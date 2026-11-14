@@ -166,7 +166,7 @@ function platformView(){return `<article class="about-page" aria-labelledby="abo
    <p class="about-lead">Candex is a cancer-care concept designed for Finland. Our aim is to help people understand their next step, give care teams a shared picture and make gaps in access easier to see.</p>
    <p class="about-caption">An all-cancer vision. A lung-care pilot.</p>
   </div>
-  <img src="care-emblem.svg" alt="Purple cancer awareness ribbon, representing support across cancer types">
+  <img src="ribbon-upright.svg" alt="Purple cancer awareness ribbon in the Candex style">
  </header>
  <section class="about-section" aria-labelledby="about-services-title">
   <p class="eyebrow">Our services</p><h2 id="about-services-title">One journey. Three connected perspectives.</h2>
