@@ -3,6 +3,12 @@
 let currentCleanup;
 let sessionBackend = '';
 let sessionToken = '';
+export function resetDicomSession() {
+  sessionBackend = '';
+  sessionToken = '';
+  window.candexAgent?.setToken?.('');
+  currentCleanup?.();
+}
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const ANALYSIS_TIMEOUT_MS = 5 * 60 * 1000;
 const text = (value, limit = 5000) => String(value ?? '').slice(0, limit);

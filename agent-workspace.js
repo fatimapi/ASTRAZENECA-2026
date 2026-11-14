@@ -13,6 +13,18 @@ const convo = {};            // patient id -> [{role, type, text, data}]
 let token = '';              // backend token, page memory only
 let status = null;           // {configured, chatModel, visionModel, ctInput} | {error}
 let busy = false, selected = null;
+let sessionRevision = 0;
+const requests = new Set();
+
+// Leaving a demo workspace must not retain its backend token or restore an
+// old conversation when an earlier request eventually returns.
+function resetSession() {
+  sessionRevision++;
+  for (const controller of requests) controller.abort();
+  requests.clear();
+  token = ''; status = null; selected = null; busy = false;
+  for (const id of Object.keys(convo)) delete convo[id];
+}
 
 const pid = () => (selected && patients.some(p => p.id === selected) ? selected : (state.selected && patients.some(p => p.id === state.selected) ? state.selected : patients[0].id));
 const caseOf = id => { const k = window.candexImaging?.links?.[id]; return k ? window.candexImaging.CASES[k] : null; };
@@ -39,15 +51,25 @@ const SECTIONS = ['Patient', 'Care pathway', 'Clinical context', 'Imaging techni
 
 // ---------- Backend calls ----------
 async function api(path, body) {
-  const res = await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token.trim()}`}, body: JSON.stringify(body)});
-  let data = null;
-  try { data = await res.json(); } catch { data = null; }
-  if (!res.ok) { const e = new Error(data?.detail || `HTTP ${res.status}`); e.status = res.status; throw e; }
-  return data;
+  const controller = new AbortController();
+  requests.add(controller);
+  try {
+    const res = await fetch(path, {method: 'POST', signal: controller.signal, headers: {'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token.trim()}`}, body: JSON.stringify(body)});
+    let data = null;
+    try { data = await res.json(); } catch { data = null; }
+    if (!res.ok) { const e = new Error(data?.detail || `HTTP ${res.status}`); e.status = res.status; throw e; }
+    return data;
+  } finally { requests.delete(controller); }
 }
 async function refreshStatus() {
-  try { const r = await fetch('/api/agent/status', {headers: {Accept: 'application/json'}}); status = r.ok ? await r.json() : {error: `HTTP ${r.status}`}; }
-  catch { status = {error: 'offline'}; }
+  const revision = sessionRevision, controller = new AbortController();
+  requests.add(controller);
+  let next;
+  try { const r = await fetch('/api/agent/status', {signal: controller.signal, headers: {Accept: 'application/json'}}); next = r.ok ? await r.json() : {error: `HTTP ${r.status}`}; }
+  catch { next = {error: 'offline'}; }
+  finally { requests.delete(controller); }
+  if (revision !== sessionRevision) return;
+  status = next;
   const el = document.querySelector('#agent-status');
   if (el) el.innerHTML = statusHTML();
 }
@@ -107,7 +129,8 @@ function drawLog() {
 
 function view() {
   const id = pid(), p = patients.find(x => x.id === id), c = caseOf(id), rec = record(id);
-  setTimeout(() => { if (!status) refreshStatus(); drawLog(); }, 0);
+  const revision = sessionRevision;
+  setTimeout(() => { if (revision !== sessionRevision) return; if (!status) refreshStatus(); drawLog(); }, 0);
   const prompts = ['Summarise this patient in three lines.', 'What is the urgency, and which findings drive it?', 'What is missing from the record before referral?', 'How does the AI second read compare with the radiologists?'];
   return `${demoNotice('Clinical agent (research prototype): fictional patients, public research CT. Answers and drafts must be checked by a clinician; nothing is sent.')}
 <div class="agent-layout"><aside class="stack">
@@ -132,6 +155,7 @@ function view() {
 
 // ---------- Actions ----------
 async function run(kind, payload) {
+  const revision = sessionRevision;
   const id = pid();
   if (busy) return;
   if (kind !== 'ct' && !token.trim() && status?.configured) { toast('Paste the backend token first.'); document.querySelector('#agent-token')?.focus(); return; }
@@ -156,12 +180,14 @@ async function run(kind, payload) {
       reply = {role: 'model', type: 'ct', data: out};
     }
   } catch (e) {
+    if (revision !== sessionRevision) return;
     if (e.status === 401) reply = {role: 'model', type: 'error', text: T('The backend token is missing or wrong. Paste the token printed by python -m backend.')};
     else if (kind === 'ct') {
       const pre = window.candexAi?.read(caseOf(id)?.id);
       reply = pre ? {role: 'model', type: 'ct', data: {read: pre, model: `${window.candexAi.provenance()?.model || 'precomputed'} (precomputed)`, input: T('Live AI unavailable; showing the precomputed research read')}} : {role: 'model', type: 'error', text: `${T('Live AI unavailable')}: ${e.message}`};
     } else reply = {role: 'model', ...offline(kind, id, e.message)};
   }
+  if (revision !== sessionRevision) return;
   items.pop();
   items.push(reply);
   busy = false;
@@ -233,5 +259,5 @@ window.candexI18n?.extend?.({
 // One backend token for the whole page (clinical agent and DICOM page).
 const getToken = () => token;
 const setToken = v => { token = String(v ?? ''); for (const el of document.querySelectorAll('#agent-token, #med-token')) if (el.value !== token) el.value = token; };
-window.candexAgent = {view, record, refreshStatus, plain, run, getToken, setToken, _convo: convo, _setStatus: v => { status = v; }};
+window.candexAgent = {view, record, refreshStatus, resetSession, plain, run, getToken, setToken, _convo: convo, _setStatus: v => { status = v; }};
 })();

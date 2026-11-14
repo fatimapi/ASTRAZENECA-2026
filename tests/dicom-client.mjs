@@ -17,8 +17,8 @@ const document={createElement:tag=>new Node(tag)};
 let calls=[];let mode='success';
 const response=data=>({ok:true,json:async()=>data});
 const fakeForm=class{constructor(){this.values={}}append(k,v){this.values[k]=v}};
-const context=vm.createContext({document,HTMLElement:Node,location:{protocol:'http:',origin:'http://localhost:8000'},URL,Blob,FormData:fakeForm,AbortController,setTimeout,clearTimeout,console,fetch:async(url,options)=>{calls.push({url,options});if(url.endsWith('/health'))return response({status:'ok',model:{name:'DenseNet',loaded:false,supported_modalities:['CR','DX']}});if(mode==='auth')return {ok:false,status:401,json:async()=>({detail:'wrong key'})};if(mode==='invalid')return response({status:'completed',findings:[{label:'test',score:NaN}]});return response({status:'completed',analysis_id:'test',model:{name:'DenseNet',weights:'test',version:'1',task:'chest-xray-classification'},image:{modality:'DX',width:100,height:100,preview_png_base64:'iVBORw0KGgoAAA=='},findings:[{label:'<script>unsafe</script>',score:.4}],limitations:['Research only'],report_draft:'Actual test model response',requires_clinician_review:true})}});
-let source=await fs.readFile(new URL('../dicom.js', import.meta.url),'utf8');source=source.replace('export function mountDicomPanel','function mountDicomPanel');vm.runInContext(source+'\nglobalThis.mountDicomPanel=mountDicomPanel;',context);
+const context=vm.createContext({document,window:{},HTMLElement:Node,location:{protocol:'http:',origin:'http://localhost:8000'},URL,Blob,FormData:fakeForm,AbortController,setTimeout,clearTimeout,console,fetch:async(url,options)=>{if(url.endsWith('/api/agent/cxr-summary'))return {ok:false,status:503,json:async()=>({detail:'Live summary not configured in this test'})};calls.push({url,options});if(url.endsWith('/health'))return response({status:'ok',model:{name:'DenseNet',loaded:false,supported_modalities:['CR','DX']}});if(mode==='auth')return {ok:false,status:401,json:async()=>({detail:'wrong key'})};if(mode==='invalid')return response({status:'completed',findings:[{label:'test',score:NaN}]});return response({status:'completed',analysis_id:'test',model:{name:'DenseNet',weights:'test',version:'1',task:'chest-xray-classification'},image:{modality:'DX',width:100,height:100,preview_png_base64:'iVBORw0KGgoAAA=='},findings:[{label:'<script>unsafe</script>',score:.4}],limitations:['Research only'],report_draft:'Actual test model response',requires_clinician_review:true})}});
+let source=await fs.readFile(new URL('../dicom.js', import.meta.url),'utf8');source=source.replace(/^export\s+(?=(?:async\s+)?function\b|(?:const|let|var)\b)/gm,'');vm.runInContext(source+'\nglobalThis.mountDicomPanel=mountDicomPanel;globalThis.resetDicomSession=resetDicomSession;',context);
 const cleanup=context.mountDicomPanel(container);
 function all(node=container){return [node,...node.children.flatMap(all)]}
 const byId=id=>all().find(n=>n.id===id);
@@ -36,4 +36,18 @@ byId('dicom-study').files=[{name:'other.dcm',size:2048}];await byId('dicom-study
 byId('dicom-confirm-chest').checked=true;byId('dicom-permitted').checked=true;await byId('dicom-permitted').fire('change');mode='auth';await form.fire('submit');assert(statuses().some(x=>x.includes('API key was not accepted')));assert(!byId('dicom-returned-report'));
 byId('dicom-study').files=[{name:'huge.dcm',size:21*1024*1024}];await byId('dicom-study').fire('change');assert(button('Analyse DICOM').disabled);assert(statuses().some(x=>x.includes('20 MiB')));
 await button('Forget API key').fire('click');assert.equal(byId('dicom-api-key').value,'');cleanup();assert.equal(all().reduce((n,node)=>n+Object.values(node.listeners).flat().length,0),0,'Cleanup must remove all handlers');
-console.log('PASS: initial no-network, URL validation, explicit health, file selection no-upload, API auth, analysis payload, actual results, text escaping, stale reset, auth errors, size limit, key clearing, cleanup');
+// Ordinary navigation remembers the connection in this page session, but
+// leaving/switching a demo workspace explicitly clears that credential.
+const remountCleanup=context.mountDicomPanel(container);
+byId('dicom-backend-url').value='https://research.example.test';await byId('dicom-backend-url').fire('input');
+byId('dicom-api-key').value='temporary-doctor-token';await byId('dicom-api-key').fire('input');
+remountCleanup();
+context.mountDicomPanel(container);
+assert.equal(byId('dicom-api-key').value,'temporary-doctor-token','Normal remount retains the current page-session credential');
+context.resetDicomSession();
+assert.equal(all().reduce((n,node)=>n+Object.values(node.listeners).flat().length,0),0,'Session reset also removes active panel handlers');
+context.mountDicomPanel(container);
+assert.equal(byId('dicom-api-key').value,'','Session reset clears the cached backend token');
+assert.equal(byId('dicom-backend-url').value,'http://localhost:8000','Session reset clears the cached backend address');
+context.resetDicomSession();context.resetDicomSession();
+console.log('PASS: initial no-network, URL validation, explicit health, file selection no-upload, API auth, analysis payload, actual results, text escaping, stale reset, auth errors, size limit, key clearing, cleanup and credential reset');

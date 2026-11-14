@@ -1,5 +1,13 @@
 # Candex — No patient left behind
 
+## Demo sign-in
+
+The website opens on a Candex landing page. Choose **Patient**, **Doctor** or **Quality Administrator**, then select **Enter demo workspace**. The selection is remembered in this browser tab while you refresh or follow links. **Switch workspace** and **Leave demo** return to the landing page. Direct links to another role require choosing that workspace first.
+
+This is the hackathon **demo sign-in**, not authentication: it collects no email or password, verifies no professional identity, and uses fictional records. The role marker lives in sessionStorage and does not protect data or backend APIs. Backend requests still need their existing API token. Real accounts would require a server-side identity and authorisation service.
+
+Leaving or switching clears clinical-agent conversations and cached backend credentials and cancels pending AI requests. Shared fictional health-check, report, appointment and referral examples are retained for demonstrating the handoff between roles. Use the existing demo data controls to reset those examples. The hosted private preview retains its separate ChatGPT access gate.
+
 An accessible patient and doctor prototype, with a real, locally run chest-X-ray DICOM model connector. The existing records, CT illustration, appointments and quality metrics are fictional examples. The separate **Doctor → DICOM AI analysis** page displays actual model output only after a successful backend request.
 
 ## Run the website with DICOM AI
@@ -46,7 +54,7 @@ This serves the patient/doctor prototype and optional browser-local guide, **but
 - Uses bearer authentication, bounded uploads and an explicit optional CORS allowlist. The default launcher binds to the local computer only.
 - Does **not** accept CT, MRI, compressed DICOM or multiframe studies; locate tumours; calculate cancer probabilities; or establish a diagnosis. Those tasks require other models and preprocessing. Chest anatomy and permitted use must be confirmed by the uploader.
 
-The role switch is a prototype interface choice, not professional identity verification. This local research service is not a production patient-data system or a clinically validated diagnostic device. Use synthetic/public permitted examples for development. Burned-in patient information can exist inside pixels; suppressing DICOM metadata is not complete de-identification. No uploads or analysis results are intentionally retained by the application, but the selected server necessarily processes the uploaded file. Multipart parsing may use temporary disk files, which are closed and removed after the request.
+The demo sign-in is a prototype interface choice, not professional identity verification. This local research service is not a production patient-data system or a clinically validated diagnostic device. Use synthetic/public permitted examples for development. Burned-in patient information can exist inside pixels; suppressing DICOM metadata is not complete de-identification. No uploads or analysis results are intentionally retained by the application, but the selected server necessarily processes the uploaded file. Multipart parsing may use temporary disk files, which are closed and removed after the request.
 
 ## Other features
 
@@ -108,7 +116,7 @@ The new **Doctor → Reports** approval panel releases an immutable reviewed rep
 4. Record a referral as issued, pending or not required, with a reason and receiving service when issued.
 5. Switch back to the patient view to see the recorded outcome. New report versions preserve booked appointments but invalidate the current follow-up/decision; old versions remain in history.
 
-This is a **browser-local, persistent demonstration**, synchronised across tabs on the same origin through browser storage. It does not send email, contact a hospital, reserve a clinical appointment or provide authenticated accounts. Use fictional data only. Reset the journey in its Demo data controls to clear the stored report/booking/decision history. The existing role switch is not authentication.
+This is a **browser-local, persistent demonstration**, synchronised across tabs on the same origin through browser storage. It does not send email, contact a hospital, reserve a clinical appointment or provide authenticated accounts. Use fictional data only. Reset the journey in its Demo data controls to clear the stored report/booking/decision history. The demo sign-in is not authentication.
 
 ## Detailed regional map and KPI traffic lights
 
@@ -136,6 +144,6 @@ node tests/kpis.cjs
 
 The view brings together the existing worklist identity, that ID’s submitted health-check information, linked public research CT reference, and browser-local reviewed report/appointment/referral history when it belongs to the same ID. Missing medicines, allergies or clinical facts are explicitly not recorded. Public research scans are not represented as the fictional person’s own images. Changing the query clears the old record immediately; queries are not put into URLs or persisted by the lookup.
 
-This is a **synthetic-data interface demonstration**, not real record access. The role switch and ID are not authentication. It does not accept Finnish personal identity codes or connect to Kanta. Real use requires authenticated staff identity, server-side patient/organisation authorisation, a lawful care relationship or other permitted access basis, audit controls and an authorised source system. A real identifier alone must never unlock a record.
+This is a **synthetic-data interface demonstration**, not real record access. The demo sign-in and ID are not authentication. It does not accept Finnish personal identity codes or connect to Kanta. Real use requires authenticated staff identity, server-side patient/organisation authorisation, a lawful care relationship or other permitted access basis, audit controls and an authorised source system. A real identifier alone must never unlock a record.
 
 Test: `node tests/patient-records.cjs` covers exact matching, role guards, submitted health IDs, cross-patient isolation, safe text rendering and clearing of stale results. Browser visual testing remains separate.
