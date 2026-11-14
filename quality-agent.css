@@ -1,0 +1,24 @@
+/* Quality administrator: Quality agent and Quality reports */
+.q-sees{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.q-sees li{display:flex;align-items:center;gap:7px;font-size:.8rem;flex-wrap:wrap}
+.q-sees li svg{width:15px;height:15px;flex:none;color:var(--purple,#6d3fc0)}
+.q-prov{font-size:.66rem;padding:2px 7px;border-radius:999px;font-weight:600;letter-spacing:.02em}
+.q-prov-syn{background:#fdf0dc;color:#8a5a12}
+.q-prov-ref{background:#e6f0fb;color:#1f4f86}
+.q-prov-res{background:#e9f5ec;color:#256339}
+.q-tag{display:inline-block;font-size:.68rem;font-weight:600;color:#8a5a12;background:#fdf0dc;border-radius:999px;padding:2px 8px;margin-bottom:6px}
+.q-unverified{font-size:.76rem;color:#8a3b12;background:#fdecdf;border-radius:8px;padding:6px 9px;margin:6px 0 0}
+.q-tech{font-size:.76rem;margin-top:6px}.q-tech summary{cursor:pointer;color:var(--muted,#6b6475)}
+.q-tech code{font-size:.74rem}
+.q-reports{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:20px;align-items:start;margin-bottom:24px}
+.q-controls{display:flex;flex-direction:column;gap:12px;position:sticky;top:14px}
+.q-controls h2{margin:0}
+.q-controls .button-row{display:flex;flex-wrap:wrap;gap:8px}
+.q-controls .button[disabled]{opacity:.5;cursor:not-allowed}
+.q-preview{min-width:0}
+.q-doc h4{margin:18px 0 8px}
+.q-doc ul{padding-left:20px;line-height:1.5}
+.q-kv{display:grid;grid-template-columns:minmax(140px,40%) 1fr;gap:6px 12px;margin:0;font-size:.84rem}
+.q-kv dt{color:var(--muted,#6b6475);font-weight:600}.q-kv dd{margin:0}
+@media (max-width:900px){.q-reports{grid-template-columns:1fr}.q-controls{position:static}}
+.q-review-warn{background:#fdf0dc;border-left:4px solid #9a5a29;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:.82rem}.q-review-warn ul{margin:6px 0 0}
