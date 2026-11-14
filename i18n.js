@@ -232,6 +232,11 @@ const FI={
 'Screening at the health centre':'Seulonta terveyskeskuksessa','Checking your health':'Terveytesi tarkistus',
 'Your health centre doctor asks about your symptoms and health history to see whether more tests are needed.':'Terveyskeskuslääkärisi kysyy oireistasi ja terveyshistoriastasi selvittääkseen, tarvitaanko lisätutkimuksia.',
 'Being sent for tests quickly does not mean something serious has been found.':'Nopea ohjaus tutkimuksiin ei tarkoita, että jotain vakavaa olisi löydetty.',
+'Urgent action requests from the quality team':'Laatutiimin kiireelliset toimenpidepyynnöt','Urgent regional action':'Kiireellinen alueellinen toimenpide','Urgent regional actions':'Kiireelliset alueelliset toimenpiteet',
+'Urgent action':'Kiireellisiä toimia','Acknowledged':'Kuitattu','Acknowledge':'Kuittaa','All acknowledged':'Kaikki kuitattu','Show affected patients':'Näytä koskevat potilaat','Open patient worklist':'Avaa potilastyölista',
+'1 patient in your worklist':'1 potilas työlistallasi','Urgent action requested by the quality team':'Laatutiimi pyytää kiireellisiä toimia',
+'Sent to doctors · waiting for acknowledgement':'Lähetetty lääkäreille · odottaa kuittausta','Acknowledged by doctor':'Lääkäri on kuitannut',
+'Request acknowledged. The quality team can see it has been received.':'Pyyntö kuitattu. Laatutiimi näkee, että se on vastaanotettu.','Notification closed. Affected patients stay flagged until their follow-up is done.':'Ilmoitus suljettu. Potilaat pysyvät merkittyinä, kunnes seuranta on tehty.','Request acknowledged and closed. The quality team can see it has been received.':'Pyyntö kuitattu, ja se on suljettu. Laatutiimi näkee, että se on vastaanotettu.',
 'Specialist appointment · 10:30':'Erikoislääkärin vastaanotto · 10.30','Chest CT scan':'Keuhkojen TT-kuvaus','Diagnosis discussion':'Diagnoosikeskustelu',
 
 // Records
@@ -277,7 +282,7 @@ const FI={
 'Fictional multi-cancer patient worklist':'Kuvitteellinen eri syöpätyyppien potilastyölista','Review priority & reason':'Arvion kiireellisyys ja syy','Status':'Tila','Action':'Toiminto',
 'Interval change on example imaging':'Muutos esimerkkikuvantamisessa edelliseen verrattuna','Awaiting review':'Odottaa arviota','Referral information ready':'Lähetetiedot valmiina','Referral received':'Lähete vastaanotettu',
 'Follow-up requires confirmation':'Seuranta vaatii vahvistuksen','Follow-up due':'Seuranta erääntyy','Specialist appointment requested':'Erikoislääkärin vastaanottoa pyydetty','Pathway review':'Hoitopolun arvio',
-'Follow-up prepared':'Seuranta valmisteltu','Reviewed in this session':'Arvioitu tässä istunnossa','No patients match this search.':'Haulla ei löytynyt potilaita.','Fictional patient':'Kuvitteellinen potilas',
+'Follow-up prepared':'Seuranta valmisteltu','Follow-up sent':'Seuranta lähetetty','No open notifications. All urgent requests have been resolved.':'Ei avoimia ilmoituksia. Kaikki kiireelliset pyynnöt on ratkaistu.','Resolved by doctor':'Lääkäri ratkaissut','Reviewed in this session':'Arvioitu tässä istunnossa','No patients match this search.':'Haulla ei löytynyt potilaita.','Fictional patient':'Kuvitteellinen potilas',
 'Candex is designed for all cancer pathways. The PDF’s lung workflow is the imaging demonstration; breast, colorectal and prostate entries illustrate the shared care-coordination model.':'Candex on suunniteltu kaikille syöpien hoitopoluille. PDF:n keuhkotyönkulku on kuvantamisen demo; rinta-, suolisto- ja eturauhassyövän rivit havainnollistavat yhteistä hoidon koordinoinnin mallia.',
 
 // Imaging review
@@ -495,6 +500,9 @@ const PATTERNS=[
  [/^(CX-\d+) · (\d+) years$/,(m,id,a)=>`${id} · ${a} vuotta`],
  [/^(CX-\d+) · (\d+) years · (.+)$/,(m,id,a,r)=>`${id} · ${a} vuotta · ${lookup(r)}`],
  [/^(.+)\. This example covers care coordination; no cancer-specific imaging model is running\.$/,(m,r)=>`${lookup(r)}. Tämä esimerkki kattaa hoidon koordinoinnin; syöpäkohtaista kuvantamismallia ei ole käytössä.`],
+ [/^(\d+) patients in your worklist$/,(m,n)=>`${n} potilasta työlistallasi`],
+ [/^(\d+) open$/,(m,n)=>`${n} avoinna`],
+ [/^(\d+) urgent requests$/,(m,n)=>`${n} kiireellistä pyyntöä`],
  [/^Step (\d+) of (\d+)$/,(m,a,b)=>`Vaihe ${a}/${b}`],
  [/^Step (\d+) · (.+)$/,(m,n,t)=>`Vaihe ${n} · ${lookup(t)}`],
  [/^Care pathway: step (\d+) of (\d+), (.+)$/,(m,a,b,t)=>`Hoitopolku: vaihe ${a}/${b}, ${lookup(t)}`],
