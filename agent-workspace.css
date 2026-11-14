@@ -42,3 +42,16 @@
 .agent-form textarea{flex:1;min-height:46px;border:1px solid #d7d1dd;border-radius:8px;padding:10px 12px;font:inherit;font-size:.8rem;resize:vertical}
 @media(max-width:950px){.agent-layout{grid-template-columns:1fr}.agent-chat{min-height:480px}}
 .agent-msg.is-user p{color:#fff}
+
+/* Side-panel drop-downs (How it works, What the agent can see, Backend token, Technical details) */
+.agent-drop{border-top:1px solid #ece8f0;padding:10px 0 2px;margin:0}
+.agent-drop>summary{cursor:pointer;font-weight:600;font-size:.86rem;color:var(--ink,#32283c);display:flex;align-items:center;gap:7px;padding:2px 0 8px}
+.agent-drop>summary::before{content:"▸";font-size:.8rem}
+.agent-drop[open]>summary::before{transform:rotate(90deg)}
+.agent-drop>summary::-webkit-details-marker{display:none}.agent-drop>summary{list-style:none}
+.agent-drop>summary svg{width:15px;height:15px}
+.agent-drop .agent-how,.agent-drop .agent-sees,.agent-drop .q-sees{margin:2px 0 8px}
+.agent-drop p{color:var(--ink,#32283c)}
+.token-state{margin-left:auto;font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:999px;background:#fdf0dc;color:#8a5a12}
+.token-state.is-set{background:#e9f5ec;color:#256339}
+.dicom-workspace .token-drop{margin-top:4px}

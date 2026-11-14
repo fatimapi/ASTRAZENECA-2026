@@ -137,14 +137,13 @@ function view() {
 <section class="card agent-side"><div class="card-head"><h2>Clinical agent</h2>${badge('Research', 'amber')}</div>
 <div class="field"><label for="agent-patient">${icon('users')}Patient</label><select id="agent-patient">${patients.map(x => `<option value="${esc(x.id)}" ${x.id === id ? 'selected' : ''}>${esc(x.name)} · ${esc(x.id)} · ${esc(T(x.type))}</option>`).join('')}</select></div>
 <div class="agent-status" id="agent-status" aria-live="polite">${statusHTML()}</div>
-<div class="field"><label for="agent-token">${icon('lock')}Backend token</label><input id="agent-token" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(T('Paste the token printed by python -m backend'))}" value="${esc(token)}"><small>Kept in this page’s memory only. The Gemini key stays on the server.</small></div>
-<h3 class="agent-h3">What the agent can see</h3><ul class="agent-sees">${SECTIONS.map(s => `<li class="${rec[s] ? '' : 'is-off'}">${icon(rec[s] ? 'check' : 'close')}${T(s)}</li>`).join('')}</ul>
-<p class="field-note">${c ? `${T('CT study')}: <span translate="no">${esc(c.id)}</span>` : T('No CT study linked. Link one in Imaging review to enable the CT read.')}</p></section>
-<section class="card agent-design"><h3 class="agent-h3">How it works</h3><ul class="agent-how">
+${tokenDrop('agent-token')}
+<details class="agent-drop"><summary>How it works</summary><ul class="agent-how">
 <li><strong>Tools:</strong> one agent calls specialist tools: the patient record and a Gemini CT read of the linked study.</li>
 <li><strong>Review roles:</strong> each draft is written by a drafter, then checked against the record by a separate safety reviewer.</li>
-<li><strong>Grounded:</strong> answers use only this record, cite sections, and say “not recorded” instead of guessing. Urgency is never changed.</li></ul>
-</section></aside>
+<li><strong>Grounded:</strong> answers use only this record, cite sections, and say “not recorded” instead of guessing. Urgency is never changed.</li></ul></details>
+<details class="agent-drop"><summary>What the agent can see</summary><ul class="agent-sees">${SECTIONS.map(s => `<li class="${rec[s] ? '' : 'is-off'}">${icon(rec[s] ? 'check' : 'close')}${T(s)}</li>`).join('')}</ul>
+<p class="field-note">${c ? `${T('CT study')}: <span translate="no">${esc(c.id)}</span>` : T('No CT study linked. Link one in Imaging review to enable the CT read.')}</p></details></section></aside>
 <section class="card agent-chat" aria-labelledby="agent-title"><div class="card-head"><div><h2 id="agent-title" translate="no">${esc(p.name)} · ${esc(p.id)}</h2><p class="subhead">${esc(T(p.type))} · ${esc(T(p.reason))}</p></div><button type="button" class="text-btn" data-agent-clear>${T('Clear conversation')}</button></div>
 <div class="agent-log" id="agent-log" aria-live="polite"></div>
 <div class="agent-prompts">${prompts.map(q => `<button type="button" class="agent-chip" data-agent-ask="${esc(q)}">${T(q)}</button>`).join('')}</div>
@@ -158,7 +157,7 @@ async function run(kind, payload) {
   const revision = sessionRevision;
   const id = pid();
   if (busy) return;
-  if (kind !== 'ct' && !token.trim() && status?.configured) { toast('Paste the backend token first.'); document.querySelector('#agent-token')?.focus(); return; }
+  if (kind !== 'ct' && !token.trim() && status?.configured) { toast('Paste the backend token first.'); openToken('#agent-token'); return; }
   busy = true;
   const items = log(id);
   if (payload.userText) items.push({role: 'user', text: payload.userText});
@@ -205,7 +204,7 @@ document.addEventListener('submit', e => {
 document.addEventListener('keydown', e => {
   if (e.target.id === 'agent-input' && e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.querySelector('#agent-form')?.requestSubmit(); }
 });
-document.addEventListener('input', e => { if (e.target.id === 'agent-token') token = e.target.value; });
+document.addEventListener('input', e => { if (e.target.id === 'agent-token') setToken(e.target.value); });
 document.addEventListener('change', e => {
   if (e.target.id === 'agent-patient') { selected = e.target.value; state.selected = selected; render(); }
 });
@@ -258,6 +257,17 @@ window.candexI18n?.extend?.({
 
 // One backend token for the whole page (clinical agent and DICOM page).
 const getToken = () => token;
-const setToken = v => { token = String(v ?? ''); for (const el of document.querySelectorAll('#agent-token, #q-token')) if (el.value !== token) el.value = token; };
-window.candexAgent = {view, record, refreshStatus, resetSession, plain, run, getToken, setToken, _convo: convo, _setStatus: v => { status = v; }};
+// The backend token field, as a drop-down (closed by default; opened when needed).
+const tokenState = () => (token.trim() ? T('Set') : T('Not set'));
+function tokenDrop(id, hint = 'Kept in this page’s memory only. The Gemini key stays on the server.') {
+  return `<details class="agent-drop token-drop"><summary>${icon('lock')}<span>${T('Backend token')}</span><span class="token-state${token.trim() ? ' is-set' : ''}">${tokenState()}</span></summary>
+<div class="field"><label class="sr-only" for="${id}">${T('Backend token')}</label><input id="${id}" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(T('Paste the token printed by python -m backend'))}" value="${esc(token)}"><small>${T(hint)}</small></div></details>`;
+}
+function openToken(sel) { const el = document.querySelector(sel); el?.closest?.('details')?.setAttribute?.('open', ''); el?.focus?.(); }
+const setToken = v => {
+  token = String(v ?? '');
+  for (const el of document.querySelectorAll('#agent-token, #q-token')) if (el.value !== token) el.value = token;
+  for (const el of document.querySelectorAll('.token-drop .token-state')) { el.textContent = tokenState(); el.classList.toggle('is-set', !!token.trim()); }
+};
+window.candexAgent = {view, record, refreshStatus, resetSession, plain, run, getToken, setToken, tokenDrop, openToken, _convo: convo, _setStatus: v => { status = v; }};
 })();

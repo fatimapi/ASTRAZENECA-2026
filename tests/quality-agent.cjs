@@ -25,7 +25,7 @@ const check = (ok, msg) => { checks++; if (!ok) defects.push(msg); };
   // Mirrors the page.
   check(V['kpi.referral_review_days'].value === 12 && V['kpi.referral_review_days'].status && V['kpi.referral_review_days'].source, 'National KPI value, status and source as on the page');
   check(V['kpi.treatment_within_pathway_target'].status === 'unknown', '"Not assessed" stays grey');
-  check(V['nhs.nhs_62day_treatment_share'].value === 78 && /not a Finnish standard/.test(V['nhs.nhs_62day_treatment_share'].reference), 'NHS figures are labelled external comparators');
+  check(V['eu.eu_colorectal_participation'].value === 41 && /not a Finnish standard/.test(V['eu.eu_colorectal_participation'].reference) && V['eu.eu_colorectal_participation'].status === 'red' && !/NHS/.test(JSON.stringify(pk)), 'European comparators replace NHS, labelled external');
   check(V['op.regional_gap_days'].value === 11 && /Static illustrative/.test(V['op.regional_gap_days'].note) && /Static illustrative/.test(V['op.demographic_gap_pp'].note), 'Hard-coded gap cards are labelled static illustrative');
   check(V['regions.count'].value === 19 && V['regions.referral_review_days.gap'].value === 22 && V['regions.referral_review_days.withData'].value === 18, 'Regional spread computed from the map fixtures (gap 22 d, Åland no data)');
   check(V['cohort.n'].value >= 50 && typeof V['cohort.travelGap'].value === 'number' && V['cohort.completeness'].unit === '%', 'Cohort figures from kpis()');
@@ -83,6 +83,15 @@ const check = (ok, msg) => { checks++; if (!ok) defects.push(msg); };
     const svg = rr.match(/const WORDMARK_SVG = '([^']+)'/)[1];
     check(paths(svg) === paths(app.match(/const candexWordmark = \(\) => `([^`]+)`/)[1]), 'PDF wordmark uses the same drawing as the site wordmark');
     check(/if \(wordmarkPNG\) \{\s*if \(i === 1\)/.test(rr) && /addImage\(wordmarkPNG/.test(rr), 'The PDF kit stamps the wordmark on every page'); }
+
+  // Side panels: drop-downs, "How it works" before "What the agent can see"; token in a drop-down.
+  for (const [name, html] of [['Quality agent', Q.view()], ['Clinical agent', win.candexAgent.view()]]) {
+    const how = html.indexOf('<details class="agent-drop"><summary>How it works'), sees = html.indexOf('What the agent can see');
+    check(how > 0 && sees > how && /<details class="agent-drop token-drop">/.test(html) && !/<h3 class="agent-h3">/.test(html), `${name}: How it works first, drop-downs, token in a drop-down`);
+  }
+  check(/<details class="agent-drop token-drop">/.test(Q.reportsView()), 'Reports page: token in a drop-down');
+  check(/element\('details', 'agent-drop token-drop'\)/.test(read('dicom.js')), 'DICOM page: API key in a drop-down');
+  check(/r\.kind === 'regional'\) \{ k\.section\(n\+\+, tx\(r\.lang, 'Regional waiting times \(map\)'/.test(read('quality-agent.js')) && /data-q-map="0"/.test(Q.previewHTML(Q.buildReport('regional', 'en', pk, 'x'))), 'Regional report: map in the preview and the PDF');
   console.log(defects.length ? JSON.stringify(defects, null, 2) : `PASS: ${checks} quality agent & report checks.`);
   if (defects.length) process.exitCode = 1;
 })();

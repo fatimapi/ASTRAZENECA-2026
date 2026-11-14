@@ -34,7 +34,7 @@ function pack() {
     demographic_gap_pp: 'Static illustrative value on the page, not computed from the cohort data',
   };
   const kpis = (typeof nationalKpis !== 'undefined' ? nationalKpis : []).map(([id, label, v, display, detail]) => add(`kpi.${id}`, {label, value: v, display, unit: unit(display), provenance: 'SYNTHETIC', detail, ...ev(id, v)}));
-  const comparators = (typeof nhsKpis !== 'undefined' ? nhsKpis : []).map(([id, label, v, display, detail]) => add(`nhs.${id}`, {label, value: v, display, unit: unit(display), provenance: 'SYNTHETIC', detail, reference: 'NHS England external comparator (not a Finnish standard)', ...ev(id, v)}));
+  const comparators = (typeof euKpis !== 'undefined' ? euKpis : []).map(([id, label, v, display, detail]) => add(`eu.${id}`, {label, value: v, display, unit: unit(display), provenance: 'SYNTHETIC', detail, reference: 'European comparator (not a Finnish standard)', ...ev(id, v)}));
   const operational = (typeof metrics !== 'undefined' ? metrics : []).map(([label, display, definition], i) => add(`op.${kpiMetricIds[i]}`, {label, value: kpiValues[i], display, unit: unit(display), definition, provenance: 'SYNTHETIC', ...(STATIC[kpiMetricIds[i]] ? {note: STATIC[kpiMetricIds[i]]} : {}), ...ev(kpiMetricIds[i], kpiValues[i])}));
   // Regions (19 maakunta, synthetic). No ranks: min/max/gap and status counts only.
   const regionIds = [], regionSummary = {};
@@ -120,12 +120,12 @@ function pack() {
   lung.cxr = xs.map(x => ({id: x.id, nodule: x.nodule, mass: x.mass, topLabel: x.top?.label, topScore: Math.round((x.top?.score || 0) * 100) / 100}));
   const src = K?.sources || {};
   return {
-    about: 'Candex Quality & Equity data (research prototype). Values are synthetic unless tagged otherwise. Finnish references are sourced; NHS figures are external comparators.',
+    about: 'Candex Quality & Equity data (research prototype). Values are synthetic unless tagged otherwise. Finnish references are sourced; European figures (EU screening target, European screening guidelines, EUSOMA) are external comparators.',
     referenceProfile: K?.getMode?.() === 'demo' ? 'Local demo operating bands (not national standards)' : 'Verified Finnish references (unsupported measures remain grey)',
     provenanceKey: {SYNTHETIC: 'Invented example values, not measured Finnish performance', 'SOURCED REFERENCE': 'Published Finnish reference or external comparator', 'PUBLIC RESEARCH DATA': 'LIDC-IDRI public research images (TCIA, CC BY 3.0)'},
     sections: {kpis, comparators, operational, regions: regionSummary, cohortGroups: cohort.groups || [], lungCases: lung.cases, chestXrays: lung.cxr, lungModel: lung.model || null},
     values,
-    sources: [src.access, src.strategy, src.thl, {title: 'NHS England — Cancer waiting times (external comparator)', url: 'https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/'}, {title: 'LIDC-IDRI, The Cancer Imaging Archive (CC BY 3.0)', url: 'https://www.cancerimagingarchive.net/collection/lidc-idri/'}].filter(Boolean),
+    sources: [src.access, src.strategy, src.thl, ...(K?.europe || []), {title: 'LIDC-IDRI, The Cancer Imaging Archive (CC BY 3.0)', url: 'https://www.cancerimagingarchive.net/collection/lidc-idri/'}].filter(Boolean),
   };
 }
 async function hashOf(p) {
@@ -145,6 +145,7 @@ const display = (L, v) => {
 let status = null, busy = false;
 const log = [];
 const token = () => (window.candexAgent?.getToken?.() || '').trim();
+const tokenField = hint => (window.candexAgent?.tokenDrop ? window.candexAgent.tokenDrop('q-token', hint) : `<div class="field"><label for="q-token">${T('Backend token')}</label><input id="q-token" type="password" autocomplete="off" value="${esc(token())}"></div>`);
 async function api(path, body) {
   const res = await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token()}`}, body: JSON.stringify(body)});
   let data = null;
@@ -215,14 +216,14 @@ function view() {
   return `<div class="agent-layout"><aside class="stack">
 <section class="card agent-side"><div class="card-head"><h2>Quality agent</h2>${badge('Research', 'amber')}</div>
 <div class="agent-status" id="q-status" aria-live="polite">${statusHTML()}</div>
-<div class="field"><label for="q-token">${icon('lock')}Backend token</label><input id="q-token" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(T('Paste the token printed by python -m backend'))}" value="${esc(token())}"><small>${T('One token for the whole page. The Gemini key stays on the server.')}</small></div>
-<h3 class="agent-h3">What the agent can see</h3><ul class="q-sees">${sees.map(([s, prov]) => `<li>${icon('check')}<span>${T(s)}</span><small class="q-prov q-prov-${prov === 'SYNTHETIC' ? 'syn' : prov === 'SOURCED REFERENCE' ? 'ref' : 'res'}">${provLabel(uiLang(), prov)}</small></li>`).join('')}</ul>
-<p class="field-note">${T('Reference profile')}: ${esc(T(p.referenceProfile))}</p>
-<details class="q-tech"><summary>${T('Technical details')}</summary><p>${T('Data pack')}: <code id="q-hash" translate="no">…</code> · ${Object.keys(p.values).length} ${T('values')}</p></details></section>
-<section class="card agent-design"><h3 class="agent-h3">How it works</h3><ul class="agent-how">
+${tokenField('One token for the whole page. The Gemini key stays on the server.')}
+<details class="agent-drop"><summary>${T('How it works')}</summary><ul class="agent-how">
 <li><strong>${T('Grounded:')}</strong> ${T('answers use only the figures on the Quality & Equity page, each tagged synthetic, sourced reference or public research data.')}</li>
 <li><strong>${T('Checked:')}</strong> ${T('the server checks every number in an answer against the page data and flags any it cannot find.')}</li>
-<li><strong>${T('Honest:')}</strong> ${T('no patient-level conclusions and no rankings of real regions; the figures are synthetic.')}</li></ul></section></aside>
+<li><strong>${T('Honest:')}</strong> ${T('no patient-level conclusions and no rankings of real regions; the figures are synthetic.')}</li></ul></details>
+<details class="agent-drop"><summary>${T('What the agent can see')}</summary><ul class="q-sees">${sees.map(([s, prov]) => `<li>${icon('check')}<span>${T(s)}</span><small class="q-prov q-prov-${prov === 'SYNTHETIC' ? 'syn' : prov === 'SOURCED REFERENCE' ? 'ref' : 'res'}">${provLabel(uiLang(), prov)}</small></li>`).join('')}</ul>
+<p class="field-note">${T('Reference profile')}: ${esc(T(p.referenceProfile))}</p></details>
+<details class="agent-drop"><summary>${T('Technical details')}</summary><p>${T('Data pack')}: <code id="q-hash" translate="no">…</code> · ${Object.keys(p.values).length} ${T('values')}</p></details></section></aside>
 <section class="card agent-chat q-chat" aria-labelledby="q-title"><div class="card-head"><div><h2 id="q-title">${T('Ask about quality and equity')}</h2><p class="subhead">${T('KPIs, references, regions, the simulated cohort and the lung pilot')}</p></div><button type="button" class="text-btn" data-q-clear>${T('Clear conversation')}</button></div>
 <div class="agent-log" id="q-log" aria-live="polite"></div>
 <div class="agent-prompts">${STARTERS.map(q => `<button type="button" class="agent-chip" data-q-ask="${esc(q)}">${T(q)}</button>`).join('')}</div>
@@ -271,7 +272,7 @@ function buildReport(kind, L, pk, hash) {
     const rows = ids => ids.map(id => [lab(id), pk.values[id].value == null ? statusLabel(L, 'unknown') : val(id), st(id), loc(L, pk.values[id].threshold || '—'), provLabel(L, pk.values[id].provenance)]);
     const head = [tx(L, 'Indicator', 'Mittari'), tx(L, 'Value', 'Arvo'), tx(L, 'Status', 'Tila'), tx(L, 'Reference / threshold', 'Viite / raja-arvo'), tx(L, 'Data', 'Aineisto')];
     sections.push({title: tx(L, 'Finnish reference indicators', 'Suomalaiset viitemittarit'), table: {head, rows: rows(pk.sections.kpis), widths: [52, 20, 26, 54, 26]}});
-    sections.push({title: tx(L, 'External comparators (NHS England, not Finnish standards)', 'Ulkoiset vertailukohdat (NHS England, eivät suomalaisia standardeja)'), table: {head, rows: rows(pk.sections.comparators), widths: [52, 20, 26, 54, 26]}});
+    sections.push({title: tx(L, 'European comparators (not Finnish standards)', 'Eurooppalaiset vertailukohdat (eivät suomalaisia standardeja)'), table: {head, rows: rows(pk.sections.comparators), widths: [52, 20, 26, 54, 26]}});
     sections.push({title: tx(L, 'Clinical workflow & model measures', 'Kliininen työnkulku ja mallimittarit'), table: {head, rows: rows(pk.sections.operational), widths: [52, 20, 26, 54, 26]}});
     const grey = [...pk.sections.kpis, ...pk.sections.operational].filter(id => pk.values[id].status === 'unknown');
     sections.push({title: tx(L, 'Why some measures are not assessed', 'Miksi osaa mittareista ei arvioida'), list: grey.map(id => `${lab(id)}: ${loc(L, pk.values[id].basis || '—')}`)});
@@ -303,10 +304,10 @@ function buildReport(kind, L, pk, hash) {
     ...(kind === 'lung' ? [tx(L, 'Research data only: the AI reader is unvalidated and not CE-marked; 5 studies give a wide confidence interval. The chest X-ray classifier is not a nodule detector, and X-ray and CT dates are unknown.', 'Vain tutkimusaineistoa: tekoälylukija on validoimaton eikä CE-merkitty; viisi tutkimusta antaa leveän luottamusvälin. Keuhkoröntgenluokittelija ei tunnista pesäkkeitä, eikä röntgen- ja TT-kuvien päivämääriä tunneta.')] : []),
   ];
   return {
-    kind, lang: L, title: tx(L, KINDS[kind][0], KINDS[kind][1]),
+    kind, lang: L, pk, title: tx(L, KINDS[kind][0], KINDS[kind][1]),
     banner: tx(L, 'SYNTHETIC DEMO DATA · NOT MEASURED FINNISH PERFORMANCE · DRAFT', 'SYNTEETTINEN ESIMERKKIAINEISTO · EI MITATTUA SUOMALAISTA SUORITUSKYKYÄ · LUONNOS'),
     summary: F(nar.summary), findings: F(nar.findings), questions: F(nar.questions), sections, caveats, reviewIssues: ai ? R.review?.[`issues_${L}`] || R.review?.issues || [] : [],
-    provenance: [[tx(L, 'KPI values, regional figures, cohort', 'KPI-arvot, alueluvut, kohortti'), provLabel(L, 'SYNTHETIC'), 'app.js · regional-map.js · screening.js'], [tx(L, 'Finnish references, NHS comparators', 'Suomalaiset viitteet, NHS-vertailut'), provLabel(L, 'SOURCED REFERENCE'), 'kpis.js'], [tx(L, 'LIDC-IDRI CT and chest X-ray results', 'LIDC-IDRI-TT- ja keuhkoröntgentulokset'), provLabel(L, 'PUBLIC RESEARCH DATA'), 'data/lidc/*.js']],
+    provenance: [[tx(L, 'KPI values, regional figures, cohort', 'KPI-arvot, alueluvut, kohortti'), provLabel(L, 'SYNTHETIC'), 'app.js · regional-map.js · screening.js'], [tx(L, 'Finnish references, European comparators', 'Suomalaiset viitteet, eurooppalaiset vertailukohdat'), provLabel(L, 'SOURCED REFERENCE'), 'kpis.js'], [tx(L, 'LIDC-IDRI CT and chest X-ray results', 'LIDC-IDRI-TT- ja keuhkoröntgentulokset'), provLabel(L, 'PUBLIC RESEARCH DATA'), 'data/lidc/*.js']],
     sources: pk.sources,
     technical: [[tx(L, 'Generated', 'Laadittu'), new Date().toISOString().slice(0, 16).replace('T', ' ')], [tx(L, 'KPI reference profile', 'KPI-viiteprofiili'), loc(L, pk.referenceProfile)], [tx(L, 'Data pack', 'Tietopaketti'), hash], [tx(L, 'Narrative', 'Teksti'), ai ? `${R.model} (AI, ${tx(L, 'numbers filled from the data pack', 'luvut täytetty tietopaketista')})` : tx(L, 'Template text, no AI', 'Mallipohjainen teksti, ei tekoälyä')], ...(ai ? [[tx(L, 'Safety review', 'Turvallisuustarkistus'), R.review?.issues?.length ? `${R.review.issues.length} ${tx(L, 'issue(s)', 'huomiota')}: ${(R.review[`issues_${L}`] || R.review.issues).join(' ')}` : tx(L, 'no issues found', 'ei huomautettavaa')]] : []), ...(bad.size ? [[tx(L, 'Unknown placeholders', 'Tuntemattomat paikkamerkit'), [...bad].join(', ')]] : [])],
     signoff: [[tx(L, 'Status', 'Tila'), tx(L, 'Draft for review, not approved', 'Luonnos tarkistettavaksi, ei hyväksytty')], [tx(L, 'Prepared by', 'Laatija'), tx(L, 'Quality Administrator (demo) in Candex', 'Laatuhallinnoija (demo) Candexissa')], [tx(L, 'Reviewed and approved by', 'Tarkistanut ja hyväksynyt'), '____________________'], [tx(L, 'Date', 'Päivämäärä'), '____________________']],
@@ -318,6 +319,7 @@ function previewHTML(r) {
   const L = r.labels;
   return `<article class="rr-doc q-doc" translate="no" lang="${r.lang}"><header class="rr-head"><div><strong>${esc(r.title)}</strong><small>${esc(r.banner)}</small></div></header>
 ${r.reviewIssues?.length ? `<div class="q-review-warn"><strong>${esc(L.reviewWarn)}</strong><ul>${r.reviewIssues.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}<div class="rr-bottom"><small>${esc(L.summary)}</small>${r.summary.map(s => `<p>${esc(s)}</p>`).join('')}</div>
+${r.kind === 'regional' ? `<h4>${esc(tx(r.lang, 'Regional waiting times (map)', 'Alueelliset odotusajat (kartta)'))}</h4><div class="q-maps"><figure class="q-map-main"><img data-q-map="0" alt="${esc(tx(r.lang, 'Map: referral receipt to assessment start by region', 'Kartta: lähetteen saapumisesta arvioinnin alkuun alueittain'))}"><figcaption>${esc(tx(r.lang, 'Referral receipt → assessment start (days). Colours as on the Workspace map.', 'Lähetteen saapuminen → arvioinnin alku (päivää). Värit kuten Työtila-sivun kartassa.'))}</figcaption></figure><figure><img data-q-map="1" alt="${esc(tx(r.lang, 'Map: specialist assessment days by region', 'Kartta: erikoislääkärin arvio päivinä alueittain'))}"><figcaption>${esc(tx(r.lang, 'Specialist assessment (days), shaded by days: no national threshold.', 'Erikoislääkärin arvio (päivää), sävytetty päivien mukaan: ei kansallista raja-arvoa.'))}</figcaption></figure><figure><img data-q-map="2" alt="${esc(tx(r.lang, 'Map: treatment waiting time by region', 'Kartta: hoidon odotusaika alueittain'))}"><figcaption>${esc(tx(r.lang, 'Treatment waiting time (days), shaded by days: no national threshold.', 'Hoidon odotusaika (päivää), sävytetty päivien mukaan: ei kansallista raja-arvoa.'))}</figcaption></figure></div>` : ''}
 ${r.findings.length ? `<h4>${esc(L.findings)}</h4><ul>${r.findings.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
 ${r.sections.map(sec).join('')}
 ${r.questions.length ? `<h4>${esc(L.questions)}</h4><ul>${r.questions.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
@@ -327,7 +329,7 @@ ${r.questions.length ? `<h4>${esc(L.questions)}</h4><ul>${r.questions.map(x => `
 <details class="q-tech"><summary>${esc(L.technical)}</summary><dl class="q-kv">${r.technical.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></details>
 <h4>${esc(L.signoff)}</h4><dl class="q-kv">${r.signoff.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></article>`;
 }
-function writePDF(jsPDF, r) {
+function writePDF(jsPDF, r, maps = null) {
   const C = window.candexReport, k = C.makeKit(jsPDF), doc = k.doc, L = r.labels;
   doc.setLanguage?.(r.lang === 'fi' ? 'fi' : 'en-GB');
   doc.setProperties({title: `Candex · ${r.title}`, subject: r.banner, author: 'Candex (demonstration)', creator: 'Candex'});
@@ -336,6 +338,7 @@ function writePDF(jsPDF, r) {
   k.callout(L.summary, r.summary.join(' '));
   let n = 1;
   if (r.findings.length) { k.section(n++, L.findings); k.list(r.findings); }
+  if (r.kind === 'regional') { k.section(n++, tx(r.lang, 'Regional waiting times (map)', 'Alueelliset odotusajat (kartta)')); drawRegionalMaps(k, r.lang, r.pk, maps); }
   for (const s of r.sections) {
     k.section(n++, s.title);
     if (s.table) k.table(s.table.head, s.table.rows, s.table.widths.map(w => (w * k.CW) / s.table.widths.reduce((a, b) => a + b, 0)));
@@ -365,7 +368,7 @@ function reportsView() {
 <div class="field"><label for="q-lang">${T('Report language')}</label><select id="q-lang"><option value="en" ${reportLang() === 'en' ? 'selected' : ''}>English</option><option value="fi" ${reportLang() === 'fi' ? 'selected' : ''}>Suomi</option></select></div>
 <p class="field-note">${T('Reference profile')}: ${esc(T(pack().referenceProfile))}</p>
 <div class="agent-status" id="q-status">${statusHTML()}</div>
-<div class="field"><label for="q-token">${icon('lock')}Backend token</label><input id="q-token" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(T('Paste the token printed by python -m backend'))}" value="${esc(token())}"></div>
+${tokenField('One token for the whole page. The Gemini key stays on the server.')}
 <div class="button-row"><button class="button secondary" data-q-ai ${R.busy ? 'disabled' : ''}>${icon('sparkle')}${R.busy ? T('Writing the summary… (30–40 s)') : T('Write AI summary')}</button><button class="button" data-q-preview>${T('Preview report')}</button><button class="button" data-q-pdf disabled>${icon('download')}${T('Download PDF')}</button></div>
 <p class="field-note" id="q-report-note">${T('Tables are computed from the page data. The AI summary is optional; without it the report uses template text. Preview the report before downloading.')}</p>
 ${R.error ? `<p class="notice" role="alert">${esc(R.error)}</p>` : ''}</aside>
@@ -374,14 +377,17 @@ ${R.error ? `<p class="notice" role="alert">${esc(R.error)}</p>` : ''}</aside>
 async function paintReport(show = false) {
   const btn = document.querySelector('[data-q-pdf]');
   const {r, hash} = await current();
-  if (show) { const box = document.querySelector('#q-report'); if (box) box.innerHTML = previewHTML(r); R.previewed = fpOf(r, hash); }
+  if (show) {
+    const box = document.querySelector('#q-report'); if (box) box.innerHTML = previewHTML(r); R.previewed = fpOf(r, hash);
+    if (r.kind === 'regional') regionalMaps().then(m => { if (m) document.querySelectorAll('[data-q-map]').forEach(img => { img.src = m[+img.dataset.qMap]; }); });
+  }
   if (btn) btn.disabled = R.previewed !== fpOf(r, hash);
 }
 async function writeAI() {
   if (R.busy) return;
   const L = uiLang();
   if (!status?.configured) { toast(T('Live AI is not available. The report will use template text.')); return; }
-  if (!token()) { toast(T('Paste the backend token first.')); document.querySelector('#q-token')?.focus(); return; }
+  if (!token()) { toast(T('Paste the backend token first.')); window.candexAgent?.openToken?.('#q-token'); return; }
   R.busy = true; R.error = null; render(true);
   try {
     const pk = pack(), hash = await hashOf(pk);
@@ -402,7 +408,8 @@ async function downloadPDF() {
     const {r, hash} = await current();
     if (R.previewed !== fpOf(r, hash)) { toast(T('Preview the current report before downloading.')); return; }
     const lib = await window.candexReport.loadJsPDF();
-    writePDF(lib.jsPDF, r).save(`candex-${r.kind}-report-${r.lang}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    const maps = r.kind === 'regional' ? await regionalMaps() : null;
+    writePDF(lib.jsPDF, r, maps).save(`candex-${r.kind}-report-${r.lang}-${new Date().toISOString().slice(0, 10)}.pdf`);
     toast(T('PDF downloaded. It is a draft built from synthetic data.'));
   } catch { toast(T('The PDF library could not load (offline?). Use the preview and your browser’s Print → Save as PDF.')); }
 }
@@ -455,39 +462,11 @@ async function mapImage(metricIndex, {labels = false, px = 1100} = {}) {
   }
   return cv.toDataURL('image/png');
 }
-function writeDataPDF(jsPDF, L, pk, hash, maps) {
-  const k = window.candexReport.makeKit(jsPDF), doc = k.doc, M = window.CandexRegionalMapTest;
-  const V = pk.values, val = id => display(L, V[id]), lab = id => (L === 'fi' ? (V[id].labelFi || FI(V[id].label)) : V[id].label);
-  const st = id => statusLabel(L, V[id].status);
-  const banner = tx(L, 'SYNTHETIC DEMO DATA · NOT MEASURED FINNISH PERFORMANCE', 'SYNTEETTINEN ESIMERKKIAINEISTO · EI MITATTUA SUOMALAISTA SUORITUSKYKYÄ');
-  const title = tx(L, 'Quality & Equity: sample data report', 'Laatu ja yhdenvertaisuus: esimerkkiaineiston raportti');
-  doc.setLanguage?.(L === 'fi' ? 'fi' : 'en-GB');
-  doc.setProperties({title: `Candex · ${title}`, subject: banner, author: 'Candex (demonstration)', creator: 'Candex'});
-  k.title(title, `Candex · ${new Date().toISOString().slice(0, 10)} · ${loc(L, pk.referenceProfile)}`, banner);
-  const all = [...pk.sections.kpis, ...pk.sections.comparators, ...pk.sections.operational];
-  const cnt = lvl => all.filter(id => V[id].status === lvl).length;
-  const rr = pk.sections.regions.referral_review_days;
-  k.callout(tx(L, 'At a glance', 'Yhdellä silmäyksellä'), tx(L,
-    `${all.length} indicators: ${cnt('green')} under control, ${cnt('yellow')} need review, ${cnt('red')} need urgent action, ${cnt('unknown')} not assessed. Referral assessment start ranges from ${val(rr.min)} (${V[rr.min].region}) to ${val(rr.max)} (${V[rr.max].region}) across ${val(rr.withData)} regions with data. All values are synthetic examples.`,
-    `${all.length} mittaria: hallinnassa ${cnt('green')}, vaatii tarkistusta ${cnt('yellow')}, kiireellisiä toimia ${cnt('red')}, arvioimatta ${cnt('unknown')}. Lähetteen arvioinnin aloitus vaihtelee ${val(rr.min)} (${V[rr.min].regionFi}) – ${val(rr.max)} (${V[rr.max].regionFi}) ${val(rr.withData)} alueella, joilta on tietoa. Kaikki arvot ovat synteettisiä esimerkkejä.`));
-  let n = 1;
-  k.section(n++, tx(L, 'How to read this report', 'Raportin lukuohje'));
-  k.kv([[statusLabel(L, 'green'), tx(L, 'Meets the stated reference.', 'Täyttää ilmoitetun viitteen.')], [statusLabel(L, 'yellow'), tx(L, 'Within the local warning band: review the service.', 'Paikallisella varoitusalueella: tarkista palvelu.')], [statusLabel(L, 'red'), tx(L, 'Beyond the reference: urgent service action.', 'Viitteen ulkopuolella: kiireellisiä palvelutoimia.')], [statusLabel(L, 'unknown'), tx(L, 'No applicable threshold or not enough data.', 'Ei soveltuvaa raja-arvoa tai riittävästi tietoa.')], [tx(L, 'Important', 'Tärkeää'), tx(L, 'Colours are service-review signals, not patient triage. Finnish sources define particular limits and strategic goals; yellow bands are local Candex conventions.', 'Värit ovat palvelun arvioinnin signaaleja, eivät potilaiden kiireellisyysluokitus. Suomalaiset lähteet määrittävät tietyt rajat ja strategiset tavoitteet; keltaiset alueet ovat Candexin paikallisia käytäntöjä.')]], 44);
-  const head = [tx(L, 'Indicator', 'Mittari'), tx(L, 'Value', 'Arvo'), tx(L, 'Status', 'Tila'), tx(L, 'Reference / threshold', 'Viite / raja-arvo')];
-  const W4 = [k.CW * 0.34, k.CW * 0.12, k.CW * 0.16, k.CW * 0.38];
-  const rows = ids => ids.map(id => [lab(id), V[id].value == null ? statusLabel(L, 'unknown') : val(id), st(id), loc(L, V[id].threshold || '—')]);
-  k.section(n++, tx(L, 'Finnish reference indicators', 'Suomalaiset viitemittarit'));
-  k.table(head, rows(pk.sections.kpis), W4);
-  k.sub(tx(L, 'What each reference means', 'Mitä kukin viite tarkoittaa'));
-  k.list(pk.sections.kpis.map(id => `${lab(id)}: ${loc(L, V[id].basis || '—')}${V[id].source ? ` (${V[id].source})` : ''}`));
-  k.section(n++, tx(L, 'External comparators (NHS England)', 'Ulkoiset vertailukohdat (NHS England)'));
-  k.para(tx(L, 'Use only as external service benchmarks with matching event definitions and cohorts. They are not Finnish standards.', 'Käytä vain ulkoisina vertailukohtina, kun tapahtumamääritelmät ja kohortit vastaavat toisiaan. Ne eivät ole suomalaisia standardeja.'), {size: 8.6, color: k.MUTED});
-  k.table(head, rows(pk.sections.comparators), W4);
-  k.section(n++, tx(L, 'Clinical workflow & model measures', 'Kliininen työnkulku ja mallimittarit'));
-  k.table([tx(L, 'Measure', 'Mittari'), tx(L, 'Value', 'Arvo'), tx(L, 'Status', 'Tila'), tx(L, 'Definition', 'Määritelmä')], pk.sections.operational.map(id => [lab(id) + (V[id].note ? ' *' : ''), val(id), st(id), loc(L, V[id].definition || '')]), W4);
-  k.para(tx(L, `* Static illustrative value shown on the page; it is not computed from the regional or cohort data (the map data give a referral-assessment gap of ${val(rr.gap)}).`, `* Sivulla näytettävä kiinteä esimerkkiarvo; sitä ei lasketa alue- tai kohorttiaineistosta (karttatietojen mukaan lähetteen arvioinnin ero on ${val(rr.gap)}).`), {size: 8.2, color: k.MUTED});
-  // Regional waiting times: large labelled map + table, then two smaller maps.
-  k.section(n++, tx(L, 'Regional waiting times (map)', 'Alueelliset odotusajat (kartta)'));
+// The regional maps (same boundaries and rules as the Workspace and Quality & Equity
+// map): a large labelled map of referral assessment start with a region table, then
+// the two waiting-time measures. Shared by the sample-data export and the regional report.
+function drawRegionalMaps(k, L, pk, maps) {
+  const doc = k.doc, M = window.CandexRegionalMapTest, V = pk.values;
   const legend = y => { let x = k.M; for (const lvl of ['green', 'yellow', 'red', 'unknown']) { doc.setFillColor(...MAP_RGB[lvl]); doc.rect(x, y - 2.6, 3.4, 3.4, 'F'); k.font(7.6, false, k.INK); const t = statusLabel(L, lvl); doc.text(clean(t), x + 4.6, y); x += 6 + doc.getTextWidth(clean(t)) + 4; } };
   const clean = window.candexReport.clean;
   if (maps) {
@@ -527,6 +506,43 @@ function writeDataPDF(jsPDF, L, pk, hash, maps) {
   } else {
     k.para(tx(L, 'The map boundaries could not load, so the maps are left out; the tables below have every value.', 'Alueiden rajoja ei voitu ladata, joten kartat puuttuvat; alla olevissa taulukoissa ovat kaikki arvot.'), {color: k.MUTED});
   }
+}
+function writeDataPDF(jsPDF, L, pk, hash, maps) {
+  const k = window.candexReport.makeKit(jsPDF), doc = k.doc, M = window.CandexRegionalMapTest;
+  const V = pk.values, val = id => display(L, V[id]), lab = id => (L === 'fi' ? (V[id].labelFi || FI(V[id].label)) : V[id].label);
+  const st = id => statusLabel(L, V[id].status);
+  const banner = tx(L, 'SYNTHETIC DEMO DATA · NOT MEASURED FINNISH PERFORMANCE', 'SYNTEETTINEN ESIMERKKIAINEISTO · EI MITATTUA SUOMALAISTA SUORITUSKYKYÄ');
+  const title = tx(L, 'Quality & Equity: sample data report', 'Laatu ja yhdenvertaisuus: esimerkkiaineiston raportti');
+  doc.setLanguage?.(L === 'fi' ? 'fi' : 'en-GB');
+  doc.setProperties({title: `Candex · ${title}`, subject: banner, author: 'Candex (demonstration)', creator: 'Candex'});
+  k.title(title, `Candex · ${new Date().toISOString().slice(0, 10)} · ${loc(L, pk.referenceProfile)}`, banner);
+  const all = [...pk.sections.kpis, ...pk.sections.comparators, ...pk.sections.operational];
+  const cnt = lvl => all.filter(id => V[id].status === lvl).length;
+  const rr = pk.sections.regions.referral_review_days;
+  k.callout(tx(L, 'At a glance', 'Yhdellä silmäyksellä'), tx(L,
+    `${all.length} indicators: ${cnt('green')} under control, ${cnt('yellow')} need review, ${cnt('red')} need urgent action, ${cnt('unknown')} not assessed. Referral assessment start ranges from ${val(rr.min)} (${V[rr.min].region}) to ${val(rr.max)} (${V[rr.max].region}) across ${val(rr.withData)} regions with data. All values are synthetic examples.`,
+    `${all.length} mittaria: hallinnassa ${cnt('green')}, vaatii tarkistusta ${cnt('yellow')}, kiireellisiä toimia ${cnt('red')}, arvioimatta ${cnt('unknown')}. Lähetteen arvioinnin aloitus vaihtelee ${val(rr.min)} (${V[rr.min].regionFi}) – ${val(rr.max)} (${V[rr.max].regionFi}) ${val(rr.withData)} alueella, joilta on tietoa. Kaikki arvot ovat synteettisiä esimerkkejä.`));
+  let n = 1;
+  k.section(n++, tx(L, 'How to read this report', 'Raportin lukuohje'));
+  k.kv([[statusLabel(L, 'green'), tx(L, 'Meets the stated reference.', 'Täyttää ilmoitetun viitteen.')], [statusLabel(L, 'yellow'), tx(L, 'Within the local warning band: review the service.', 'Paikallisella varoitusalueella: tarkista palvelu.')], [statusLabel(L, 'red'), tx(L, 'Beyond the reference: urgent service action.', 'Viitteen ulkopuolella: kiireellisiä palvelutoimia.')], [statusLabel(L, 'unknown'), tx(L, 'No applicable threshold or not enough data.', 'Ei soveltuvaa raja-arvoa tai riittävästi tietoa.')], [tx(L, 'Important', 'Tärkeää'), tx(L, 'Colours are service-review signals, not patient triage. Finnish sources define particular limits and strategic goals; yellow bands are local Candex conventions.', 'Värit ovat palvelun arvioinnin signaaleja, eivät potilaiden kiireellisyysluokitus. Suomalaiset lähteet määrittävät tietyt rajat ja strategiset tavoitteet; keltaiset alueet ovat Candexin paikallisia käytäntöjä.')]], 44);
+  const head = [tx(L, 'Indicator', 'Mittari'), tx(L, 'Value', 'Arvo'), tx(L, 'Status', 'Tila'), tx(L, 'Reference / threshold', 'Viite / raja-arvo')];
+  const W4 = [k.CW * 0.34, k.CW * 0.12, k.CW * 0.16, k.CW * 0.38];
+  const rows = ids => ids.map(id => [lab(id), V[id].value == null ? statusLabel(L, 'unknown') : val(id), st(id), loc(L, V[id].threshold || '—')]);
+  k.section(n++, tx(L, 'Finnish reference indicators', 'Suomalaiset viitemittarit'));
+  k.table(head, rows(pk.sections.kpis), W4);
+  k.sub(tx(L, 'What each reference means', 'Mitä kukin viite tarkoittaa'));
+  k.list(pk.sections.kpis.map(id => `${lab(id)}: ${loc(L, V[id].basis || '—')}${V[id].source ? ` (${V[id].source})` : ''}`));
+  k.section(n++, tx(L, 'European comparators', 'Eurooppalaiset vertailukohdat'));
+  k.para(tx(L, 'EU screening target, European screening guidelines and the EUSOMA breast-centre indicator. Use only as external benchmarks with matching definitions and cohorts. They are not Finnish standards.', 'EU:n seulontatavoite, eurooppalaiset seulontasuositukset ja EUSOMAn rintasyöpäkeskusmittari. Käytä vain ulkoisina vertailukohtina, kun määritelmät ja kohortit vastaavat toisiaan. Ne eivät ole suomalaisia standardeja.'), {size: 8.6, color: k.MUTED});
+  k.table(head, rows(pk.sections.comparators), W4);
+  k.sub(tx(L, 'What each comparator means', 'Mitä kukin vertailukohta tarkoittaa'));
+  k.list(pk.sections.comparators.map(id => `${lab(id)}: ${loc(L, V[id].basis || '—')}${V[id].source ? ` (${V[id].source})` : ''}`));
+  k.section(n++, tx(L, 'Clinical workflow & model measures', 'Kliininen työnkulku ja mallimittarit'));
+  k.table([tx(L, 'Measure', 'Mittari'), tx(L, 'Value', 'Arvo'), tx(L, 'Status', 'Tila'), tx(L, 'Definition', 'Määritelmä')], pk.sections.operational.map(id => [lab(id) + (V[id].note ? ' *' : ''), val(id), st(id), loc(L, V[id].definition || '')]), W4);
+  k.para(tx(L, `* Static illustrative value shown on the page; it is not computed from the regional or cohort data (the map data give a referral-assessment gap of ${val(rr.gap)}).`, `* Sivulla näytettävä kiinteä esimerkkiarvo; sitä ei lasketa alue- tai kohorttiaineistosta (karttatietojen mukaan lähetteen arvioinnin ero on ${val(rr.gap)}).`), {size: 8.2, color: k.MUTED});
+  // Regional waiting times: large labelled map + table, then two smaller maps.
+  k.section(n++, tx(L, 'Regional waiting times (map)', 'Alueelliset odotusajat (kartta)'));
+  drawRegionalMaps(k, L, pk, maps);
   k.sub(tx(L, 'Spread across regions', 'Vaihtelu alueittain'));
   const rs = pk.sections.regions;
   k.table([tx(L, 'Measure', 'Mittari'), tx(L, 'Lowest', 'Pienin'), tx(L, 'Highest', 'Suurin'), tx(L, 'Gap', 'Ero'), tx(L, 'Regions by status', 'Alueet tilan mukaan')],
@@ -547,10 +563,12 @@ function writeDataPDF(jsPDF, L, pk, hash, maps) {
   k.frame(`Candex · ${title}`, banner, tx(L, 'Page', 'Sivu'), tx(L, 'of', '/'));
   return doc;
 }
+async function regionalMaps() {
+  try { return await Promise.all([mapImage(0, {labels: true}), mapImage(1, {labels: true, px: 900}), mapImage(2, {labels: true, px: 900})]); } catch { return null; }
+}
 async function dataPdf(L = uiLang()) {
   const pk = pack(), hash = await hashOf(pk);
-  let maps = null;
-  try { maps = await Promise.all([mapImage(0, {labels: true}), mapImage(1, {labels: true, px: 900}), mapImage(2, {labels: true, px: 900})]); } catch { maps = null; }
+  const maps = await regionalMaps();
   const lib = await window.candexReport.loadJsPDF();
   return writeDataPDF(lib.jsPDF, L, pk, hash, maps);
 }
@@ -674,7 +692,7 @@ window.candexI18n?.extend?.({
   'Preview the current report before downloading.': 'Esikatsele nykyinen raportti ennen lataamista.', 'PDF downloaded. It is a draft built from synthetic data.': 'PDF ladattu. Se on synteettisestä aineistosta koottu luonnos.',
   'The PDF library could not load (offline?). Use the preview and your browser’s Print → Save as PDF.': 'PDF-kirjasto ei latautunut (ei yhteyttä?). Käytä esikatselua ja selaimen Tulosta → Tallenna PDF:nä.',
   'Paste the backend token first.': 'Liitä ensin palvelimen tunniste.', 'The backend token was not accepted. Paste the current token.': 'Palvelimen tunnistetta ei hyväksytty. Liitä voimassa oleva tunniste.',
-  'Reports': 'Raportit', 'Export sample data (PDF)': 'Vie esimerkkidata (PDF)', 'CSV': 'CSV', 'PDF downloaded. All values are synthetic examples.': 'PDF ladattu. Kaikki arvot ovat synteettisiä esimerkkejä.', 'Preparing the PDF…': 'Valmistellaan PDF:ää…',
+  'Reports': 'Raportit', 'Set': 'Asetettu', 'Not set': 'Ei asetettu', 'Backend token': 'Palvelimen tunniste', 'How it works': 'Miten se toimii', 'What the agent can see': 'Mitä agentti näkee', 'Kept in this page’s memory only. The Gemini key stays on the server.': 'Säilyy vain tämän sivun muistissa. Gemini-avain pysyy palvelimella.', 'Export sample data (PDF)': 'Vie esimerkkidata (PDF)', 'CSV': 'CSV', 'PDF downloaded. All values are synthetic examples.': 'PDF ladattu. Kaikki arvot ovat synteettisiä esimerkkejä.', 'Preparing the PDF…': 'Valmistellaan PDF:ää…',
 });
-window.candexQuality = {pack, hashOf, dataPdf, exportDataPDF, writeDataPDF, view, reportsView, buildReport, previewHTML, writePDF, offlineAnswer, templateNarrative, ask, _R: R, _log: log, _setStatus: v => { status = v; }};
+window.candexQuality = {pack, hashOf, regionalMaps, dataPdf, exportDataPDF, writeDataPDF, view, reportsView, buildReport, previewHTML, writePDF, offlineAnswer, templateNarrative, ask, _R: R, _log: log, _setStatus: v => { status = v; }};
 })();

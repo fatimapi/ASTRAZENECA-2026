@@ -30,7 +30,11 @@ assert.equal(api.evaluate('made-up',1).level,'unknown');
 assert.throws(()=>api.setMode('unverified'));
 console.log('PASS: sourced KPI boundaries, explicit local warnings, unsupported/missing-data neutrality and demo-mode separation.');
 
-assert.equal(api.evaluate('nhs_31day_treatment_share',96).level,'green');
-assert.equal(api.evaluate('nhs_31day_treatment_share',94).level,'yellow');
-assert.equal(api.evaluate('nhs_62day_treatment_share',78).level,'red');
-assert(api.evaluate('nhs_62day_treatment_share',85).basis.includes('NOT a Finnish standard'));
+assert.equal(api.evaluate('eu_screening_offer',92).level,'green');
+assert.equal(api.evaluate('eu_screening_offer',87).level,'yellow');
+assert.equal(api.evaluate('eu_breast_participation',73).level,'yellow');
+assert.equal(api.evaluate('eu_breast_participation',75).level,'green');
+assert.equal(api.evaluate('eu_colorectal_participation',41).level,'red');
+assert.equal(api.evaluate('eusoma_6week_treatment',81).level,'yellow');
+assert(['eu_screening_offer','eu_breast_participation','eu_colorectal_participation','eusoma_6week_treatment'].every(id=>api.evaluate(id,80).basis.includes('NOT a Finnish standard')&&/^https:\/\//.test(api.evaluate(id,80).source.url)));
+assert.equal(api.evaluate('eu_breast_participation',101).level,'unknown');
