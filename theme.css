@@ -240,3 +240,6 @@
 :root[data-theme="dark"] .agent-drop{border-top-color:var(--line)}
 :root[data-theme="dark"] .token-state{background:#44351c;color:#f4d79e}
 :root[data-theme="dark"] .token-state.is-set{background:#203e2d;color:#b0e7c2}
+:root[data-theme="dark"] .entry-reset{border-top-color:var(--line)}
+:root[data-theme="dark"] .entry-reset-btn{background:var(--soft);border-color:#7b4a5a;color:#f3c3d1}
+:root[data-theme="dark"] .entry-reset p{color:var(--muted)}

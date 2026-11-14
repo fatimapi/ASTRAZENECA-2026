@@ -59,17 +59,27 @@ function decisionForm() {
   return `<section class="card"><div class="card-head"><h2>Structured decision support</h2>${icon('doctor')}</div><form id="decision-form"><div class="field"><label for="decision">What is the next clinical action?</label><select id="decision" name="decision"><option value="">Select for this demonstration</option><option value="Surveillance / repeat imaging">Surveillance / repeat imaging</option><option value="Further imaging or specialist investigation">Further imaging or specialist investigation</option><option value="Biopsy / pathology assessment">Biopsy / pathology assessment</option><option value="Discuss at multidisciplinary team review">Discuss at multidisciplinary team review</option></select></div><div class="field space-top"><label for="rationale">Review notes</label><textarea id="rationale" name="rationale" placeholder="Record your reasoning. Use fictional details only." maxlength="1500"></textarea></div><div class="form-actions" style="justify-content:flex-start"><button class="button" type="submit">Prepare review draft${icon('arrow')}</button><button class="button secondary" type="button" data-report="${esc(state.selected || '')}">${icon('file')}Referral report</button></div></form></section>`;
 }
 
+// Doctor marks the CT and X-ray analysis complete; the patient's pathway updates (care-journey.js).
+function analysisCard(p, c) {
+  const J = window.CandexJourney; if (!J) return '';
+  const done = J.imaging(p.id), xray = !!(c && window.candexCxrReads?.cases?.[c.id]);
+  const when = done ? new Intl.DateTimeFormat(window.candexI18n?.lang === 'fi' ? 'fi-FI' : 'en-GB', {timeZone: 'Europe/Helsinki', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}).format(new Date(done.at)) : '';
+  return `<section class="card analysis-card${done ? ' is-done' : ''}"><div class="card-head"><h2>${T('CT and X-ray analysis')}</h2>${done ? badge(T('Completed')) : badge(T('Not completed'), 'amber')}</div>
+${done ? `<p>${T('Completed by')} <strong translate="no">${esc(done.by)}</strong> · <span translate="no">${esc(when)}</span>. ${T('The patient’s pathway now shows the CT and X-ray step as done, and the report can be released.')}</p><button type="button" class="text-btn" data-action="imaging-undo">${T('Undo')}</button>`
+    : c ? `<p>${T('When you have reviewed the CT study')}${xray ? ` ${T('and the chest X-ray')}` : ''}, ${T('mark the analysis complete. The patient’s pathway moves on, and the report can then be released.')}</p><button type="button" class="button" data-action="imaging-complete">${icon('check')}${T('Mark CT and X-ray analysis complete')}</button>`
+    : `<p>${T('Link a CT study for this patient first.')}</p>`}</section>`;
+}
 function scanView() {
   const p = patients.find(x => x.id === state.selected) || patients[0];
   state.selected = p.id;
   const c = CASES[links[p.id]];
   const head = `${heading('A second look. A fuller picture.', 'Choose a patient from the worklist and review their linked CT study with the radiologists’ outlines.', 'Clinical imaging', `<button class="button secondary" data-action="upload">${icon('upload')}Analyze chest X-ray DICOM</button>`)}`;
   if (!c) {
-    return `${head}${demoNotice('Imaging review · Link one of 5 public LIDC-IDRI research CT studies to try the viewer. Any AI read shown is precomputed research output, not a diagnosis.')}${picker(p)}<section class="card empty-scan"><div class="empty-scan-icon">${icon('scan')}</div><h2>No CT study linked for ${esc(p.name)}</h2><p translate="no">${esc(T(p.type))} · ${esc(T(p.reason))}</p><p>Choose a study above to open the viewer, or analyse a chest X-ray DICOM with the research model.</p></section>${decisionForm()}`;
+    return `${head}${demoNotice('Imaging review · Link one of 5 public LIDC-IDRI research CT studies to try the viewer. Any AI read shown is precomputed research output, not a diagnosis.')}${picker(p)}${analysisCard(p, null)}<section class="card empty-scan"><div class="empty-scan-icon">${icon('scan')}</div><h2>No CT study linked for ${esc(p.name)}</h2><p translate="no">${esc(T(p.type))} · ${esc(T(p.reason))}</p><p>Choose a study above to open the viewer, or analyse a chest X-ray DICOM with the research model.</p></section>${decisionForm()}`;
   }
   const i = Math.min(sliceAt[c.id] ?? c.centre, c.frames.length - 1);
   const f = c.frames[i], main = c.nodules[0], [meaning, action] = LUNG_RADS[c.band] || ['', ''];
-  return `${head}${demoNotice(`Real public CT from LIDC-IDRI (${c.id}), linked to this fictional patient for the demo. It is not ${esc(p.name)}’s own scan. Outlines are the LIDC radiologists’ markings. Any AI read shown is precomputed research output, not a diagnosis.`)}${picker(p)}
+  return `${head}${demoNotice(`Real public CT from LIDC-IDRI (${c.id}), linked to this fictional patient for the demo. It is not ${esc(p.name)}’s own scan. Outlines are the LIDC radiologists’ markings. Any AI read shown is precomputed research output, not a diagnosis.`)}${picker(p)}${analysisCard(p, c)}
 <div class="scan-layout"><div class="stack"><section class="scan-viewer"><div class="scan-toolbar"><span>${esc(p.id)} · ${esc(p.name)}</span>${badge(`${c.id} · CT`)}</div>
 <div class="scan-stage ct-stage"><div class="ct-frame"><img id="ct-img" src="${f.src}" width="384" height="384" alt="Axial chest CT slice from public study ${c.id}"><svg id="ct-overlay" viewBox="0 0 384 384" aria-hidden="true">${overlaySVG(f, c, i)}</svg></div></div>
 <p class="scan-caption" id="ct-caption">${caption(c, i)}</p>
@@ -117,6 +127,9 @@ document.addEventListener('click', e => {
 
 window.candexImaging = {
   scanView, autoLink, links, CASES,
-  actions: {'ct-centre': () => { const p = patients.find(x => x.id === state.selected), c = p && CASES[links[p.id]]; if (c) showSlice(c.centre); }},
+  actions: {
+    'imaging-complete': () => { const p = patients.find(x => x.id === state.selected), c = p && CASES[links[p.id]]; if (!p || !c) return; window.CandexJourney?.completeImaging(p.id, {ct: c.id, xray: !!window.candexCxrReads?.cases?.[c.id]}); toast(T('CT and X-ray analysis marked complete. The patient’s pathway is updated.')); render(true); },
+    'imaging-undo': () => { const p = patients.find(x => x.id === state.selected); if (!p) return; window.CandexJourney?.undoImaging(p.id); toast(T('Analysis marked not complete.')); render(true); },
+    'ct-centre': () => { const p = patients.find(x => x.id === state.selected), c = p && CASES[links[p.id]]; if (c) showSlice(c.centre); }},
 };
 })();
