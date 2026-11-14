@@ -15,6 +15,9 @@ __pycache__/
 htmlcov/
 *.dcm
 *.dicom
+# Exception: public, de-identified LIDC-IDRI demo scans (CC BY 3.0) in demo-data/ only.
+# Never put real patient scans in demo-data/.
+!demo-data/**/*.dcm
 *.nii
 *.nii.gz
 *.pt

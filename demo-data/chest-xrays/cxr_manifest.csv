@@ -1,0 +1,9 @@
+patient,source,view,evidence,check
+LIDC-IDRI-0002,00000001.dcm,PA,SID 1.80 m,consistent
+LIDC-IDRI-0029,00000001.dcm,PA,SID 1.83 m,consistent
+LIDC-IDRI-0051,00000001.dcm,PA,SID 1.80 m,Stored display window -600/1600 clipped 99.5% of pixels; removed so the image is scaled over its stored range.
+LIDC-IDRI-0052,00000001.dcm,PA,SID 1.80 m,consistent
+LIDC-IDRI-0116,00000002.dcm,PA,SID 1.80 m,"Pixel data is inverted relative to its MONOCHROME2 label (spine dark, lungs bright; mean spine 3986 vs lung 10409, the reverse of the other images). Relabelled MONOCHROME1."
+LIDC-IDRI-0170,00000002.dcm,PA,"SID 1.80 m; description ""CHEST, PA & LATERAL CHEST, PA & LATERAL""","Monitoring leads and a line are visible, as in an inpatient; headers still indicate a standard PA set-up. View not confirmed visually."
+LIDC-IDRI-0233,00000001.dcm,PA,"SID 1.80 m; description ""CHEST, PA & LATERAL CHEST, PA & LATERAL""",consistent
+LIDC-IDRI-0265,00000002.dcm,PA,SID 1.80 m,consistent
