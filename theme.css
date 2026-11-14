@@ -243,3 +243,5 @@
 :root[data-theme="dark"] .entry-reset{border-top-color:var(--line)}
 :root[data-theme="dark"] .entry-reset-btn{background:var(--soft);border-color:#7b4a5a;color:#f3c3d1}
 :root[data-theme="dark"] .entry-reset p{color:var(--muted)}
+:root[data-theme="dark"] .ctc-table tr.is-top td{background:#2e2239}
+:root[data-theme="dark"] :is(.ctc-kv dt,.ctc-pair figcaption){color:var(--muted)}

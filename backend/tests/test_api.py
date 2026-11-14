@@ -287,3 +287,42 @@ def test_quality_agent_routes_need_token_validate_and_check_numbers(client, monk
     pack = '{"a": 12, "b": 0.4962, "c": "28–99 %", "d": 76.5, "e": 2035}'
     assert unverified_numbers("12 d, 0,50, 49.6 %, 50 %, CI 28–99 %, 76,5 % by 2035", pack) == []
     assert unverified_numbers("The gap is 13 days and 0.7", pack) == [0.7, 13.0]
+
+
+def test_ct_compare_needs_token_confirmations_and_ct_series(client, monkeypatch):
+    from backend.ct_compare import match, reference_cases
+    files = [("files", ("a.dcm", synthetic_dicom_bytes(), "application/dicom"))]
+    assert client.post("/api/ct/compare", files=files, data={"confirmed_chest": "true", "permitted_data": "true"}).status_code == 401
+    assert client.post("/api/ct/compare", files=files, data={"confirmed_chest": "true"}, headers=AUTH).status_code == 422
+    # The synthetic file is an X-ray (not CT): rejected before any AI call.
+    r = client.post("/api/ct/compare", files=files, data={"confirmed_chest": "true", "permitted_data": "true"}, headers=AUTH)
+    assert r.status_code == 415 and "CT" in r.json()["detail"]
+    # Matching: all 25 public studies scored; similar nodules rank first.
+    refs = reference_cases()
+    assert len(refs) == 25 and all(r["band"] and r["diameter"] for r in refs)
+    ranked = match({"nodule_present": True, "long_axis_mm": 30.0, "lung_rads": "4X", "composition": "solid", "location": {"side": "left"}}, refs)
+    assert len(ranked) == 25 and ranked[0]["band"] in ("4B", "4X-like") and ranked[0]["diameter"] >= 15
+    small = match({"nodule_present": True, "long_axis_mm": 5.0, "lung_rads": "2", "composition": "solid", "location": {"side": "right"}}, refs)
+    assert small[0]["band"] == "2" and small[0]["score"] <= small[-1]["score"]
+    assert all(0 <= m["similarity"] <= 100 for m in ranked)
+
+
+def test_nodule_measurement_on_a_synthetic_lung():
+    """A 10 mm solid nodule touching a vessel and near the chest wall, in synthetic lung (HU)."""
+    from backend.ct_measure import lung_rads_by_size, measure_nodule
+    px, spacing = 0.7, 1.0
+    z, y, x = np.mgrid[0:60, 0:160, 0:160].astype(np.float32)
+    vol = np.full((60, 160, 160), 40.0, np.float32)                          # body
+    lung = ((y[0] - 80) / 60) ** 2 + ((x[0] - 80) / 60) ** 2 <= 1            # one lung region (2-D)
+    vol[:, lung] = -850.0
+    vol[:, :, :2] = -1000.0                                                 # outside air at the image edge
+    cz, cy, cx, r_mm = 30, 80, 70, 5.0
+    d2 = ((z - cz) * spacing) ** 2 + ((y - cy) * px) ** 2 + ((x - cx) * px) ** 2
+    vol[d2 <= r_mm ** 2] = 30.0                                             # nodule: 10 mm diameter
+    vessel = (((y - cy) * px) ** 2 + ((z - cz) * spacing) ** 2 <= 1.0) & (x > cx) & (x < cx + 40)
+    vol[vessel & lung[None]] = 20.0                                         # thin vessel attached
+    m = measure_nodule(vol, px, spacing, cz, (cy + 2, cx - 2))              # seed a little off-centre
+    assert m is not None
+    assert 8.5 <= m["long_mm"] <= 12.0, m
+    assert lung_rads_by_size(m["mean_mm"]) == "4A"
+    assert measure_nodule(vol, px, spacing, cz, (80, 120)) is None or measure_nodule(vol, px, spacing, cz, (80, 120))["long_mm"] < 5  # empty lung: nothing large
