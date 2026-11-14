@@ -1,0 +1,13 @@
+# Python 3.10–3.12. For Linux CPU-only PyTorch, see backend/README.md.
+fastapi==0.141.1
+uvicorn==0.52.1
+python-multipart==0.0.32
+pydicom==3.0.1
+numpy>=1.26,<3; sys_platform != "darwin" or platform_machine != "x86_64"
+numpy==1.26.4; sys_platform == "darwin" and platform_machine == "x86_64"
+Pillow>=11,<14
+torch==2.10.0; sys_platform != "darwin" or platform_machine != "x86_64"
+torchvision==0.25.0; sys_platform != "darwin" or platform_machine != "x86_64"
+torch==2.2.2; sys_platform == "darwin" and platform_machine == "x86_64"
+torchvision==0.17.2; sys_platform == "darwin" and platform_machine == "x86_64"
+torchxrayvision==1.5.7
