@@ -49,7 +49,7 @@
       <header class="entry-header">
         <a class="entry-brand" href="#" aria-label="${t('Candex home')}">${wordmark}</a>
         <div class="entry-header-actions">
-          ${window.CandexTheme?.button() || ''}
+
           <div class="entry-language" role="group" aria-label="${t('Language')}">
             <button type="button" data-entry-lang="en" lang="en" translate="no" aria-pressed="${language !== 'fi'}" title="English">EN</button>
             <button type="button" data-entry-lang="fi" lang="fi" translate="no" aria-pressed="${language === 'fi'}" title="Suomi">FI</button>
