@@ -1,9 +1,9 @@
 """Candex clinical agent (research prototype): live Gemini behind the backend.
 
-Design follows the open-source projects listed in the AI workspace:
-- MedRAX: one agent that calls specialist tools (record lookup, CT read).
-- Radiology Swarm / mAIstro: several AI roles in sequence — every draft is
-  written by a drafter and then checked by a separate safety reviewer.
+Design:
+- One agent that calls specialist tools (record lookup, CT read).
+- Every draft is written by a drafter and then checked by a separate safety
+  reviewer.
 
 Safety and privacy:
 - The Gemini key stays on the server (GEMINI_API_KEY, or a file named by

@@ -28,7 +28,7 @@ const check = (ok, msg) => { checks++; if (!ok) defects.push(msg); };
   const html = A.view();
   check(/Clinical agent/.test(html) && /data-agent-draft="referral"/.test(html) && /data-agent-ct/.test(html) && /agent-token/.test(html), 'View has chat, drafts, CT tool and token field');
   check(!/undefined/.test(html), 'View has no undefined');
-  check(/MedRAX/.test(html) && /Radiology Swarm/.test(html), 'View explains the open-source designs it follows');
+  check(/How it works/.test(html) && !/MedRAX|mAIstro|Radiology Swarm/.test(html), 'View explains how it works without naming removed agents');
 
   // Without live AI (status not configured), every tool falls back honestly.
   A._setStatus({configured: false});
