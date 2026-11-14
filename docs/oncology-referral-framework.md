@@ -17,7 +17,7 @@ The report is generated in English or Finnish (*Report language* selector). Ever
 | Treatment-related changes | "Not applicable: no cancer treatment has been given" | Pre-diagnostic |
 | — | **New: health-check context.** Symptoms with red flags and duration, family history pattern, pack-years and USPSTF eligibility, AUDIT-C, BMI, radon, work exposures, screening status | The referral's reason usually comes from the patient's own report |
 | — | **New: access and equity.** Language with interpreter flag, travel time, usual place of care, access support | Candex's equity aim: the receiving team can plan support before booking |
-| — | **New: AI model comparison** table (radiologists vs AI vs agreement), marked *Pending* | Ready for the planned CT nodule detector, without inventing output |
+| — | **New: AI second reader (research comparison)**. Precomputed Gemini read vs radiologists with agreement, AI report text and caveats (see `docs/ai-second-reader.md`) | Shows what an AI adds and where it fails, without letting it drive decisions |
 | Patient-accessible clarity | A separate **plain-language summary** section and a glossary | Patients read reports in OmaKanta before seeing the doctor |
 
 ## Report structure and data sources
@@ -35,7 +35,7 @@ The report is generated in English or Finnish (*Report language* selector). Ever
    - **Nodal disease** and **distant metastases**: "Not evaluated", with the step needed.
    - **Standardised category**: Lung-RADS v2022 (approximated), with its caveat.
    - **Treatment-related changes**: not applicable.
-6. **AI model comparison (planned).** Detection, long × short axis, composition, Lung-RADS and outline overlap (Dice): the radiologists' values against an AI column marked *Pending*. Includes a caution that a LUNA16-trained model has seen LIDC-IDRI, so it needs validation on independent Finnish data.
+6. **AI second reader: research comparison.** The precomputed AI finding in one line, with its verdict (agrees, partly agrees or disagrees); a table of radiologists vs AI vs agreement (detection, side and lobe, size, composition, Lung-RADS, slice, confidence); the AI report text verbatim; and provenance with the exploratory result (95% CI), the training-data caveat and "not used for urgency or recommendations". If no read exists, it shows *Pending*. Details: `docs/ai-second-reader.md`.
 7. **Impression.**
    - The bottom line.
    - **Key findings in order of importance**, each with measurements and the key-image reference.

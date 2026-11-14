@@ -80,3 +80,12 @@
 #dialog .record-row.screening-row{padding:12px 0;border-bottom:1px solid var(--line)}
 .symptom-advice p{margin:6px 0 0}
 .symptom-advice p[translate="no"]{font-weight:550}
+
+/* AI second reader (research) on the imaging review page */
+.ct-frame circle.ct-ai{fill:none;stroke:#f4c98b;stroke-width:2;stroke-dasharray:5 3}
+.ct-frame text.ct-ai-label{fill:#f4c98b;font-size:11px;font-weight:700;font-family:sans-serif}
+.ai-card .card-head{flex-wrap:wrap;gap:8px}
+.ai-card .ai-miss{border-left-color:var(--orange);background:#fcf0df;color:#5e3d14;margin:8px 0 6px}
+.ai-card .ai-report summary{cursor:pointer;font-weight:600;font-size:.74rem;margin-top:12px}
+.ai-card .ai-report p{font-size:.74rem;color:var(--muted);margin:6px 0 0}
+.ai-card .ai-prov{font-size:.66rem;margin-top:10px}
