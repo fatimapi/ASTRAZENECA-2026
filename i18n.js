@@ -85,7 +85,7 @@ const FI={
 'Every step of your care, from referral to treatment, with a person responsible at each one.':'Hoitosi jokainen vaihe lähetteestä hoitoon – jokaisella vaiheella on vastuuhenkilö.',
 'Your pathway at a glance':'Hoitopolkusi yhdellä silmäyksellä','Now':'Nyt','Next':'Seuraavaksi','Your contact':'Yhteyshenkilösi','Step by step':'Vaihe vaiheelta','Key dates':'Tärkeät päivämäärät',
 'Completed':'Valmis','In progress':'Käynnissä','Upcoming':'Tulossa',
-'Referral':'Lähete','X-ray':'Röntgen','Specialist':'Erikoislääkäri','Diagnosis':'Diagnoosi','Treatment':'Hoito',
+'Referral':'Lähete','Screening':'Seulonta','X-ray':'Röntgen','Specialist':'Erikoislääkäri','Diagnosis':'Diagnoosi','Treatment':'Hoito',
 '5 Nov':'5.11.','14 Nov':'14.11.','18 Nov':'18.11.','24 Nov':'24.11.','Early Dec':'Joulukuun alku','After diagnosis':'Diagnoosin jälkeen',
 '5 November 2026':'5.11.2026','6 November 2026':'6.11.2026','14 November 2026':'14.11.2026','18 November 2026':'18.11.2026','Expected early December 2026':'Arviolta joulukuun alussa 2026',
 'Screening & referral':'Seulonta ja lähete','Your health centre doctor sent an urgent referral after you reported a cough lasting more than three weeks.':'Terveyskeskuslääkärisi lähetti kiireellisen lähetteen, kun kerroit yli kolme viikkoa jatkuneesta yskästä.',
@@ -120,6 +120,13 @@ const FI={
 'Your plan, made together':'Suunnitelma, joka tehdään yhdessä','If you need treatment, you and your team decide on a plan together.':'Jos tarvitset hoitoa, sinä ja tiimisi päätätte hoitosuunnitelmasta yhdessä.',
 'If no treatment is needed, you may have check-ups to make sure everything stays well.':'Jos hoitoa ei tarvita, sinulle voidaan sopia seurantakäyntejä, joilla varmistetaan, että kaikki pysyy hyvin.',
 'At every step you can ask questions, ask for an interpreter, or choose a phone or video appointment. Your care coordinator Elina is there to help.':'Voit joka vaiheessa esittää kysymyksiä, pyytää tulkkia tai valita puhelin- tai videovastaanoton. Hoitokoordinaattorisi Elina auttaa sinua.',
+'Every step of your care, from screening to treatment, with a person responsible at each one.':'Hoitosi jokainen vaihe seulonnasta hoitoon – jokaisella vaiheella on vastuuhenkilö.',
+'Your health centre doctor checked your symptoms and health history after you reported a cough lasting more than three weeks.':'Terveyskeskuslääkärisi tutki oireesi ja terveyshistoriasi, kun kerroit yli kolme viikkoa jatkuneesta yskästä.',
+'Checked by':'Tutkinut','Outcome':'Lopputulos','Chest X-ray recommended':'Keuhkoröntgen suositeltu',
+'Being sent for tests quickly means you are seen sooner. It does not mean cancer has been found.':'Nopea ohjaus tutkimuksiin tarkoittaa, että pääset tutkimuksiin aiemmin. Se ei tarkoita, että syöpä olisi löydetty.',
+'Screening at the health centre':'Seulonta terveyskeskuksessa','Checking your health':'Terveytesi tarkistus',
+'Your health centre doctor asks about your symptoms and health history to see whether more tests are needed.':'Terveyskeskuslääkärisi kysyy oireistasi ja terveyshistoriastasi selvittääkseen, tarvitaanko lisätutkimuksia.',
+'Being sent for tests quickly does not mean something serious has been found.':'Nopea ohjaus tutkimuksiin ei tarkoita, että jotain vakavaa olisi löydetty.',
 'Specialist appointment · 10:30':'Erikoislääkärin vastaanotto · 10.30','Chest CT scan':'Keuhkojen TT-kuvaus','Diagnosis discussion':'Diagnoosikeskustelu',
 
 // Records
