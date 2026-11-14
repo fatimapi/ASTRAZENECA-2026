@@ -211,3 +211,10 @@ def test_actual_model_on_synthetic_dicom(monkeypatch, tmp_path):
     assert len(result["findings"]) == 18
     assert result["model"]["weights"] == "densenet121-res224-all"
     assert result["requires_clinician_review"] is True
+
+
+def test_official_map_asset_is_allowlisted(client):
+    response = client.get("/data/finland-regions.geojson")
+    assert response.status_code == 200
+    assert len(response.json()["features"]) == 19
+    assert client.get("/data/map-sources.md").status_code == 404

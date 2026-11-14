@@ -85,3 +85,33 @@ Backend tests validate DICOM handling and API failures with synthetic images and
 Static hosting can serve the interface, but live analysis requires the Python service. For a remotely hosted frontend, configure a trusted HTTPS backend URL and matching `CANDEX_ALLOWED_ORIGINS`; never embed a permanent API key in frontend code. Public deployment requires stronger identity, access controls and operational safeguards than this local development connector.
 
 External network requests: Google Fonts; optional jsDelivr/Hugging Face assets for the browser guide; and pretrained weight downloads for the backend. Uploaded pixels are not sent to an external model API by this implementation. Follow the upstream library, model-weight and training-data licence terms for your use.
+
+
+## Reviewed report → appointment → referral demo
+
+The new **Doctor → Reports** approval panel releases an immutable reviewed report to **CX-1042 / Aino Lehtinen** in this browser’s patient demo portal. It is separate from creating a draft: edits invalidate the approval checkbox, and the wrong patient reference is rejected.
+
+1. In Doctor → Reports, prepare the findings and plan; preview them, tick explicit clinician approval and release the reviewed version.
+2. Switch to Patient → Reports & appointments. Read/download the reviewed report, choose an offered future Helsinki-time slot and consultation method, and confirm the demo booking.
+3. Switch to Doctor → Referrals & follow-up. Review the booking and explicitly simulate the follow-up as completed.
+4. Record a referral as issued, pending or not required, with a reason and receiving service when issued.
+5. Switch back to the patient view to see the recorded outcome. New report versions preserve booked appointments but invalidate the current follow-up/decision; old versions remain in history.
+
+This is a **browser-local, persistent demonstration**, synchronised across tabs on the same origin through browser storage. It does not send email, contact a hospital, reserve a clinical appointment or provide authenticated accounts. Use fictional data only. Reset the journey in its Demo data controls to clear the stored report/booking/decision history. The existing role switch is not authentication.
+
+## Detailed regional map and KPI traffic lights
+
+Quality administrator → Overview and Quality & equity now use actual Statistics Finland 2026 boundaries for all **19 maakunta administrative regions**, including Åland. These are not the 21 wellbeing services county boundaries. Region selection, metric selection, keyboard controls and map zoom are supported. Boundary data are bundled locally with attribution; no map API key or external tiles are needed. See [map sources](data/map-sources.md).
+
+Every performance figure is synthetic. Green/yellow/red identify the configured service-review band; grey means missing data or no applicable verified threshold. The default profile uses verified Finnish references; optional local demo operating bands are explicitly not national standards. Recognised NHS England comparators are shown separately as external references, never relabelled Finnish or universal international standards. Yellow warning bands are Candex conventions.
+
+See [KPI reference definitions](data/kpi-standards.md) for scope, event anchors, sources and limitations. No universal cancer-diagnosis, sensitivity or false-positive target is invented. A median below an individual deadline does not prove compliance, and service colours do not determine clinical urgency.
+
+Additional checks:
+
+```sh
+node tests/referrals-store.mjs
+node tests/referrals-client.cjs
+node tests/regional-map.mjs
+node tests/kpis.cjs
+```
