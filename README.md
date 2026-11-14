@@ -71,7 +71,7 @@ The demo sign-in is a prototype interface choice, not professional identity veri
   - Live Gemini calls go through the backend: the key stays on the server, and the doctor pastes the backend token into the page. Without live AI, every tool falls back to record-only answers labelled "without AI".
   - One agent calls specialist tools (patient record, CT read), with a separate safety reviewer for every draft.
 - **Quality Administrator → AI workspace → Quality agent (research):**
-  - Chat about any figure on the Quality & Equity page: KPIs and their Finnish references, NHS comparators, the 19 regions, the simulated cohort and the lung pilot data. English or Finnish.
+  - Chat about any figure on the Quality & Equity page: KPIs and their Finnish references, European comparators, the 19 regions, the simulated cohort and the lung pilot data. English or Finnish.
   - Grounded in a "data pack" built from the same code that draws the page. Every value is tagged synthetic, sourced reference or public research data, and the server flags any number in an answer that is not in the pack.
   - Declines patient-level questions and rankings of real regions. Without live AI it answers from page data, labelled "no AI".
 - **Quality Administrator → Reports:** five report summaries (KPI status, screening equity, regional access, lung pathway & AI evaluation, standards & data limitations). Tables are computed from the page data; the optional AI summary writes placeholders that are filled from the data pack, so it never types a number, and a safety reviewer checks it. Preview first, then download the PDF in English or Finnish; every page carries the synthetic-data banner. Model: `CANDEX_QUALITY_MODEL` (default gemini-3.5-flash).
@@ -133,7 +133,7 @@ Quality Administrator → Overview and Quality & Equity now use actual Statistic
 
 Selecting a region shows a short, indicator-specific next step and suggested owner only when its status is **Needs review** or **Urgent action**. Under-control and unassessed indicators do not produce recommendations. Prompts support service-level review; map values remain synthetic.
 
-Every performance figure is synthetic. Green/yellow/red identify the configured service-review band; grey means missing data or no applicable verified threshold. The default profile uses verified Finnish references; optional local demo operating bands are explicitly not national standards. Recognised NHS England comparators are shown separately as external references, never relabelled Finnish or universal international standards. Yellow warning bands are Candex conventions.
+Every performance figure is synthetic. Green/yellow/red identify the configured service-review band; grey means missing data or no applicable verified threshold. The default profile uses verified Finnish references; optional local demo operating bands are explicitly not national standards. European comparators (EU screening target, European screening guidelines, EUSOMA breast-centre indicator) are shown separately as external references, never relabelled Finnish standards. Yellow warning bands are Candex conventions.
 
 See [KPI reference definitions](data/kpi-standards.md) for scope, event anchors, sources and limitations. No universal cancer-diagnosis, sensitivity or false-positive target is invented. A median below an individual deadline does not prove compliance, and service colours do not determine clinical urgency.
 

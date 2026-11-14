@@ -58,6 +58,7 @@ async function parseResponse(response) {
 function modelName(model) { return text(model?.name || 'Unnamed model', 250); }
 
 window.candexI18n?.extend?.({
+'Set': 'Asetettu', 'Not set': 'Ei asetettu',
 "Research prototype only; not clinically validated for Candex or for making patient-care decisions.": "Vain tutkimusprototyyppi; ei kliinisesti validoitu Candexille eikä hoitopäätösten tekemiseen.",
 "Frontal AP/PA CR/DX chest X-rays only. CT, MR, mammography, lateral images and multi-frame studies are unsupported.": "Vain edestä otetut AP/PA CR/DX -keuhkoröntgenkuvat. TT-, MR- ja mammografiakuvia, sivukuvia ja monikuvaisia tutkimuksia ei tueta.",
 "Scores are uncalibrated model outputs, not disease probabilities or a diagnosis. No decision threshold is applied.": "Pisteet ovat kalibroimattomia mallin tuloksia, eivät sairauden todennäköisyyksiä eivätkä diagnoosi. Päätösrajaa ei käytetä.",
@@ -218,7 +219,14 @@ export function mountDicomPanel(container) {
   tokenInput.value = sessionToken || window.candexAgent?.getToken?.() || '';
   tokenInput.placeholder = 'Paste your backend API key';
   connectionCard.append(field('Backend URL', urlInput, 'Use your local backend or a trusted HTTPS deployment. A plain Python static server does not provide the analysis API.'));
-  connectionCard.append(field('Backend API key', tokenInput, 'Enter the CANDEX_API_KEY set on your server. It stays in this page’s memory and is sent only to the backend you select.'));
+  // The API key sits in a drop-down (closed by default); its summary says whether it is set.
+  const tokenDrop = element('details', 'agent-drop token-drop');
+  const tokenSummary = element('summary');
+  const tokenState = element('span', `token-state${tokenInput.value.trim() ? ' is-set' : ''}`, tokenInput.value.trim() ? 'Set' : 'Not set');
+  tokenSummary.append(element('span', '', 'Backend API key'), tokenState);
+  tokenDrop.append(tokenSummary, field('Backend API key', tokenInput, 'Enter the CANDEX_API_KEY set on your server. It stays in this page’s memory and is sent only to the backend you select.'));
+  connectionCard.append(tokenDrop);
+  const showTokenState = () => { const set = !!tokenInput.value.trim(); tokenState.textContent = set ? 'Set' : 'Not set'; tokenState.classList.toggle('is-set', set); };
   const connectionButtons = element('div', 'button-row');
   const connectButton = element('button', 'button secondary', 'Check connection');
   connectButton.type = 'button';
@@ -350,8 +358,8 @@ export function mountDicomPanel(container) {
   }
 
   listen(urlInput, 'input', () => { sessionBackend = urlInput.value; disconnect(); });
-  listen(tokenInput, 'input', () => { sessionToken = tokenInput.value; window.candexAgent?.setToken?.(tokenInput.value); syncControls(); });
-  listen(forgetButton, 'click', () => { sessionToken = ''; tokenInput.value = ''; resetResult(); setStatus(requestStatus, 'API key cleared from this page session.'); syncControls(); });
+  listen(tokenInput, 'input', () => { sessionToken = tokenInput.value; window.candexAgent?.setToken?.(tokenInput.value); showTokenState(); syncControls(); });
+  listen(forgetButton, 'click', () => { sessionToken = ''; tokenInput.value = ''; showTokenState(); resetResult(); setStatus(requestStatus, 'API key cleared from this page session.'); syncControls(); });
   listen(fileInput, 'change', () => {
     resetResult();
     setStatus(requestStatus, '');

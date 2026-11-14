@@ -10,7 +10,11 @@ All displayed values are synthetic. Colours are dashboard review priority, not c
 
 ## Recognised external comparators
 
-[NHS England cancer waiting-times monitoring guidance](https://www.england.nhs.uk/long-read/national-cancer-waiting-times-monitoring-dataset-guidance/): operational references96% treated within31days of decision-to-treat/earliest clinically appropriate date, and85% first definitive treatment within62days of the applicable urgent referral. These are ENGLAND benchmarks, not Finnish standards or universal international rules. Candex LOCAL warnings are yellow within5percentage points below the reference and red beyond that. Cohorts and anchors must match before comparison.
+European comparators (not Finnish standards; sources checked 14 Nov 2026):
+- [Council Recommendation on cancer screening, 9 December 2022](https://ec.europa.eu/commission/presscorner/detail/en/ip_22_7548) (Europe's Beating Cancer Plan): 90% of the EU population who qualify for breast, cervical and colorectal screening should be offered it by 2025. Candex local warning: yellow within 5 percentage points below, red beyond.
+- [European guidelines for quality assurance in breast cancer screening and diagnosis, 4th ed.](https://cci4eu.aws-lcb.iarc.who.int/wp-content/uploads/2025/01/EU_guidelines_BC_screening.pdf): participation of at least 70% acceptable, at least 75% desirable.
+- [European guidelines for quality assurance in colorectal cancer screening, 1st ed.](https://doi.org/10.1055/s-0032-1309788) (Moss et al., Endoscopy 2012): uptake of at least 45% acceptable; aim for at least 65%.
+- [EUSOMA quality indicators in breast cancer care](https://doi.org/10.1016/j.ejca.2010.06.119) (Del Turco et al., Eur J Cancer 2010): first diagnostic examination to surgery or start of other treatment within 6 weeks; minimum standard 75%, target 90%. Breast cancer only; later EUSOMA updates (2017, 2024) may set different thresholds.
 
 ## Measures without a universal applicable threshold
 

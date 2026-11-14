@@ -344,8 +344,8 @@ MAX_PACK_CHARS = 80_000
 
 QUALITY_RULES = """Rules (research prototype for a Finnish quality administrator):
 - Use ONLY the DATA PACK. If a number or fact is not in it, say it is not in Candex data. Never invent numbers; only quote values from the pack, and use precomputed gaps/min/max instead of doing arithmetic.
-- Tag every number with its provenance from the pack: SYNTHETIC (all KPI values, regional figures, the n=50 cohort), SOURCED REFERENCE (Finnish references, NHS comparators), PUBLIC RESEARCH DATA (LIDC-IDRI). Never present a synthetic value as measured Finnish performance.
-- Keep each reference's meaning: the 3-week (21-day) STM limit is a NON-URGENT limit for starting assessment after referral receipt, not a cancer-treatment target; 2035 strategy goals are strategic goals; NHS figures are external comparators, not Finnish standards; local demo bands are local conventions. A grey 'Not assessed' status stays grey; never convert 3 or 6 months into 90/180-day targets.
+- Tag every number with its provenance from the pack: SYNTHETIC (all KPI values, regional figures, the n=50 cohort), SOURCED REFERENCE (Finnish references, European comparators), PUBLIC RESEARCH DATA (LIDC-IDRI). Never present a synthetic value as measured Finnish performance.
+- Keep each reference's meaning: the 3-week (21-day) STM limit is a NON-URGENT limit for starting assessment after referral receipt, not a cancer-treatment target; 2035 strategy goals are strategic goals; European comparators (EU screening target, European screening guidelines, EUSOMA breast-centre indicator) are external comparators, not Finnish standards; local demo bands are local conventions. A grey 'Not assessed' status stays grey; never convert 3 or 6 months into 90/180-day targets.
 - Values marked 'static illustrative' are fixed example numbers that are not computed from the datasets; say so if asked about them.
 - Small numbers: always give n with a rate; flag low-n groups (n < 5) and do not compare them. LIDC AI second reader: 4/5 found (95% CI 28-99%), one model, one run. Chest X-ray classifier: n=8, uncalibrated, not a nodule detector.
 - The cohort's gaps were built into the simulation (oversampling and participation penalties), so they illustrate the method and are not findings about real groups.
@@ -430,7 +430,7 @@ async def quality_chat(body: QualityChatIn, authorization: str = Header(default=
 
 
 REPORT_FOCUS = {
-    "kpi": "KPI status against Finnish references: which indicators are under control, need review, need urgent action or are not assessed, what reference sets each threshold, and the external NHS comparators.",
+    "kpi": "KPI status against Finnish references: which indicators are under control, need review, need urgent action or are not assessed, what reference sets each threshold, and the European comparators.",
     "equity": "Screening equity in the simulated cohort (n=50): up-to-date rates by group with n, the travel-time, language, urban/other and care-route gaps, low-n groups, days to GP, data completeness.",
     "regional": "Regional access across the 19 maakunta regions (synthetic): spread (min, max, gap) of each measure, how many regions are in each status band, Åland without data. No rankings of real regions.",
     "lung": "Lung pathway research data: the 25 public LIDC-IDRI CT studies, the AI second-reader agreement with confidence interval, size error and wrong-side finding, and the 8 chest X-ray classifier results (not a nodule detector).",
@@ -483,7 +483,7 @@ async def quality_report(body: QualityReportIn, authorization: str = Header(defa
     unknown = sorted({t for t in _TOKEN.findall(text) if t not in ids})
     typed = unverified_numbers(_TOKEN.sub(" ", text), data)
     reviewer = ("You are a safety reviewer. Check the REPORT NARRATIVE (placeholders {{id}} stand for pack values) against the DATA PACK and RULES. "
-                "List: synthetic data presented as measured performance, local bands presented as national standards, NHS comparators presented as Finnish, "
+                "List: synthetic data presented as measured performance, local bands presented as national standards, European comparators presented as Finnish standards, "
                 "the AI reader presented as validated, causal or stigmatising claims about groups, rankings of real regions, patient-level conclusions, "
                 "and missing small-n caveats. Return an empty list if there are none.\n"
                 f"RULES:\n{REPORT_RULES}\n\nDATA PACK:\n{data}\n\nREPORT NARRATIVE (English):\n" + "\n".join(nar.summary_en + nar.findings_en + nar.questions_en))

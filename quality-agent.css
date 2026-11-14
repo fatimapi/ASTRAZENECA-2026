@@ -22,3 +22,5 @@
 .q-kv dt{color:var(--muted,#6b6475);font-weight:600}.q-kv dd{margin:0}
 @media (max-width:900px){.q-reports{grid-template-columns:1fr}.q-controls{position:static}}
 .q-review-warn{background:#fdf0dc;border-left:4px solid #9a5a29;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:.82rem}.q-review-warn ul{margin:6px 0 0}
+.q-maps{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;align-items:start;margin-bottom:8px}.q-maps figure{margin:0}.q-maps img{width:100%;display:block;border:1px solid #ece8f0;border-radius:8px;background:#fff;min-height:60px}.q-maps figcaption{font-size:.74rem;color:var(--muted,#6b6475);margin-top:4px}
+@media (max-width:700px){.q-maps{grid-template-columns:1fr 1fr}.q-map-main{grid-column:1/-1}}
