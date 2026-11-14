@@ -14,7 +14,7 @@
   const text=`CANDEX — REVIEWED DEMO REPORT\nNot a signed clinical document or real referral.\n\nPatient: ${S().patient.name} / ${report.patientId}\nVersion: ${report.version}\nReviewed by: ${report.approvedBy}\nReleased: ${date(report.approvedAt)} (Finland time)\nCare pathway: ${report.type}\n\nFINDINGS\n${report.findings}\n\nNEXT STEP\n${report.plan}\n`;
   const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=node('a');a.href=url;a.download=`candex-reviewed-demo-report-v${report.version}.txt`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
  }
- function reportBody(report){const pre=node('pre','referrals-report',`FINDINGS\n${report.findings}\n\nPROPOSED NEXT STEP\n${report.plan}`);pre.setAttribute('translate','no');return pre;}
+ function reportBody(report){const pre=node('pre','referrals-report',`FINDINGS\n${report.findings}\n\nPROPOSED NEXT STEP\n${report.plan}`);return pre;}
  function demoBanner(){const n=node('div','referrals-demo');n.append(status('Browser-local demonstration'),node('p','','Reviewed reports, appointment selections and referral decisions are shared between the demo roles on this browser only. No patient message, health-service booking or hospital referral is sent. Use fictional information.'));return n;}
  function resetControls(on,onReset){
   const detail=node('details','referrals-reset');detail.append(node('summary','','Demo data controls'),note('This journey persists in this browser. Resetting removes its report, booking and referral history from this device.'));
@@ -37,7 +37,7 @@
    const reportCard=card(role==='care'?'Reviewed report in the patient portal':'Your reviewed report');
    if(!report){reportCard.append(note(role==='care'?'Review a report draft, then release its approved version to the demo patient portal.':'Your care team has not released a reviewed report yet. Appointment selection will appear here after release.'));const go=button(role==='care'?'Review a report draft':'Explore the doctor demonstration');go.dataset.go='care/reports';reportCard.append(go);}
    else{
-    reportCard.append(status(`Reviewed · Version ${report.version}`),node('p','referrals-meta',`${report.approvedBy} · ${date(report.approvedAt)} · Finland time`));const identity=node('p','referrals-meta',`${S().patient.name} · ${report.patientId} · ${report.type}`);identity.setAttribute('translate','no');reportCard.append(identity,reportBody(report));const dl=button('Download reviewed demo report');on(dl,'click',()=>download(report));reportCard.append(dl);
+    reportCard.append(status(`Reviewed · Version ${report.version}`),node('p','referrals-meta',`${report.approvedBy} · ${date(report.approvedAt)} · Finland time`));const identity=node('p','referrals-meta',`${S().patient.name} · ${report.patientId} · ${report.type}`);reportCard.append(identity,reportBody(report));const dl=button('Download reviewed demo report');on(dl,'click',()=>download(report));reportCard.append(dl);
     if(report.version>1)reportCard.append(note('This is the latest reviewed version. Any booked appointment is preserved. A previous report’s follow-up or referral outcome does not automatically apply to this version.'));
    }main.append(reportCard);
    const booking=card(role==='care'?'Patient-selected follow-up':'Choose a suitable follow-up');
@@ -79,7 +79,7 @@
   let alive=true,approvedSnapshot='',message='';const cleanups=[];
   const on=(target,name,fn)=>{target.addEventListener(name,fn);cleanups.push(()=>target.removeEventListener(name,fn));};
   const root=node('section','referrals-review-panel');root.append(node('h3','','Review, then release to the patient'),note('This releases a reviewed copy to Aino Lehtinen’s demo portal on this browser. It does not send a clinical message. The report’s patient reference must be CX-1042.'));
-  const preview=node('pre','referrals-report');preview.setAttribute('translate','no');
+  const preview=node('pre','referrals-report');
   const previewButton=button('Preview current draft');const label=node('label','check-row'),approved=node('input');approved.type='checkbox';approved.id='referral-report-approved';label.append(approved,node('span','','I have reviewed this complete demo report and approve this exact version for the patient portal.'));
   const send=button('Approve & release reviewed demo report',true);send.disabled=true;
   const feedback=node('div','referrals-feedback');feedback.setAttribute('role','status');
