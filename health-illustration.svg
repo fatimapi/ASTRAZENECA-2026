@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="A friendly health check clipboard with a heart">
+  <defs>
+    <linearGradient id="hcBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3edf8"/>
+      <stop offset="1" stop-color="#e4d6f1"/>
+    </linearGradient>
+    <linearGradient id="hcHeart" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9b6fc4"/>
+      <stop offset="1" stop-color="#674287"/>
+    </linearGradient>
+  </defs>
+  <!-- soft background shapes -->
+  <ellipse cx="160" cy="118" rx="138" ry="92" fill="url(#hcBg)"/>
+  <circle cx="58" cy="52" r="16" fill="#e7dcf2"/>
+  <circle cx="270" cy="170" r="11" fill="#e7dcf2"/>
+  <!-- sparkles -->
+  <path d="M262 46v16M254 54h16" stroke="#b993dc" stroke-width="3" stroke-linecap="round"/>
+  <path d="M44 150v10M39 155h10" stroke="#c9aee6" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- clipboard -->
+  <rect x="104" y="44" width="112" height="148" rx="14" fill="#ffffff" stroke="#d5c3e8" stroke-width="2"/>
+  <rect x="134" y="34" width="52" height="22" rx="8" fill="#674287"/>
+  <circle cx="160" cy="45" r="4" fill="#d5baf0"/>
+  <!-- checklist -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="128" cy="84" r="9" fill="#ede3f7"/>
+    <path d="m123.5 84 3 3 6-6" stroke="#674287" stroke-width="2.5" fill="none"/>
+    <path d="M146 80h50M146 89h32" stroke="#d9cbe7" stroke-width="5"/>
+    <circle cx="128" cy="116" r="9" fill="#ede3f7"/>
+    <path d="m123.5 116 3 3 6-6" stroke="#674287" stroke-width="2.5" fill="none"/>
+    <path d="M146 112h44M146 121h38" stroke="#d9cbe7" stroke-width="5"/>
+    <circle cx="128" cy="148" r="9" fill="none" stroke="#d5c3e8" stroke-width="2"/>
+    <path d="M146 144h40M146 153h26" stroke="#e6dcef" stroke-width="5"/>
+  </g>
+  <!-- heart with pulse, in front -->
+  <path d="M232 132c-8-9-22-9-29 1-7-10-21-10-29-1-9 10-6 25 6 35l23 19 23-19c12-10 15-25 6-35Z" fill="url(#hcHeart)"/>
+  <path d="M180 151h12l5-10 7 19 5-9h12" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- leaf sprig -->
+  <path d="M78 186c4-26 18-44 40-52" stroke="#9b7bbf" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M92 158c-14-2-22 6-24 16 13 2 22-5 24-16Z" fill="#c9aee6"/>
+  <path d="M104 142c-2-13 6-22 17-24 2 13-5 22-17 24Z" fill="#b993dc"/>
+</svg>
