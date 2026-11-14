@@ -115,3 +115,14 @@ node tests/referrals-client.cjs
 node tests/regional-map.mjs
 node tests/kpis.cjs
 ```
+
+
+## Doctor patient-record lookup
+
+**Doctor → Patient records** looks up an existing worklist patient by exact internal ID. Try `CX-1042`, `CX-1043`, `CX-1044` or `CX-1045`. Health checks submitted through the current demo can also be found by their generated `HC-2001`-style IDs. Patient worklist rows include a Patient record shortcut.
+
+The view brings together the existing worklist identity, that ID’s submitted health-check information, linked public research CT reference, and browser-local reviewed report/appointment/referral history when it belongs to the same ID. Missing medicines, allergies or clinical facts are explicitly not recorded. Public research scans are not represented as the fictional person’s own images. Changing the query clears the old record immediately; queries are not put into URLs or persisted by the lookup.
+
+This is a **synthetic-data interface demonstration**, not real record access. The role switch and ID are not authentication. It does not accept Finnish personal identity codes or connect to Kanta. Real use requires authenticated staff identity, server-side patient/organisation authorisation, a lawful care relationship or other permitted access basis, audit controls and an authorised source system. A real identifier alone must never unlock a record.
+
+Test: `node tests/patient-records.cjs` covers exact matching, role guards, submitted health IDs, cross-patient isolation, safe text rendering and clearing of stale results. Browser visual testing remains separate.
