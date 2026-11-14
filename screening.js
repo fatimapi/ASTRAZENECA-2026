@@ -238,7 +238,7 @@ ${sel('contact', 'Preferred consultation', ['Video consultation', 'Phone call', 
 }
 
 function summaryHTML() {
-  return state.health ? (currentPid ? `<div class="notice sent-notice">${icon('check')}<span>Added to the demo care team as <strong>${esc(currentPid)}</strong>. Switch to <strong>Doctor</strong> to see it in the workspace, patient worklist and Quality &amp; equity.</span></div>` : '') + resultHTML(state.health) + (currentPid && window.candexReport ? `<div class="form-actions" style="justify-content:flex-start;margin:6px 0 14px"><button type="button" class="button secondary" data-action="patient-summary-pdf">${icon('download')}Download my summary (PDF)</button></div>` : '') : `<p>You haven’t completed a demo health check yet.</p>${goButton('health', 'Start health check', true, 'patient')}`;
+  return state.health ? (currentPid ? `<div class="notice sent-notice">${icon('check')}<span>Added to the demo care team as <strong>${esc(currentPid)}</strong>. Switch to <strong>Doctor</strong> to see it in the Dashboard, patient worklist and Quality &amp; equity.</span></div>` : '') + resultHTML(state.health) + (currentPid && window.candexReport ? `<div class="form-actions" style="justify-content:flex-start;margin:6px 0 14px"><button type="button" class="button secondary" data-action="patient-summary-pdf">${icon('download')}Download my summary (PDF)</button></div>` : '') : `<p>You haven’t completed a demo health check yet.</p>${goButton('health', 'Start health check', true, 'patient')}`;
 }
 
 // Update the symptom checklist when the care area changes, keeping ticks.

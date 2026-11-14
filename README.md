@@ -2,11 +2,15 @@
 
 ## Demo sign-in
 
-The website opens on a Candex landing page. Choose **Patient**, **Doctor** or **Quality Administrator**, then select **Enter demo workspace**. The selection is remembered in this browser tab while you refresh or follow links. **Switch workspace** and **Leave demo** return to the landing page. Direct links to another role require choosing that workspace first.
+The website opens on a Candex landing page. Choose **Patient**, **Doctor** or **Quality Administrator**, then select **Enter demo Dashboard**. The selection is remembered in this browser tab while you refresh or follow links. **Switch Dashboard** and **Leave demo** return to the landing page. Direct links to another role require choosing that Dashboard first.
 
 This is the hackathon **demo sign-in**, not authentication: it collects no email or password, verifies no professional identity, and uses fictional records. The role marker lives in sessionStorage and does not protect data or backend APIs. Backend requests still need their existing API token. Real accounts would require a server-side identity and authorisation service.
 
 Leaving or switching clears clinical-agent conversations and cached backend credentials and cancels pending AI requests. Shared fictional health-check, report, appointment and referral examples are retained for demonstrating the handoff between roles. Use the existing demo data controls to reset those examples. The hosted private preview retains its separate ChatGPT access gate.
+
+## Appearance and readability
+
+Use **Dark mode** in the landing page or Dashboard header, or in **Accessibility**, to switch appearance. The initial appearance follows your device preference; an explicit choice is saved in this browser and synchronised across tabs. Changing appearance keeps current forms and drafts intact. Text is larger by default, with an additional **Larger text** option. KPI labels above the numbers use larger, bold text in both themes.
 
 An accessible patient and doctor prototype, with a real, locally run chest-X-ray DICOM model connector. The existing records, CT illustration, appointments and quality metrics are fictional examples. The separate **Doctor → DICOM AI analysis** page displays actual model output only after a successful backend request.
 
@@ -60,7 +64,7 @@ The demo sign-in is a prototype interface choice, not professional identity veri
 
 - Doctor → Referrals & follow-up: a referral worklist for every patient (health-check date, attached report PDF, referral status) with Upload report PDF, Create & attach PDF, and Open referral & follow-up. Each patient now has their own referral journey
 - Patient summary PDF in plain language (English or Finnish) with the symptoms from the health check, screening, lifestyle points and where to get help. Available from Reports and from the patient's own health-check summary
-- **Doctor → AI workspace → Clinical agent (research):**
+- **Doctor → AI Dashboard → Clinical agent (research):**
   - Chat about one patient, grounded in their record, with cited sections.
   - Draft a referral note, a patient message or an MDT summary. Each draft goes through a drafter, then a separate safety reviewer, and can be added to the referral note.
   - Run a Gemini CT read of the linked study.
