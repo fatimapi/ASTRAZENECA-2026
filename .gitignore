@@ -4,3 +4,21 @@ Thumbs.db
 .env.*
 !.env.example
 node_modules/
+
+# Python backend, model caches and private imaging data
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.dcm
+*.dicom
+*.nii
+*.nii.gz
+*.pt
+*.pth
+*.onnx
+
+.model-cache/
