@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="420" viewBox="0 0 500 420" fill="none" role="img" aria-label="Purple cancer awareness ribbon surrounded by connected care points">
+<defs>
+<linearGradient id="back" x1="252" y1="91" x2="248" y2="213" gradientUnits="userSpaceOnUse"><stop stop-color="#734B98"/><stop offset="1" stop-color="#A17ABB"/></linearGradient>
+<linearGradient id="left" x1="203" y1="161" x2="322" y2="336" gradientUnits="userSpaceOnUse"><stop stop-color="#E0CAEE"/><stop offset=".44" stop-color="#BE98D7"/><stop offset="1" stop-color="#9468B1"/></linearGradient>
+<linearGradient id="right" x1="312" y1="128" x2="172" y2="326" gradientUnits="userSpaceOnUse"><stop stop-color="#F1E3F8"/><stop offset=".48" stop-color="#D3B5E5"/><stop offset="1" stop-color="#A47CC0"/></linearGradient>
+<linearGradient id="shine" x1="238" y1="129" x2="273" y2="216" gradientUnits="userSpaceOnUse"><stop stop-color="#F9F2FF" stop-opacity=".9"/><stop offset="1" stop-color="#F9F2FF" stop-opacity="0"/></linearGradient>
+<radialGradient id="halo" cx="0" cy="0" r="1" gradientTransform="translate(250 217) rotate(90) scale(174 177)" gradientUnits="userSpaceOnUse"><stop stop-color="#C9A3DF" stop-opacity=".2"/><stop offset="1" stop-color="#C9A3DF" stop-opacity="0"/></radialGradient>
+</defs>
+<circle cx="250" cy="217" r="175" fill="url(#halo)"/>
+<circle cx="250" cy="216" r="151" stroke="#9D78B7" stroke-opacity=".18" stroke-width="1.2"/>
+<path d="M123 134C165 68 239 46 303 70M383 144C418 203 402 284 348 331M291 362C218 383 146 349 110 292" stroke="#B69BCC" stroke-opacity=".48" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M121 132L173 93L251 65L321 82M383 146L401 218L377 296M348 332L291 362L211 362L143 325L108 263" stroke="#9E7CB7" stroke-opacity=".17" stroke-width="1" stroke-dasharray="3 6"/>
+<g fill="#F4ECFA" stroke="#BCA0CF" stroke-width="1.5">
+<circle cx="121" cy="132" r="7"/><circle cx="251" cy="65" r="6"/><circle cx="383" cy="146" r="8"/><circle cx="377" cy="296" r="5"/><circle cx="291" cy="362" r="7"/><circle cx="143" cy="325" r="6"/>
+</g>
+<circle cx="121" cy="132" r="2.3" fill="#9C73B8"/><circle cx="383" cy="146" r="2.6" fill="#9C73B8"/><circle cx="291" cy="362" r="2.3" fill="#9C73B8"/>
+<path d="M202 116C215 86 285 86 298 116L314 157C302 142 279 135 250 135C221 135 198 142 186 157L202 116Z" fill="url(#back)" stroke="#80599D" stroke-width="1.2"/>
+<path d="M203 115C194 135 200 159 217 184C247 228 291 280 328 323L285 346C251 299 216 254 191 216C170 184 174 151 186 128C190 122 196 118 203 115Z" fill="url(#left)" stroke="#9F78BB" stroke-width="1.2"/>
+<path d="M297 115C306 135 300 159 283 184C253 228 209 280 172 323L215 346C249 299 284 254 309 216C330 184 326 151 314 128C310 122 304 118 297 115Z" fill="url(#right)" stroke="#A580BD" stroke-width="1.2"/>
+<path d="M297 116C302 135 294 160 280 180C256 215 213 270 180 314" stroke="url(#shine)" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M233 207L251 229L267 208L251 186L233 207Z" fill="#8154A3" fill-opacity=".12"/>
+<path d="M215 346L202 312L172 323" fill="#9970B5" fill-opacity=".22"/>
+<path d="M285 346L300 314L328 323" fill="#734894" fill-opacity=".18"/>
+<path d="M340 99C340 111 344 115 356 115C344 115 340 119 340 131C340 119 336 115 324 115C336 115 340 111 340 99Z" fill="#B68BCE"/>
+<path d="M112 230C112 237 114 239 121 239C114 239 112 241 112 248C112 241 110 239 103 239C110 239 112 237 112 230Z" fill="#CAB0DC"/>
+<circle cx="349" cy="261" r="3" fill="#BA98D0"/>
+<circle cx="175" cy="83" r="2.5" fill="#C5A9D8"/>
+</svg>
