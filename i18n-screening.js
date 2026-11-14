@@ -9,6 +9,7 @@ const FI = {
 'A guided check of screening, symptoms and lifestyle, to prepare for a conversation with your care team.': 'Ohjattu kysely seulonnoista, oireista ja elintavoista keskustelua varten hoitotiimisi kanssa.',
 'Try the health check with fictional information only. It maps your answers onto Finnish screening programmes and published guidance. It does not calculate cancer risk or give a diagnosis.': 'Kokeile terveyskyselyä vain kuvitteellisilla tiedoilla. Se vertaa vastauksiasi suomalaisiin seulontaohjelmiin ja julkaistuihin suosituksiin. Se ei laske syöpäriskiä eikä anna diagnoosia.',
 'About 6 minutes': 'Noin 6 minuuttia',
+'Purple cancer awareness ribbon in the Candex style': 'Violetti syöpätietoisuuden nauha Candexin tyylissä',
 'About you': 'Tietoja sinusta',
 'Your name (use a made-up name)': 'Nimesi (käytä keksittyä nimeä)',
 'e.g. Aino Example': 'esim. Aino Esimerkki',

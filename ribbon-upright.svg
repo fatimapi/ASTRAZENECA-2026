@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="5 11 90 90" role="img" aria-labelledby="ribbon-upright-title">
+  <title id="ribbon-upright-title">Candex awareness ribbon: an upright purple cancer awareness ribbon in the style of the Candex ribbon d</title>
+  <!-- Same construction as the Candex ribbon d: 10-unit bands, a ring of radius 15
+       (outer 20, inner 10), 45-degree straight bands, vertical cuts at the ends, and
+       the band that passes behind shaded with #1a1028 at 35 %. -->
+  <defs>
+    <clipPath id="ribbon-cut"><rect x="20" y="0" width="60" height="120"/></clipPath>
+    <mask id="ribbon-gap" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="120">
+      <rect x="0" y="0" width="100" height="120" fill="#fff"/>
+      <path d="M39.39 48.61L95 104.22" stroke="#000" stroke-width="15" fill="none"/>
+    </mask>
+  </defs>
+  <g clip-path="url(#ribbon-cut)" fill="none" stroke-width="10">
+    <!-- Back band: from the right of the loop down to the left tail -->
+    <g mask="url(#ribbon-gap)">
+      <path d="M60.61 48.61L5 104.22" stroke="#967BB6"/>
+      <path d="M60.61 48.61L5 104.22" stroke="#1a1028" stroke-opacity="0.35"/>
+    </g>
+    <!-- Front band: the loop, then across the front to the right tail -->
+    <path d="M60.61 48.61A15 15 0 1 0 39.39 48.61L95 104.22" stroke="#967BB6"/>
+  </g>
+</svg>
