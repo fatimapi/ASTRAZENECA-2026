@@ -129,6 +129,20 @@ def test_mono1_is_inverted_and_rescale_is_supported():
     assert np.allclose(normal.pixels_255 + inverse.pixels_255, 255, atol=1e-4)
 
 
+def test_window_that_clips_most_pixels_is_rejected():
+    # A CT lung window stored on a radiograph (seen in LIDC-IDRI-0051) turns it white.
+    ds = pydicom.dcmread(io.BytesIO(synthetic_dicom_bytes()))
+    p5, p10 = (int(v) for v in np.percentile(ds.pixel_array, [5, 10]))
+    with pytest.raises(ImageRejected, match="display window clips"):
+        prepare_dicom(mutate(WindowCenter=(p5 + p10) // 2, WindowWidth=max(2, p10 - p5)), True)
+    # Fully clipped: no usable range at all.
+    with pytest.raises(ImageRejected):
+        prepare_dicom(mutate(WindowCenter=-600, WindowWidth=1600), True)
+    # A sensible window over the stored range still works.
+    lo, hi = int(ds.pixel_array.min()), int(ds.pixel_array.max())
+    assert prepare_dicom(mutate(WindowCenter=(lo + hi) // 2, WindowWidth=hi - lo + 1), True).pixels_255.std() > 0
+
+
 def test_deflated_dataset_rejected_before_pydicom_inflates(client, monkeypatch):
     ds = pydicom.dcmread(io.BytesIO(synthetic_dicom_bytes()))
     ds.file_meta.TransferSyntaxUID = "1.2.840.10008.1.2.1.99"
@@ -227,3 +241,32 @@ def test_lidc_demo_images_are_served_but_nothing_else_under_data(client):
     for bad in ["/data/lidc/LIDC-IDRI-0799/../../backend/app.py", "/data/lidc/LIDC-IDRI-0799/s05.png",
                 "/data/lidc/..%2F..%2Fbackend/app.py", "/data/lidc/LIDC-IDRI-9999/s05.jpg", "/data/lidc/notes/s05.jpg"]:
         assert client.get(bad).status_code == 404, bad
+
+
+def test_agent_routes_need_token_validate_input_and_never_leak_the_key(client, monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("CANDEX_GEMINI_KEY_FILE", raising=False)
+    status = client.get("/api/agent/status").json()
+    assert status["configured"] is False and "key" not in str(status).lower().replace("chatmodel", "")
+    chat = {"record": {"Patient": {"x": "y"}}, "messages": [{"role": "user", "text": "hi"}]}
+    assert client.post("/api/agent/chat", json=chat).status_code == 401
+    assert client.post("/api/agent/chat", json=chat, headers={"Authorization": "Bearer wrong"}).status_code == 401
+    assert client.post("/api/agent/chat", json=chat, headers=AUTH).status_code == 503  # no Gemini key: honest failure
+    assert client.post("/api/agent/analyze-ct", json={"caseId": "../../backend/app.py"}, headers=AUTH).status_code == 422
+    assert client.post("/api/agent/draft", json={"record": {}, "kind": "anything"}, headers=AUTH).status_code == 422
+    big = {"record": {"x": "y" * 300_000}, "messages": [{"role": "user", "text": "hi"}]}
+    assert client.post("/api/agent/chat", json=big, headers=AUTH).status_code == 413
+    monkeypatch.setenv("GEMINI_API_KEY", "AIzaTestKeyThatMustNeverLeak_123456")
+    status = client.get("/api/agent/status").json()
+    assert status["configured"] is True and "AIza" not in str(status)
+
+
+def test_cxr_summary_needs_token_and_valid_scores(client, monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("CANDEX_GEMINI_KEY_FILE", raising=False)
+    ok = {"lang": "fi", "findings": [{"label": "Nodule", "score": 0.1}, {"label": "Mass", "score": 0.03}]}
+    assert client.post("/api/agent/cxr-summary", json=ok).status_code == 401
+    assert client.post("/api/agent/cxr-summary", json=ok, headers=AUTH).status_code == 503  # no Gemini key: page falls back
+    for bad in ({"findings": []}, {"findings": [{"label": "Nodule", "score": 1.5}]}, {"lang": "sv", "findings": ok["findings"]},
+                {"findings": [{"label": "x" * 500, "score": 0.1}]}, {"findings": [{"label": "a", "score": 0.1}] * 41}):
+        assert client.post("/api/agent/cxr-summary", json=bad, headers=AUTH).status_code == 422

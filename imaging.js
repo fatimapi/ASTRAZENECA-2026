@@ -11,7 +11,12 @@
 // from several parts, which the page-level translator cannot match whole.
 const T = s => (window.candexI18n ? window.candexI18n.tr(s) : s);
 const CASES = window.candexLidc || {};
-const ORDER = ['LIDC-IDRI-0799', 'LIDC-IDRI-0365', 'LIDC-IDRI-0116', 'LIDC-IDRI-0977', 'LIDC-IDRI-0317'].filter(id => CASES[id]);
+// Every exported study. The first five keep their original order so existing
+// links stay the same (Aino → 0799; the next lung patient → 0365); the rest
+// follow by approximate Lung-RADS band, then ID.
+const BANDS = ['2', '3', '4A', '4B', '4X-like'];
+const FIRST = ['LIDC-IDRI-0799', 'LIDC-IDRI-0365', 'LIDC-IDRI-0116', 'LIDC-IDRI-0977', 'LIDC-IDRI-0317'].filter(id => CASES[id]);
+const ORDER = [...FIRST, ...Object.keys(CASES).filter(id => !FIRST.includes(id)).sort((a, b) => BANDS.indexOf(CASES[a].band) - BANDS.indexOf(CASES[b].band) || a.localeCompare(b))];
 const STORE = 'candex-imaging-links';
 let links = {'CX-1042': 'LIDC-IDRI-0799'};
 try { Object.assign(links, JSON.parse(sessionStorage.getItem(STORE) || '{}')); } catch { /* storage unavailable */ }
@@ -47,7 +52,7 @@ function contextLines(p) {
 }
 
 function picker(p) {
-  return `<section class="card scan-picker"><div class="field"><label for="scan-patient">${icon('users')}Reviewing patient</label><select id="scan-patient">${patients.map(x => `<option value="${esc(x.id)}" ${x.id === p.id ? 'selected' : ''}>${esc(x.name)} · ${esc(x.id)} · ${esc(T(x.type))}${links[x.id] ? ` · ${T('CT linked')}` : ''}</option>`).join('')}</select></div><div class="field"><label for="scan-study">${icon('scan')}Linked CT study (public LIDC-IDRI)</label><select id="scan-study"><option value="">No study linked</option>${ORDER.map(id => `<option value="${id}" ${links[p.id] === id ? 'selected' : ''}>${id} · approx. Lung-RADS ${CASES[id].band} · main nodule ${CASES[id].nodules[0].diameter} mm</option>`).join('')}</select></div></section>`;
+  return `<section class="card scan-picker"><div class="field"><label for="scan-patient">${icon('users')}Reviewing patient</label><select id="scan-patient">${patients.map(x => `<option value="${esc(x.id)}" ${x.id === p.id ? 'selected' : ''}>${esc(x.name)} · ${esc(x.id)} · ${esc(T(x.type))}${links[x.id] ? ` · ${T('CT linked')}` : ''}</option>`).join('')}</select></div><div class="field"><label for="scan-study">${icon('scan')}Linked CT study (public LIDC-IDRI)</label><select id="scan-study"><option value="">No study linked</option>${BANDS.map(b => { const ids = ORDER.filter(id => CASES[id].band === b); return ids.length ? `<optgroup label="${T('Approx. Lung-RADS')} ${b}">${ids.map(id => `<option value="${id}" ${links[p.id] === id ? 'selected' : ''}>${id} · approx. Lung-RADS ${CASES[id].band} · main nodule ${CASES[id].nodules[0].diameter} mm${window.candexAi?.read(id) ? ` · ${T('AI read')}` : ''}</option>`).join('')}</optgroup>` : ''; }).join('')}</select></div></section>`;
 }
 
 function decisionForm() {

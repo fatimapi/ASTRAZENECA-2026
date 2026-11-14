@@ -104,6 +104,7 @@ window.candexI18n?.extend?.({
   'Nodule found': 'Pesäke löytyi', 'Side · lobe': 'Puoli · lohko', 'Size: AI vs radiologists': 'Koko: tekoäly vs radiologit', 'Lung-RADS: AI vs reference': 'Lung-RADS: tekoäly vs viite',
   'Composition': 'Rakenne', 'Model confidence (not calibrated)': 'Mallin varmuus (ei kalibroitu)', 'Runs that agree': 'Yhtäpitävät ajot', 'Marker on the radiologists’ nodule': 'Merkintä radiologien pesäkkeessä',
   'AI report text': 'Tekoälyn raporttiteksti',
+  'Approx. Lung-RADS': 'Arvioitu Lung-RADS', 'AI read': 'tekoälyluenta',
   'AI reported a finding on the other side; the radiologists’ nodule was not found.': 'Tekoäly ilmoitti löydöksen toisella puolella; radiologien pesäkettä se ei löytänyt.',
   'AI slice · radiologists’ key slice': 'Tekoälyn leike · radiologien avainleike',
   'Images: LIDC-IDRI, The Cancer Imaging Archive (CC BY 3.0), doi:10.7937/K9/TCIA.2015.LO9QL9SX. Armato SG III et al., Medical Physics 2011;38(2):915–931; Clark K et al., J Digit Imaging 2013. Excerpt of 11 slices, lung window, resized to 384 px. Prototype for research use only: not a medical device, not CE-marked.': 'Kuvat: LIDC-IDRI, The Cancer Imaging Archive (CC BY 3.0), doi:10.7937/K9/TCIA.2015.LO9QL9SX. Armato SG III ym., Medical Physics 2011;38(2):915–931; Clark K ym., J Digit Imaging 2013. Ote 11 leikkeestä, keuhkoikkuna, pienennetty 384 pikseliin. Vain tutkimuskäyttöön tarkoitettu prototyyppi: ei lääkinnällinen laite, ei CE-merkitty.', 'Show AI marker': 'Näytä tekoälyn merkintä',

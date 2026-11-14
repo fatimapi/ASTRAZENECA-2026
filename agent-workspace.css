@@ -1,0 +1,44 @@
+/* Doctor → AI workspace → Clinical agent */
+.agent-layout{display:grid;grid-template-columns:minmax(260px,330px) 1fr;gap:22px;margin-bottom:24px;align-items:start}
+.agent-side .field{margin-top:12px}
+.agent-side .field label{display:flex;align-items:center;gap:7px}
+.agent-side .field label .icon{width:15px;height:15px;color:var(--green)}
+.agent-status{display:flex;flex-direction:column;gap:4px;margin:14px 0 4px;font-size:.72rem}
+.agent-status small{color:var(--muted)}
+.agent-h3{font-size:.84rem;margin:18px 0 8px}
+.agent-sees{list-style:none;padding:0;margin:0;display:grid;gap:5px;font-size:.76rem}
+.agent-sees li{display:flex;align-items:center;gap:7px}
+.agent-sees .icon{width:14px;height:14px;color:var(--green)}
+.agent-sees li.is-off{color:var(--muted)}
+.agent-sees li.is-off .icon{color:#b9aec4}
+.agent-how{padding-left:18px;margin:0 0 10px;font-size:.75rem;display:grid;gap:7px}
+.agent-chat{display:flex;flex-direction:column;min-height:560px}
+.agent-log{flex:1;min-height:300px;max-height:58vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:6px 2px 12px;border-bottom:1px solid var(--line)}
+.agent-empty{margin:auto;text-align:center;max-width:420px;color:var(--muted);font-size:.8rem}
+.agent-empty .icon{width:28px;height:28px;color:var(--green);margin-bottom:6px}
+.agent-msg{max-width:88%;border-radius:12px;padding:11px 14px;font-size:.8rem;line-height:1.55}
+.agent-msg p{margin:0}
+.agent-msg.is-user{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
+.agent-msg.is-agent{align-self:flex-start;background:#f4f0f8;border:1px solid #e4dcec;border-bottom-left-radius:4px}
+.agent-msg.is-thinking{color:var(--muted);font-style:italic}
+.agent-msg.is-error{background:#fcf0df;border-color:#f0d8b6;color:#5e3d14}
+.agent-msg.is-offline{background:#faf8fc;border-style:dashed}
+.agent-msg.is-draft,.agent-msg.is-ct{max-width:100%;width:100%;background:#fff}
+.agent-cite{display:inline-block;background:#ede6f5;color:#4f3a66;border-radius:5px;padding:0 6px;font-size:.68rem;font-weight:600;margin:0 1px}
+.agent-draft-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.agent-issues{margin:4px 0 8px;padding-left:18px;color:#83551d;font-size:.74rem}
+.agent-draft{width:100%;min-height:180px;border:1px solid #d7d1dd;border-radius:8px;padding:10px 12px;font:inherit;font-size:.78rem;line-height:1.5;resize:vertical;background:#fdfcfe}
+.agent-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:8px}
+.agent-actions small{margin-right:auto;color:var(--muted);font-size:.68rem}
+.agent-note{color:var(--muted);font-size:.7rem;margin-top:6px!important}
+.agent-msg details{margin-top:6px;font-size:.74rem}
+.agent-msg summary{cursor:pointer;font-weight:600}
+.agent-prompts{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 8px}
+.agent-chip{border:1px solid #d9cbe7;background:#faf7fd;color:#4f3a66;border-radius:999px;padding:6px 12px;font-size:.72rem;cursor:pointer}
+.agent-chip:hover{background:#f1e9f9}
+.agent-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.agent-tools .button{min-height:36px;padding:8px 12px;font-size:.72rem}
+.agent-form{display:flex;gap:10px;align-items:flex-end}
+.agent-form textarea{flex:1;min-height:46px;border:1px solid #d7d1dd;border-radius:8px;padding:10px 12px;font:inherit;font-size:.8rem;resize:vertical}
+@media(max-width:950px){.agent-layout{grid-template-columns:1fr}.agent-chat{min-height:480px}}
+.agent-msg.is-user p{color:#fff}

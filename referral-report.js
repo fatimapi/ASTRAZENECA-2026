@@ -90,7 +90,7 @@ function fingerprint(id) {
   const saved = lang;
   try {
     const r = build(id, {lang: 'en', skipApproval: true});
-    return hash(JSON.stringify([r.patient, r.pathway.filter(([k]) => !JOURNEY_ROWS.includes(k)), r.context, r.technique, r.findings, r.ai?.rows, window.candexAiReads?.provenance?.promptSha || null, r.impression, r.plain]));
+    return hash(JSON.stringify([r.patient, r.pathway.filter(([k]) => !JOURNEY_ROWS.includes(k)), r.context, r.technique, r.findings, r.ai?.rows, window.candexAiReads?.provenance?.promptSha || null, r.cxr ? [r.cxr.summary, r.cxr.rows] : null, r.impression, r.plain]));
   } finally { lang = saved; }
 }
 function approvalStatus(id) {
@@ -319,6 +319,36 @@ function build(id, opts = {}) {
     }
   }
 
+  // Chest X-ray classifier (research): precomputed TorchXRayVision scores with an
+  // AI summary (Gemini, safety-reviewed). Shown for context only; never feeds
+  // urgency, bottom line or recommendations.
+  // Finnish for the known test-copy notes (cxr_manifest.csv); unknown notes stay in English.
+  const viewNoteFi = note => note.split(/(?<=\.)\s+(?=[A-Z])/).map(x =>
+    /^Monitoring leads/.test(x) ? 'Valvontajohdot ja katetri näkyvät kuten osastopotilaalla; otsaketiedot viittaavat silti tavalliseen PA-kuvaukseen. Suuntaa ei ole varmistettu kuvasta.'
+    : /^Pixel data is inverted/.test(x) ? 'Kuvan pikselitiedot ovat käänteiset MONOCHROME2-merkintään nähden (selkäranka tumma, keuhkot vaaleat); testikopio merkitty MONOCHROME1:ksi kuvan tarkastelun jälkeen.'
+    : /^Relabelled MONOCHROME1/.test(x) ? ''
+    : /^Stored display window/.test(x) ? 'Tallennettu näyttöikkuna leikkasi suurimman osan pikseleistä valkoisiksi; se poistettiin testikopiosta.'
+    : /^(View not confirmed|headers still)/.test(x) ? '' : x).filter(Boolean).join(' ');
+  const xr = c ? window.candexCxrReads?.cases?.[c.id] : null, xp = window.candexCxrReads?.provenance;
+  let cxr = null;
+  if (xr) {
+    const two = v => (lang === 'fi' ? v.toFixed(2).replace('.', ',') : v.toFixed(2));
+    const top = [...xr.scores].sort((a, b) => b.score - a.score).slice(0, 5);
+    const keep = [...top, ...xr.scores.filter(x => ['Nodule', 'Mass'].includes(x.label) && !top.includes(x))];
+    cxr = {
+      image: xr.image,
+      summary: t(xr.summary.en, xr.summary.fi),
+      points: lang === 'fi' ? xr.keyPoints.fi : xr.keyPoints.en,
+      rows: keep.map(x => [x.label, two(x.score), ['Nodule', 'Mass'].includes(x.label) ? t('nodule-related label', 'pesäkkeeseen liittyvä nimike') : top.indexOf(x) === 0 ? t('highest score', 'korkein pistemäärä') : '']),
+      view: t(`Frontal ${xr.view} (inferred from headers: ${xr.viewEvidence})${xr.viewNote ? `. Note: ${xr.viewNote}` : ''}`, `Edestä ${xr.view} (päätelty otsaketiedoista: ${xr.viewEvidence})${xr.viewNote ? `. Huomio: ${viewNoteFi(xr.viewNote)}` : ''}`),
+      review: xr.review?.verdict === 'consistent with the raw data' ? t('Safety review: consistent with the raw scores (0 issues).', 'Turvallisuustarkistus: yhtäpitävä raakapisteiden kanssa (0 huomiota).') : t(`Safety review found ${(xr.review?.issues || []).length} issue(s); read the raw scores: ${(xr.review?.issues || []).join(' ')}`, `Turvallisuustarkistus löysi ${(xr.review?.issues || []).length} huomiota; tarkista raakapisteet: ${(xr.review?.issues || []).join(' ')}`),
+      note: [
+        t(`Classifier: ${xp?.classifier || 'TorchXRayVision DenseNet121'}. Summary: ${xp?.summaryModel || 'Gemini'} (general-purpose model, unvalidated), generated ${xp?.generated || ''}, then checked against the raw scores by a second AI review.`, `Luokittelija: ${xp?.classifier || 'TorchXRayVision DenseNet121'}. Yhteenveto: ${xp?.summaryModel || 'Gemini'} (yleiskäyttöinen, validoimaton malli), laadittu ${xp?.generated || ''}, minkä jälkeen toinen tekoälytarkistus vertasi sen raakapisteisiin.`),
+        t('Scores are uncalibrated (0–1, not probabilities) and have no threshold. This classifier is not a nodule detector: on 8 LIDC-IDRI X-rays with 8–36 mm CT nodules, Nodule and Mass stayed at or below 0.10 and 0.12. X-ray and CT dates are de-identified, so the time between them is unknown. Not used for urgency or recommendations.', 'Pisteet ovat kalibroimattomia (0–1, eivät todennäköisyyksiä), eikä niillä ole raja-arvoa. Luokittelija ei tunnista pesäkkeitä: kahdeksassa LIDC-IDRI-röntgenkuvassa, joiden TT:ssä oli 8–36 mm:n pesäke, Nodule- ja Mass-pisteet olivat enintään 0,10 ja 0,12. Röntgen- ja TT-kuvien päivämäärät on anonymisoitu, joten niiden väli ei ole tiedossa. Ei käytetty kiireellisyyteen eikä suosituksiin.'),
+      ].join(' '),
+    };
+  }
+
   // 6. Impression
   const sizeText = g ? t(`${g.long} × ${g.short} mm ${composition(main.texture)} nodule in the ${sideIn}`, `${num(g.long)} × ${num(g.short)} mm:n ${composition(main.texture)} pesäke ${sideIn}`) : '';
   const action = level === 'urgent' ? t('Urgent referral', 'Kiireellinen lähete') : level === 'soon' ? t('Referral within 2 weeks', 'Lähete 2 viikon sisällä') : t('Routine follow-up', 'Tavanomainen seuranta');
@@ -381,7 +411,7 @@ function build(id, opts = {}) {
   const rep = {
     lang, id: p.id, name: p.name, title: t('Patient summary & oncology referral', 'Potilasyhteenveto ja syöpälähete'),
     reportId: `RF-${p.id}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`, created,
-    patient, pathway, context, technique, findings, ai, caseId: c?.id, keyFrame: c && g ? c.frames[g.frame] : null, geometry: g,
+    patient, pathway, context, technique, findings, ai, cxr, caseId: c?.id, keyFrame: c && g ? c.frames[g.frame] : null, geometry: g,
     impression: {bottomLine, bullets, negatives, notEvaluated, recs},
     plain,
     glossary: lang === 'fi'
@@ -406,6 +436,7 @@ function build(id, opts = {}) {
       zoom: t('Main nodule, zoomed x4.', 'Pääpesäke, suurennettu 4x.'),
       s6: t('AI second reader: research comparison', 'Tekoäly toisena lukijana: tutkimusvertailu'),
       aiFinding: t('AI finding (from imaging review)', 'Tekoälyn löydös (kuvantamisen arviosta)'), aiReport: t('AI report text (verbatim, unedited)', 'Tekoälyn raporttiteksti (sellaisenaan, muokkaamaton)'), aiMarker: t('Amber dashed circle: AI marker.', 'Oranssi katkoviivaympyrä: tekoälyn merkintä.'), aiHead: [t('Measure', 'Mittari'), t('Radiologists (LIDC)', 'Radiologit (LIDC)'), t('AI model', 'Tekoälymalli'), t('Agreement', 'Yhtäpitävyys')],
+      sx: t('Chest X-ray AI summary: research', 'Keuhkoröntgenkuvan tekoälyyhteenveto: tutkimus'), cxrFinding: t('AI summary of the raw classifier scores', 'Tekoälyn yhteenveto luokittelijan raakapisteistä'), cxrPoints: t('Key points', 'Keskeiset kohdat'), cxrImg: t('Frontal chest X-ray as given to the classifier.', 'Keuhkoröntgenkuva edestä, sellaisena kuin luokittelija sen sai.'), cxrHead: [t('Label (model output)', 'Nimike (mallin tulos)'), t('Score', 'Pisteet'), t('Note', 'Huomio')], cxrView: t('View', 'Kuvaussuunta'),
       s7: t('Impression', 'Johtopäätökset'), keyFindings: t('Key findings, in order of importance', 'Keskeiset löydökset tärkeysjärjestyksessä'), negatives: t('Pertinent negatives', 'Merkitykselliset negatiiviset löydökset'), recs: t('Recommendations', 'Suositukset'),
       s8: t('For the patient: plain-language summary', 'Potilaalle: selkokielinen yhteenveto'), terms: t('Terms used', 'Käytetyt termit'), s9: t('Sign-off', 'Hyväksyntä'),
       header: t('unsigned draft', 'allekirjoittamaton luonnos'),
@@ -416,8 +447,21 @@ function build(id, opts = {}) {
   return opts.skipApproval ? rep : applyApproval(rep);
 }
 
-// ---------- Key image: CT slice with the radiologists' outlines ----------
-function keyImages(rep) {
+// ---------- Key images: CT slice with outlines, plus the chest X-ray ----------
+function cxrImage(rep) {
+  return new Promise(resolve => {
+    if (!rep.cxr?.image || typeof Image === 'undefined') return resolve(null);
+    const img = new Image();
+    img.onload = () => { try { const cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight; cv.getContext('2d').drawImage(img, 0, 0); resolve({cxr: cv.toDataURL('image/jpeg', 0.9), cxrW: cv.width, cxrH: cv.height}); } catch { resolve(null); } };
+    img.onerror = () => resolve(null);
+    img.src = rep.cxr.image;
+  });
+}
+async function keyImages(rep) {
+  const [ct, x] = await Promise.all([ctImages(rep), cxrImage(rep)]);
+  return ct || x ? {...(ct || {}), ...(x || {})} : null;
+}
+function ctImages(rep) {
   return new Promise(resolve => {
     if (!rep.keyFrame || typeof Image === 'undefined') return resolve(null);
     const img = new Image();
@@ -464,6 +508,7 @@ ${sec(n++, L.s3, kvHTML(rep.context))}
 ${rep.technique ? sec(n++, L.s4, kvHTML(rep.technique)) : sec(n++, L.s4none, `<p>${esc(L.noImgHint)}</p>`)}
 ${f ? sec(n++, L.s5, `<div class="rr-img"><figure><img id="rr-full" alt="${esc(L.keyImg)}"><figcaption>${esc(L.keyImg)}</figcaption></figure><figure><img id="rr-zoom" alt="${esc(L.zoom)}"><figcaption>${esc(L.zoom)}</figcaption></figure></div><h4>${esc(L.primary)}</h4>${kvHTML(f.primary)}<h4>${esc(L.others)}</h4><ul>${f.others.map(x => `<li>${esc(x)}</li>`).join('')}</ul><h4>${esc(L.nodal)}</h4><p>${esc(f.nodal)}</p><h4>${esc(L.distant)}</h4><p>${esc(f.distant)}</p><h4>${esc(L.category)}</h4><p>${esc(f.category)}</p><h4>${esc(L.treatment)}</h4><p>${esc(f.treatment)}</p>`) : ''}
 ${rep.ai ? sec(n++, L.s6, `${rep.ai.summary ? `<div class="rr-bottom rr-ai ${rep.ai.verdict === 'agrees' ? '' : 'rr-ai-warn'}"><small>${esc(L.aiFinding)} · ${esc(rep.ai.verdictText)}</small><p>${esc(rep.ai.summary)}</p></div>` : ''}${rep.ai.miss ? `<p class="rr-ai-miss">${esc(rep.ai.miss)}</p>` : ''}<div class="table-wrap"><table><thead><tr>${L.aiHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.ai.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${rep.ai.report ? `<h4>${esc(L.aiReport)}</h4><blockquote class="rr-quote">${esc(rep.ai.report)}</blockquote>` : ''}<p class="rr-note">${esc(rep.ai.note)}</p>`) : ''}
+${rep.cxr ? sec(n++, L.sx, `<div class="rr-cxr"><figure><img src="${esc(rep.cxr.image)}" alt="${esc(L.cxrImg)}"><figcaption>${esc(L.cxrImg)}</figcaption></figure><div><div class="rr-bottom rr-ai"><small>${esc(L.cxrFinding)}</small><p>${esc(rep.cxr.summary)}</p></div><h4>${esc(L.cxrPoints)}</h4><ul>${rep.cxr.points.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>${kvHTML([[L.cxrView, rep.cxr.view]])}<div class="table-wrap"><table><thead><tr>${L.cxrHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.cxr.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="rr-note">${esc(rep.cxr.review)} ${esc(rep.cxr.note)}</p>`) : ''}
 ${sec(n++, L.s7, `<p class="rr-bl">${esc(rep.impression.bottomLine)}</p><h4>${esc(L.keyFindings)}</h4><ol>${rep.impression.bullets.map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rep.impression.negatives.length ? `<h4>${esc(L.negatives)}</h4><ul>${rep.impression.negatives.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="rr-note">${esc(rep.impression.notEvaluated)}</p><h4>${esc(L.recs)}</h4><ol>${rep.impression.recs.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`)}
 ${sec(n++, L.s8, `<p>${esc(rep.plain)}</p><h4>${esc(L.terms)}</h4>${kvHTML(rep.glossary)}`)}
 ${sec(n++, L.s9, kvHTML(rep.signoff))}
@@ -587,7 +632,7 @@ function writePDF(jsPDF, rep, images) {
   if (rep.findings) {
     const f = rep.findings;
     k.section(n++, L.s5);
-    if (images) {
+    if (images?.full) {
       const s1 = 74, s2 = 56; k.ensure(s1 + 12);
       doc.addImage(images.full, 'JPEG', k.M, k.y, s1, s1); doc.addImage(images.zoom, 'JPEG', k.M + s1 + 6, k.y, s2, s2);
       k.font(7.8, false, k.MUTED);
@@ -611,6 +656,20 @@ function writePDF(jsPDF, rep, images) {
     k.table(L.aiHead, rep.ai.rows.map(r => r.map(sym)), [46, 62, 36, k.CW - 144]);
     if (rep.ai.report) { k.sub(L.aiReport); k.para(`"${rep.ai.report}"`, {color: [80, 72, 88]}); }
     k.para(rep.ai.note, {size: 8.4, color: k.MUTED});
+  }
+  if (rep.cxr) {
+    k.section(n++, L.sx);
+    if (images?.cxr) {
+      const w = 52, h = Math.round(w * (images.cxrH / images.cxrW || 1)); k.ensure(h + 10);
+      doc.addImage(images.cxr, 'JPEG', k.M, k.y, w, h);
+      k.font(7.8, false, k.MUTED); doc.text(doc.splitTextToSize(clean(L.cxrImg), w), k.M, k.y + h + 4);
+      k.y += h + 10;
+    }
+    k.callout(L.cxrFinding, rep.cxr.summary);
+    k.sub(L.cxrPoints); k.list(rep.cxr.points);
+    k.kv([[L.cxrView, rep.cxr.view]]);
+    k.table(L.cxrHead, rep.cxr.rows, [60, 30, k.CW - 90]);
+    k.para(`${rep.cxr.review} ${rep.cxr.note}`, {size: 8.4, color: k.MUTED});
   }
   k.section(n++, L.s7);
   k.para(rep.impression.bottomLine, {size: 10, bold: true});
@@ -779,7 +838,7 @@ async function preview() {
     const rep = build(currentId());
     box.innerHTML = previewHTML(rep);
     markPreviewed(rep.id); updatePanel();
-    const imgs = await keyImages(rep);
+    const imgs = await ctImages(rep);
     if (imgs) { const a = document.querySelector('#rr-full'), b = document.querySelector('#rr-zoom'); if (a) a.src = imgs.full; if (b) b.src = imgs.zoom; }
     box.scrollIntoView?.({behavior: 'smooth', block: 'start'});
   } catch { toast('The report preview could not be prepared.'); }
@@ -879,6 +938,8 @@ window.candexI18n?.extend?.({
 ]);
 
 window.candexReport = {
+  // Set the referring clinician's note (used by the clinical agent's "Add to referral note").
+  setNote: v => { note = String(v ?? '').slice(0, 800); },
   build, buildPatient, previewHTML, approvalStatus, approveNow, withdrawApproval, markPreviewed, patientHTML, geometry, section, clean, pdfBlob,
   patientPdfDataUri: async (id, opts = {}) => { const lib = await loadJsPDF(); return writePatientPDF(lib.jsPDF, buildPatient(id, opts)).output('datauristring'); },
   // The finished PDF as a data URI (used by tests and for embedding).

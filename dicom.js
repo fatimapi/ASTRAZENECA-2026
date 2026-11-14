@@ -51,6 +51,123 @@ async function parseResponse(response) {
 
 function modelName(model) { return text(model?.name || 'Unnamed model', 250); }
 
+window.candexI18n?.extend?.({
+"Research prototype only; not clinically validated for Candex or for making patient-care decisions.": "Vain tutkimusprototyyppi; ei kliinisesti validoitu Candexille eikä hoitopäätösten tekemiseen.",
+"Frontal AP/PA CR/DX chest X-rays only. CT, MR, mammography, lateral images and multi-frame studies are unsupported.": "Vain edestä otetut AP/PA CR/DX -keuhkoröntgenkuvat. TT-, MR- ja mammografiakuvia, sivukuvia ja monikuvaisia tutkimuksia ei tueta.",
+"Scores are uncalibrated model outputs, not disease probabilities or a diagnosis. No decision threshold is applied.": "Pisteet ovat kalibroimattomia mallin tuloksia, eivät sairauden todennäköisyyksiä eivätkä diagnoosi. Päätösrajaa ei käytetä.",
+"No lesion localisation, cancer confirmation, segmentation or comparison with earlier scans is performed.": "Muutoksia ei paikanneta, syöpää ei varmisteta, rajauksia ei tehdä eikä aiempiin kuviin verrata.",
+"DICOM presentation processing, full-range scaling, centre cropping and 224 × 224 resizing can change or exclude image detail.": "DICOM-esityksen käsittely, koko alueen skaalaus, keskirajaus ja 224 × 224 -koon muutos voivat muuttaa tai poistaa kuvan yksityiskohtia.",
+"Images may contain burned-in identifiers that metadata checks cannot detect. Use permitted, de-identified research/test images only.": "Kuviin voi olla upotettu tunnisteita, joita metatietojen tarkistus ei havaitse. Käytä vain luvallisia, tunnisteettomia tutkimus- tai testikuvia.",
+"All outputs require qualified clinician review. Model performance can vary across acquisition settings and patient groups.": "Kaikki tulokset vaativat pätevän lääkärin arvion. Mallin suorituskyky voi vaihdella kuvausasetusten ja potilasryhmien välillä.",
+"AI summary": "Tekoälyn yhteenveto",
+"Summary without AI": "Yhteenveto ilman tekoälyä",
+"Research · AI-generated": "Tutkimus · tekoälyn laatima",
+"Live AI not available": "Tekoäly ei käytettävissä",
+"Add summary to report draft": "Lisää yhteenveto raporttiluonnokseen",
+"Added to the report draft": "Lisätty raporttiluonnokseen",
+"Writing a short summary of these scores with live AI, then checking it against the raw numbers…": "Tekoäly kirjoittaa lyhyen yhteenvedon pisteistä ja tarkistaa sen raakalukuja vasten…",
+"Real model output. Clear limitations.": "Todellinen mallin tulos. Selkeät rajoitukset.",
+"Upload a permitted chest X-ray DICOM to your research backend for model inference.": "Lähetä luvallinen keuhkoröntgenkuvan DICOM-tiedosto tutkimuspalvelimellesi mallin analysoitavaksi.",
+"Doctor · DICOM AI": "Lääkäri · DICOM-tekoäly",
+"DICOM AI analysis": "DICOM-tekoälyanalyysi",
+"Loading the analysis workspace…": "Ladataan analyysityötilaa…",
+"Experimental · Chest X-ray DICOM": "Kokeellinen · Keuhkoröntgen-DICOM",
+"Run the open-source TorchXRayVision classifier on one permitted chest X-ray. These model scores are research outputs for clinician review—not a cancer diagnosis or a validated cancer-risk estimate.": "Aja avoimen lähdekoodin TorchXRayVision-luokittelija yhdelle luvalliselle keuhkoröntgenkuvalle. Mallin pisteet ovat tutkimustuloksia lääkärin arvioitaviksi – eivät syöpädiagnoosi eivätkä validoitu syöpäriskin arvio.",
+"Connect your analysis service": "Yhdistä analyysipalveluun",
+"The Python backend runs the model. This page does not upload anything until you choose “Analyse DICOM”. Checking the connection sends no image.": "Python-palvelin ajaa mallin. Tämä sivu ei lähetä mitään ennen kuin valitset ”Analysoi DICOM”. Yhteyden tarkistus ei lähetä kuvaa.",
+"Backend URL": "Palvelimen osoite",
+"Backend API key": "Palvelimen API-avain",
+"Paste your backend API key": "Liitä palvelimen API-avain",
+"Enter the CANDEX_API_KEY set on your server. It stays in this page’s memory and is sent only to the backend you select.": "Anna palvelimellesi asetettu CANDEX_API_KEY. Se säilyy vain tämän sivun muistissa ja lähetetään vain valitsemallesi palvelimelle.",
+"Use your local backend or a trusted HTTPS deployment. A plain Python static server does not provide the analysis API.": "Käytä paikallista palvelinta tai luotettua HTTPS-palvelua. Pelkkä Pythonin staattinen palvelin ei tarjoa analyysirajapintaa.",
+"Check connection": "Tarkista yhteys",
+"Forget API key": "Unohda API-avain",
+"Connection check": "Yhteyden tarkistus",
+"Not connected. Start the Python backend, then check the connection.": "Ei yhteyttä. Käynnistä Python-palvelin ja tarkista yhteys.",
+"Checking the backend. No image is being sent.": "Tarkistetaan palvelinta. Kuvaa ei lähetetä.",
+"Model is loaded.": "Malli on ladattu.",
+"Model will load on the first analysis.": "Malli latautuu ensimmäisessä analyysissä.",
+"Choose a chest X-ray study": "Valitse keuhkoröntgentutkimus",
+"DICOM file": "DICOM-tiedosto",
+"No file selected.": "Tiedostoa ei ole valittu.",
+"Supported: one uncompressed, single-frame, monochrome frontal AP/PA CR or DX chest X-ray DICOM file, up to 20 MiB and 16 million pixels. CT series, MRI, compressed DICOM, colour images and multiframe studies are not supported by this connector.": "Tuettu: yksi pakkaamaton, yksikuvainen, harmaasävyinen edestä otettu AP/PA CR- tai DX-keuhkoröntgenkuva DICOM-muodossa, enintään 20 MiB ja 16 miljoonaa pikseliä. TT-sarjoja, MRI:tä, pakattuja DICOM-tiedostoja, värikuvia ja monikuvaisia tutkimuksia ei tueta.",
+"DICOM can contain identifying information, including text embedded in pixels. Use approved de-identified research or test files. Nothing here de-identifies the source image for you.": "DICOM voi sisältää tunnistetietoja, myös kuvaan upotettua tekstiä. Käytä hyväksyttyjä, tunnisteettomia tutkimus- tai testitiedostoja. Tämä sivu ei poista tunnisteita puolestasi.",
+"I confirm this is a frontal AP/PA chest X-ray, not a CT slice or another body region.": "Vahvistan, että tämä on edestä otettu AP/PA-keuhkoröntgenkuva, ei TT-leike tai muu kehon alue.",
+"I have permission to process this de-identified research or test image with the selected backend.": "Minulla on lupa käsitellä tämä tunnisteeton tutkimus- tai testikuva valitulla palvelimella.",
+"Analyse DICOM": "Analysoi DICOM",
+"Cancel request": "Peruuta pyyntö",
+"Clear image & results": "Tyhjennä kuva ja tulokset",
+"Connect the backend, enter the API key, choose a file and confirm both checks to analyse.": "Yhdistä palvelin, anna API-avain, valitse tiedosto ja vahvista molemmat kohdat analysoidaksesi.",
+"Check the backend connection before running analysis.": "Tarkista palvelinyhteys ennen analyysiä.",
+"Check the backend connection first.": "Tarkista ensin palvelinyhteys.",
+"Enter the backend API key (at least 24 characters) to enable analysis.": "Anna palvelimen API-avain (vähintään 24 merkkiä) analyysin käyttöön ottamiseksi.",
+"Select one supported DICOM file to continue.": "Valitse yksi tuettu DICOM-tiedosto jatkaaksesi.",
+"Confirm the chest X-ray and data-permission checks to continue.": "Vahvista keuhkoröntgen- ja tietolupakohdat jatkaaksesi.",
+"Ready. The file will be sent only when you choose Analyse DICOM.": "Valmis. Tiedosto lähetetään vasta, kun valitset Analysoi DICOM.",
+"This file is larger than the 20 MiB limit.": "Tiedosto ylittää 20 MiB:n rajan.",
+"Choose a DICOM file smaller than 20 MiB.": "Valitse alle 20 MiB:n DICOM-tiedosto.",
+"Choose a file within the size limit, enter the API key and confirm both checks.": "Valitse kokorajan sisällä oleva tiedosto, anna API-avain ja vahvista molemmat kohdat.",
+"API key cleared from this page session.": "API-avain poistettu tämän sivun istunnosta.",
+"Image selection and analysis results cleared from this page.": "Kuvavalinta ja analyysitulokset tyhjennetty tältä sivulta.",
+"Backend address changed. Check the new connection before analysing.": "Palvelimen osoite muuttui. Tarkista uusi yhteys ennen analyysiä.",
+"The backend is running the model. Waiting for its actual response…": "Palvelin ajaa mallia. Odotetaan sen vastausta…",
+"The backend is processing this request. The first run may need to download model weights. You can cancel waiting; the server may continue its current computation.": "Palvelin käsittelee pyyntöä. Ensimmäinen ajo voi ladata mallin painot. Voit peruuttaa odotuksen; palvelin voi silti jatkaa laskentaa.",
+"Analysis completed by the backend. Review the model outputs and limitations below.": "Palvelin suoritti analyysin. Tarkista mallin tulokset ja rajoitukset alta.",
+"Analysis results": "Analyysin tulokset",
+"Real results begin with a real connection.": "Todelliset tulokset alkavat todellisesta yhteydestä.",
+"Your image preview, model outputs and report draft will appear here after the backend completes an analysis. No sample findings are mixed into this workspace.": "Kuvan esikatselu, mallin tulokset ja raporttiluonnos näkyvät tässä, kun palvelin on suorittanut analyysin. Työtilaan ei sekoiteta esimerkkilöydöksiä.",
+"What runs, and what this model cannot tell you": "Mitä ajetaan ja mitä malli ei pysty kertomaan",
+"The backend reads supported DICOM pixels, prepares a chest X-ray and runs the pretrained TorchXRayVision DenseNet model. It returns image-level pathology scores. It does not locate a lesion, segment a tumour, compare CT volumes, determine malignancy or recommend treatment. Model outputs require independent clinical interpretation.": "Palvelin lukee tuetut DICOM-pikselit, valmistelee keuhkoröntgenkuvan ja ajaa esikoulutetun TorchXRayVision DenseNet -mallin. Se palauttaa koko kuvaa koskevat patologiapisteet. Se ei paikanna muutosta, rajaa kasvainta, vertaa TT-kuvia, määritä pahanlaatuisuutta eikä suosittele hoitoa. Mallin tulokset vaativat itsenäisen kliinisen tulkinnan.",
+"The first analysis may download model weights and take longer. No artificial progress or findings are shown. For a separately hosted backend, configure an explicit allowed website origin on that server; a browser connection can also fail if an HTTPS page tries to use an HTTP backend.": "Ensimmäinen analyysi voi ladata mallin painot ja kestää pidempään. Keinotekoista edistymistä tai löydöksiä ei näytetä. Erikseen isännöidylle palvelimelle on määritettävä sallittu verkkosivuston alkuperä; selainyhteys voi myös epäonnistua, jos HTTPS-sivu yrittää käyttää HTTP-palvelinta.",
+"View TorchXRayVision source": "Näytä TorchXRayVisionin lähdekoodi",
+"Uploaded image · Backend preview": "Lähetetty kuva · Palvelimen esikatselu",
+"Preview supplied by your backend. No tumour outlines or lesion localisation are produced by this classifier.": "Esikatselu palvelimelta. Luokittelija ei tuota kasvainrajauksia eikä paikanna muutoksia.",
+"Preview generated from the uploaded chest X-ray DICOM. This classifier provides image-level scores without lesion localisation.": "Esikatselu lähetetystä keuhkoröntgen-DICOMista. Luokittelija antaa koko kuvaa koskevat pisteet paikantamatta muutoksia.",
+"Image-level model outputs": "Mallin tulokset koko kuvalle",
+"Scores run from 0 to 1. They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.": "Pisteet ovat välillä 0–1. Ne ovat kalibroimattomia mallin tuloksia – eivät todennäköisyyksiä, diagnoosi eivätkä todennäköisyys sille, että henkilöllä on syöpä.",
+"Actual classifier scores returned by the connected backend, ranked from highest to lowest": "Yhdistetyn palvelimen palauttamat luokittelijan pisteet suurimmasta pienimpään",
+"Model label": "Mallin nimike",
+"Raw score": "Raakapisteet",
+"Model": "Malli",
+"Version": "Versio",
+"Weights": "Painot",
+"Task": "Tehtävä",
+"Analysis reference": "Analyysin tunniste",
+"Not reported": "Ei ilmoitettu",
+"Limitations & clinical review": "Rajoitukset ja kliininen arvio",
+"Reviewable report draft": "Tarkistettava raporttiluonnos",
+"This structured draft contains the returned model information. Edit it for your research review. Downloading does not sign a clinical report.": "Tämä jäsennelty luonnos sisältää mallin palauttamat tiedot. Muokkaa sitä tutkimusarviota varten. Lataaminen ei allekirjoita kliinistä raporttia.",
+"Draft findings and limitations": "Löydösten ja rajoitusten luonnos",
+"Download review draft": "Lataa tarkistusluonnos",
+"The API key was not accepted. Check the key configured on the backend, then try again.": "API-avainta ei hyväksytty. Tarkista palvelimelle asetettu avain ja yritä uudelleen.",
+"Could not reach the Candex backend. Check its address, that it is running, its allowed origins, and whether your browser is blocking an HTTP backend from an HTTPS page.": "Candex-palvelimeen ei saatu yhteyttä. Tarkista osoite, että palvelin on käynnissä, sen sallitut alkuperät ja estääkö selain HTTP-palvelimen HTTPS-sivulta.",
+"Request cancelled. The backend may still be processing an analysis already started.": "Pyyntö peruttu. Palvelin voi yhä käsitellä jo aloitettua analyysiä.",
+"This address did not return the expected Candex model-service health response.": "Tämä osoite ei palauttanut odotettua Candex-mallipalvelun tilavastausta.",
+"This file exceeds the backend upload limit. Use a DICOM file smaller than 20 MiB.": "Tiedosto ylittää palvelimen kokorajan. Käytä alle 20 MiB:n DICOM-tiedostoa."
+});
+const LABEL_FI = {"Atelectasis": "Atelektaasi", "Consolidation": "Konsolidaatio", "Infiltration": "Infiltraatti", "Pneumothorax": "Ilmarinta", "Edema": "Keuhkoödeema", "Emphysema": "Emfyseema", "Fibrosis": "Fibroosi", "Effusion": "Pleuraneste", "Pneumonia": "Keuhkokuume", "Pleural_Thickening": "Keuhkopussin paksuuntuma", "Cardiomegaly": "Sydämen suurentuma", "Nodule": "Pesäke", "Mass": "Massa", "Hernia": "Tyrä", "Lung Lesion": "Keuhkomuutos", "Fracture": "Murtuma", "Lung Opacity": "Keuhkosamentuma", "Enlarged Cardiomediastinum": "Laajentunut sydän-välikarsinavarjo"};
+// Finnish name with the model's own label kept in brackets, so it still matches the raw output.
+export const labelText = (label, lang) => (lang === 'fi' && LABEL_FI[label] ? `${LABEL_FI[label]} (${label})` : label);
+export function finnishDraft(result) {
+  const m = result.model || {};
+  return `CANDEX — HYVÄKSYMÄTÖN TUTKIMUSMALLIN TULOS\n\n${modelName(m)} / ${text(m.weights || '', 200)}\nKeuhkoröntgenkuvan luokittelu (edestä)\n\n${[...result.findings].sort((a, b) => b.score - a.score).map(f => `${labelText(text(f.label, 150), 'fi')}: ${Number(f.score).toFixed(4).replace('.', ',')} (kalibroimaton mallin pistemäärä)`).join('\n')}\n\nKliinistä raja-arvoa, paikannusta tai syöpädiagnoosia ei anneta. Pätevän lääkärin on arvioitava alkuperäinen tutkimus ja kaikki mallin rajoitukset.`;
+}
+const reportLang = () => (window.candexI18n?.lang === 'fi' ? 'fi' : 'en');
+const two = (v, lang) => (lang === 'fi' ? Number(v).toFixed(2).replace('.', ',') : Number(v).toFixed(2));
+
+// Summary built from the scores alone, used when live AI is unavailable. Exported for tests.
+export function summaryWithoutAI(findings, lang = 'en') {
+  const sorted = [...findings].sort((a, b) => b.score - a.score);
+  const get = label => findings.find(f => f.label === label);
+  const top = sorted.slice(0, 3).map(f => `${f.label} ${two(f.score, lang)}`).join(', ');
+  const nm = ['Nodule', 'Mass'].map(l => get(l) ? `${l} ${two(get(l).score, lang)}` : null).filter(Boolean).join(', ');
+  return lang === 'fi'
+    ? {summary: `Korkeimmat pisteet: ${top}.${nm ? ` Pesäkkeisiin liittyvät nimikkeet: ${nm}.` : ''} Pisteet ovat kalibroimattomia mallin tuloksia (0–1), eivät todennäköisyyksiä eivätkä diagnoosi.`,
+       key_points: ['Luokittelija ei tunnista pesäkkeitä: matala Nodule- tai Mass-pistemäärä ei sulje pois pesäkettä tai syöpää.', 'Epäilty pesäke vaatii TT-tutkimuksen.', 'Pisteet koskevat koko kuvaa; luokittelija ei paikanna löydöksiä.']}
+    : {summary: `Highest scores: ${top}.${nm ? ` Nodule-related labels: ${nm}.` : ''} Scores are uncalibrated model outputs (0–1), not probabilities or a diagnosis.`,
+       key_points: ['This classifier is not a nodule detector: a low Nodule or Mass score does not rule out a nodule or cancer.', 'A suspected nodule needs CT.', 'Scores are for the whole image; the classifier does not localise findings.']};
+}
+
 export function mountDicomPanel(container) {
   currentCleanup?.();
   if (!(container instanceof HTMLElement)) throw new TypeError('DICOM panel needs a container element.');
@@ -61,6 +178,7 @@ export function mountDicomPanel(container) {
   let activeController;
   let timer;
   let lastResult;
+  let summaryController;
   let timedOut = false;
   const listeners = [];
   const listen = (target, name, callback) => { target.addEventListener(name, callback); listeners.push(() => target.removeEventListener(name, callback)); };
@@ -181,6 +299,7 @@ export function mountDicomPanel(container) {
   }
   function resetResult() {
     lastResult = undefined;
+    summaryController?.abort();
     resultArea.replaceChildren(resultTitle, placeholder);
   }
   function syncControls() {
@@ -265,7 +384,7 @@ export function mountDicomPanel(container) {
       if (!alive) return;
       if (data.status !== 'ok' || !data.model?.name || !Array.isArray(data.model.supported_modalities)) throw new Error('This address did not return the expected Candex model-service health response.');
       connected = true;
-      setStatus(connectionStatus, `Backend reachable · ${modelName(data.model)}. ${data.model.loaded ? 'Model is loaded.' : 'Model will load on the first analysis.'} API credentials are checked when analysis starts.`, 'success');
+      setStatus(connectionStatus, reportLang() === 'fi' ? `Palvelin tavoitettavissa · ${modelName(data.model)}. ${data.model.loaded ? 'Malli on ladattu.' : 'Malli latautuu ensimmäisessä analyysissä.'} API-avain tarkistetaan, kun analyysi alkaa.` : `Backend reachable · ${modelName(data.model)}. ${data.model.loaded ? 'Model is loaded.' : 'Model will load on the first analysis.'} API credentials are checked when analysis starts.`, 'success');
     } catch (error) { if (alive) setStatus(connectionStatus, networkError(error, 'Connection check'), 'error'); }
     finally { if (alive) { busy = false; syncControls(); } }
   });
@@ -295,6 +414,48 @@ export function mountDicomPanel(container) {
     finally { if (alive) { busy = false; syncControls(); } }
   });
 
+  // Short AI summary of the returned scores: live Gemini via the backend
+  // (summariser + safety reviewer), else a summary built from the scores alone.
+  async function summarise(result, card, draft) {
+    summaryController?.abort();
+    const controller = summaryController = new AbortController();
+    const lang = reportLang();
+    const show = (data, live, note) => {
+      if (!alive || controller.signal.aborted) return;
+      const head = element('div', 'dicom-ai-head');
+      head.append(element('h2', '', live ? 'AI summary' : 'Summary without AI'), element('span', `badge${live ? '' : ' amber'}`, live ? 'Research · AI-generated' : 'Live AI not available'));
+      const list = element('ul');
+      for (const point of data.key_points.slice(0, 6)) list.append(element('li', '', text(point, 600)));
+      const add = element('button', 'button secondary', 'Add summary to report draft');
+      add.type = 'button';
+      listen(add, 'click', () => {
+        const block = `${lang === 'fi' ? 'YHTEENVETO' : 'SUMMARY'} (${live ? (lang === 'fi' ? 'tekoälyn laatima, tarkistettava' : 'AI-generated, to be checked') : (lang === 'fi' ? 'ilman tekoälyä' : 'without AI')})\n${data.summary}\n${data.key_points.map(x => `- ${x}`).join('\n')}\n\n`;
+        if (!draft.value.startsWith(block)) draft.value = block + draft.value;
+        add.disabled = true; add.textContent = 'Added to the report draft';
+      });
+      card.replaceChildren(head, element('p', 'dicom-ai-text', text(data.summary, 3000)), list, element('p', 'dicom-small-note', note), add);
+    };
+    card.replaceChildren(element('h2', '', 'AI summary'), element('p', 'dicom-status', 'Writing a short summary of these scores with live AI, then checking it against the raw numbers…'));
+    const L = (en, fi) => (lang === 'fi' ? fi : en);
+    const fallback = reason => show(summaryWithoutAI(result.findings, lang), false, `${reason} ${L('This summary is built directly from the scores, without AI.', 'Tämä yhteenveto on muodostettu suoraan pisteistä ilman tekoälyä.')}`);
+    let out;
+    try {
+      const response = await fetch(`${backend}/api/agent/cxr-summary`, {method: 'POST', signal: controller.signal, cache: 'no-store', credentials: 'omit', redirect: 'error',
+        headers: {'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${tokenInput.value.trim()}`},
+        body: JSON.stringify({lang, model: `${modelName(result.model)} ${text(result.model.weights || '', 100)}`.trim(), findings: result.findings.slice(0, 40).map(f => ({label: text(f.label, 80), score: f.score}))})});
+      if (response.status === 503 || response.status === 404) return fallback(L('Live AI is not configured on this backend.', 'Tekoälyä ei ole otettu käyttöön tällä palvelimella.'));
+      out = await parseResponse(response);
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      return fallback(`${L('Live AI summary failed:', 'Tekoälyn yhteenveto epäonnistui:')} ${networkError(error, L('The summary', 'Yhteenveto'))}`);
+    }
+    if (typeof out?.summary !== 'string' || !Array.isArray(out.key_points)) return fallback(L('The AI summary was incomplete.', 'Tekoälyn yhteenveto jäi puutteelliseksi.'));
+    const ok = out.review?.verdict === 'consistent with the raw scores';
+    const issues = Array.isArray(out.review?.issues) ? out.review.issues.map(x => text(x, 400)).join(' ') : '';
+    show(out, true, L(`Written by ${text(out.model, 60)} from the scores above, then checked by a separate AI safety review: ${ok ? 'consistent with the raw scores.' : `needs changes. ${issues}`} Uncalibrated scores; not a diagnosis. This classifier is not a nodule detector; suspected nodules need CT.`,
+      `Kirjoittanut ${text(out.model, 60)} yllä olevista pisteistä; erillinen tekoälyn turvallisuustarkistus: ${ok ? 'yhtäpitävä raakapisteiden kanssa.' : `vaatii muutoksia. ${issues}`} Kalibroimattomat pisteet; ei diagnoosi. Luokittelija ei tunnista pesäkkeitä; epäillyt pesäkkeet vaativat TT-tutkimuksen.`));
+  }
+
   function validateResult(result) {
     if (result.status !== 'completed' || !result.model?.name || result.requires_clinician_review !== true || !Array.isArray(result.findings) || !Array.isArray(result.limitations) || typeof result.report_draft !== 'string') throw new Error('The backend response is incomplete. No findings have been displayed.');
     if (!result.findings.length || result.findings.length > 100 || result.findings.some(f => typeof f.label !== 'string' || !Number.isFinite(f.score) || f.score < 0 || f.score > 1)) throw new Error('The backend returned invalid model scores. No findings have been displayed.');
@@ -311,6 +472,8 @@ export function mountDicomPanel(container) {
     image.alt = 'Preview generated from the uploaded chest X-ray DICOM. This classifier provides image-level scores without lesion localisation.';
     const imageCaption = element('p', '', 'Preview supplied by your backend. No tumour outlines or lesion localisation are produced by this classifier.');
     imageCard.append(imageHeader, image, imageCaption);
+    const summaryCard = element('section', 'card dicom-ai-summary');
+    summaryCard.setAttribute('aria-live', 'polite');
     const outputCard = element('section', 'card');
     outputCard.append(element('h2', '', 'Image-level model outputs'), element('p', 'dicom-section-copy', 'Scores run from 0 to 1. They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.'));
     const wrap = element('div', 'table-wrap');
@@ -325,9 +488,10 @@ export function mountDicomPanel(container) {
     const body = element('tbody');
     for (const finding of [...result.findings].sort((a, b) => b.score - a.score)) {
       const row = element('tr');
-      const name = element('th', '', text(finding.label, 150));
+      const name = element('th', '', labelText(text(finding.label, 150), reportLang()));
+      name.setAttribute('translate', 'no');
       name.scope = 'row';
-      const value = element('td', 'dicom-score', Number(finding.score).toFixed(4));
+      const value = element('td', 'dicom-score', reportLang() === 'fi' ? Number(finding.score).toFixed(4).replace('.', ',') : Number(finding.score).toFixed(4));
       row.append(name, value); body.append(row);
     }
     table.append(caption, head, body); wrap.append(table); outputCard.append(wrap);
@@ -343,7 +507,7 @@ export function mountDicomPanel(container) {
     reportCard.append(element('h2', '', 'Reviewable report draft'), element('p', 'dicom-section-copy', 'This structured draft contains the returned model information. Edit it for your research review. Downloading does not sign a clinical report.'));
     const draft = element('textarea', 'dicom-report-draft');
     draft.id = 'dicom-returned-report';
-    draft.value = text(result.report_draft, 30000);
+    draft.value = reportLang() === 'fi' ? finnishDraft(result) : text(result.report_draft, 30000);
     draft.rows = 15;
     reportCard.append(field('Draft findings and limitations', draft));
     const downloadButton = element('button', 'button secondary', 'Download review draft');
@@ -353,18 +517,20 @@ export function mountDicomPanel(container) {
       const link = element('a');
       const url = URL.createObjectURL(new Blob([draft.value], { type: 'text/plain;charset=utf-8' }));
       link.href = url;
-      link.download = 'candex-research-analysis-draft.txt';
+      link.download = reportLang() === 'fi' ? 'candex-tutkimusanalyysi-luonnos.txt' : 'candex-research-analysis-draft.txt';
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
     reportCard.append(downloadButton);
-    resultArea.replaceChildren(resultTitle, imageCard, outputCard, limits, reportCard);
+    resultArea.replaceChildren(resultTitle, imageCard, summaryCard, outputCard, limits, reportCard);
+    summarise(result, summaryCard, draft);
   }
 
   syncControls();
   const cleanup = () => {
     alive = false;
     activeController?.abort();
+    summaryController?.abort();
     clearTimeout(timer);
     for (const remove of listeners) remove();
     lastResult = undefined;
