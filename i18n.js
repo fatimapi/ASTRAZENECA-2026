@@ -532,5 +532,7 @@ function setLang(next){
 document.documentElement.lang=lang;
 new MutationObserver(list=>{if(lang!=='fi')return;for(const m of list)for(const n of m.addedNodes)translateTree(n);}).observe(document.body,{childList:true,subtree:true});
 translateTree(document.body);
-window.candexI18n={tr,toEnglish,setLang,get lang(){return lang;}};
+// Feature files add their own strings: extend({English:'Finnish'}, [[regex, fn], ...]).
+function extend(dict={},patterns=[]){Object.assign(FI,dict);for(const [en,fi] of Object.entries(dict))REVERSE.set(fi,en);PATTERNS.push(...patterns);if(lang==='fi')translateTree(document.body);}
+window.candexI18n={tr,toEnglish,setLang,extend,lookup:s=>lookup(s),get lang(){return lang;}};
 })();
