@@ -218,3 +218,12 @@ def test_official_map_asset_is_allowlisted(client):
     assert response.status_code == 200
     assert len(response.json()["features"]) == 19
     assert client.get("/data/map-sources.md").status_code == 404
+
+
+def test_lidc_demo_images_are_served_but_nothing_else_under_data(client):
+    ok = client.get("/data/lidc/LIDC-IDRI-0799/s05.jpg")
+    assert ok.status_code == 200 and ok.headers["content-type"] == "image/jpeg"
+    assert client.get("/data/lidc/cases.js").status_code == 200
+    for bad in ["/data/lidc/LIDC-IDRI-0799/../../backend/app.py", "/data/lidc/LIDC-IDRI-0799/s05.png",
+                "/data/lidc/..%2F..%2Fbackend/app.py", "/data/lidc/LIDC-IDRI-9999/s05.jpg", "/data/lidc/notes/s05.jpg"]:
+        assert client.get(bad).status_code == 404, bad

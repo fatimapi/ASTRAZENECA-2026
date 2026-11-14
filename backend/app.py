@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 import secrets
 import uuid
 from pathlib import Path
@@ -147,6 +148,35 @@ async def index():
 @app.get("/data/finland-regions.geojson")
 async def regional_boundaries():
     return FileResponse(ROOT / "data" / "finland-regions.geojson", media_type="application/geo+json", headers={"X-Content-Type-Options": "nosniff"})
+
+
+LIDC_DIR = ROOT / "data" / "lidc"
+
+
+@app.get("/data/lidc/cases.js")
+async def lidc_cases():
+    """Metadata and radiologist outlines for the public LIDC-IDRI demo studies."""
+    return FileResponse(LIDC_DIR / "cases.js", media_type="text/javascript", headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store"})
+
+
+@app.get("/data/lidc/ai-reads.js")
+async def lidc_ai_reads():
+    """Precomputed AI second-reader results (research comparison); no AI is called."""
+    path = LIDC_DIR / "ai-reads.js"
+    if not path.is_file():
+        raise HTTPException(404, "Not found")
+    return FileResponse(path, media_type="text/javascript", headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store"})
+
+
+@app.get("/data/lidc/{case}/{frame}")
+async def lidc_frame(case: str, frame: str):
+    """Exported CT slices only: LIDC-IDRI-NNNN/sNN.jpg, nothing else under data/."""
+    if not re.fullmatch(r"LIDC-IDRI-\d{4}", case) or not re.fullmatch(r"s\d{2}\.jpg", frame):
+        raise HTTPException(404, "Not found")
+    path = LIDC_DIR / case / frame
+    if not path.is_file():
+        raise HTTPException(404, "Not found")
+    return FileResponse(path, media_type="image/jpeg", headers={"X-Content-Type-Options": "nosniff"})
 
 
 @app.get("/{asset}")

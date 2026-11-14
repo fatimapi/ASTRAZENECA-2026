@@ -1,0 +1,44 @@
+/* The About page uses open reading sections instead of dashboard cards. */
+.about-page{max-width:1100px;margin:0 auto;overflow-wrap:anywhere}
+.about-hero{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:42px;align-items:center;padding:18px 0 34px}
+.about-hero h1{font-size:clamp(2rem,4vw,3.4rem);max-width:720px;line-height:1.12;letter-spacing:-1.6px;margin:13px 0 22px;font-weight:600}
+.about-lead{font-size:1.06rem;line-height:1.8;max-width:64ch}
+.about-hero img{width:100%;height:210px;object-fit:contain}
+.about-caption{margin-top:18px;font-size:.8rem;color:var(--green);font-weight:600}
+.about-section{padding:36px 0;border-top:1px solid var(--line)}
+.about-section h2{font-size:1.55rem;line-height:1.35;letter-spacing:-.6px}
+.about-intro{max-width:66ch;margin:12px 0 8px;font-size:.94rem;line-height:1.8}
+.about-service{display:grid;grid-template-columns:minmax(190px,.7fr) minmax(0,1.3fr);gap:32px;padding:29px 0;border-bottom:1px solid var(--line)}
+.about-service:last-child{border-bottom:0;padding-bottom:0}
+.about-service h3{font-size:1.17rem;line-height:1.45;max-width:22ch}
+.about-service p:not(.eyebrow){font-size:.94rem;line-height:1.8;max-width:66ch}
+.about-links{display:flex;flex-wrap:wrap;gap:10px 25px;margin-top:15px}
+.about-page .about-links .text-btn{font-size:.85rem;min-height:36px;text-align:left;white-space:normal}
+.about-access{margin:8px 0 36px;padding:25px 28px;background:var(--soft);border-left:3px solid var(--green)}
+.about-access h2{font-size:1.2rem;margin-bottom:9px}
+.about-access p{font-size:.94rem;line-height:1.8;max-width:78ch}
+.about-connection{display:grid;grid-template-columns:minmax(190px,.7fr) minmax(0,1.3fr);gap:32px;padding:26px 0;border-bottom:1px solid var(--line)}
+.about-connection:last-child{border-bottom:0;padding-bottom:0}
+.about-connection h3{font-size:1rem;line-height:1.5;margin-bottom:9px}
+.about-connection p{font-size:.9rem;line-height:1.8;max-width:66ch}
+.about-source{display:inline-flex;align-items:center;gap:7px;margin-top:10px;font-size:.84rem;min-height:36px;text-underline-offset:4px}
+.about-source .icon{width:15px;height:15px}
+.about-limits p{font-size:.9rem;line-height:1.85;max-width:84ch;margin-top:18px}
+.about-limits strong{color:var(--ink)}
+.high-contrast .about-caption{color:#3e254d}
+.high-contrast .about-access{border-color:#3e254d;background:#e7dfed}
+@media(max-width:800px){
+ .about-hero{grid-template-columns:minmax(0,1fr) 110px;gap:20px}
+ .about-hero img{height:145px}
+ .about-service,.about-connection{grid-template-columns:minmax(150px,.65fr) minmax(0,1.35fr);gap:24px}
+}
+@media(max-width:600px){
+ .about-hero{grid-template-columns:1fr;position:relative;padding-top:10px;gap:0}
+ .about-hero h1{letter-spacing:-1px;max-width:15ch}
+ .about-hero img{display:none}
+ .about-lead{font-size:1rem}
+ .about-section{padding:28px 0}
+ .about-service,.about-connection{grid-template-columns:1fr;gap:12px;padding:24px 0}
+ .about-service h3{max-width:none}
+ .about-access{padding:22px 20px;margin-bottom:28px}
+}

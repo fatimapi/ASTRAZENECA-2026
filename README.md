@@ -50,6 +50,11 @@ The role switch is a prototype interface choice, not professional identity verif
 
 ## Other features
 
+- Doctor → Referrals & follow-up: a referral worklist for every patient (health-check date, attached report PDF, referral status) with Upload report PDF, Create & attach PDF, and Open referral & follow-up. Each patient now has their own referral journey
+- Patient summary PDF in plain language (English or Finnish) with the symptoms from the health check, screening, lifestyle points and where to get help. Available from Reports and from the patient's own health-check summary
+- **AI second reader (research):** a precomputed Gemini read of each CT study, shown next to the radiologists on the Imaging review page and in PDF section 6, with agreement badges and caveats. It is never used for urgency or recommendations. Method, results and limits: [docs/ai-second-reader.md](docs/ai-second-reader.md); pipeline: `tools/ai-second-reader/`
+- Doctor → Reports: **Approve report**. The doctor previews the report, confirms two checks and approves it, optionally releasing it to the patient's referral journey. The PDF then shows the approval; any later change to the content needs re-approval
+- Doctor → Reports: a patient summary & oncology referral as an on-page preview and a PDF, in English or Finnish. It covers patient reference, care pathway, health-check date, family history and symptoms, the CT key image with the radiologists' outlines and findings, Lung-RADS, a planned AI comparison and a plain-language summary. The structure is explained in [docs/oncology-referral-framework.md](docs/oncology-referral-framework.md)
 - Patient/doctor routing and searchable care worklist
 - Session-only health summaries, message drafts and research preferences
 - Example care journey, reminders and calendar download
@@ -101,7 +106,9 @@ This is a **browser-local, persistent demonstration**, synchronised across tabs 
 
 ## Detailed regional map and KPI traffic lights
 
-Quality administrator → Overview and Quality & equity now use actual Statistics Finland 2026 boundaries for all **19 maakunta administrative regions**, including Åland. These are not the 21 wellbeing services county boundaries. Region selection, metric selection, keyboard controls and map zoom are supported. Boundary data are bundled locally with attribution; no map API key or external tiles are needed. See [map sources](data/map-sources.md).
+Quality Administrator → Overview and Quality & Equity now use actual Statistics Finland 2026 boundaries for all **19 maakunta administrative regions**, including Åland. These are not the 21 wellbeing services county boundaries. Region selection, metric selection, keyboard controls and map zoom are supported. Boundary data are bundled locally with attribution; no map API key or external tiles are needed. See [map sources](data/map-sources.md).
+
+Selecting a region shows a short, indicator-specific next step and suggested owner only when its status is **Needs review** or **Urgent action**. Under-control and unassessed indicators do not produce recommendations. Prompts support service-level review; map values remain synthetic.
 
 Every performance figure is synthetic. Green/yellow/red identify the configured service-review band; grey means missing data or no applicable verified threshold. The default profile uses verified Finnish references; optional local demo operating bands are explicitly not national standards. Recognised NHS England comparators are shown separately as external references, never relabelled Finnish or universal international standards. Yellow warning bands are Candex conventions.
 
@@ -115,3 +122,14 @@ node tests/referrals-client.cjs
 node tests/regional-map.mjs
 node tests/kpis.cjs
 ```
+
+
+## Doctor patient-record lookup
+
+**Doctor → Patient records** looks up an existing worklist patient by exact internal ID. Try `CX-1042`, `CX-1043`, `CX-1044` or `CX-1045`. Health checks submitted through the current demo can also be found by their generated `HC-2001`-style IDs. Patient worklist rows include a Patient record shortcut.
+
+The view brings together the existing worklist identity, that ID’s submitted health-check information, linked public research CT reference, and browser-local reviewed report/appointment/referral history when it belongs to the same ID. Missing medicines, allergies or clinical facts are explicitly not recorded. Public research scans are not represented as the fictional person’s own images. Changing the query clears the old record immediately; queries are not put into URLs or persisted by the lookup.
+
+This is a **synthetic-data interface demonstration**, not real record access. The role switch and ID are not authentication. It does not accept Finnish personal identity codes or connect to Kanta. Real use requires authenticated staff identity, server-side patient/organisation authorisation, a lawful care relationship or other permitted access basis, audit controls and an authorised source system. A real identifier alone must never unlock a record.
+
+Test: `node tests/patient-records.cjs` covers exact matching, role guards, submitted health IDs, cross-patient isolation, safe text rendering and clearing of stale results. Browser visual testing remains separate.

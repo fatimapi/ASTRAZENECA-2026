@@ -2,8 +2,13 @@
 // not authentication; a production service needs server-side identity/access.
 (()=>{
  'use strict';
- const KEY='candex-referrals-v1';
- const PATIENT={id:'CX-1042',name:'Aino Lehtinen'};
+ const BASE='candex-referrals-v1';
+ const DEFAULT_PATIENT=Object.freeze({id:'CX-1042',name:'Aino Lehtinen'});
+ // One journey per synthetic patient. Aino keeps the original storage key, so
+ // existing demo data survives; other worklist patients get their own key.
+ let PATIENT={...DEFAULT_PATIENT},KEY=BASE;
+ const keyFor=id=>id===DEFAULT_PATIENT.id?BASE:`${BASE}-${id}`;
+ const validPatientId=id=>typeof id==='string'&&/^(?:CX|HC)-\d{3,8}$/.test(id);
  const METHODS=['Video consultation','Phone consultation','In-person consultation'];
  const listeners=new Set();
  const clone=value=>JSON.parse(JSON.stringify(value));
@@ -64,7 +69,7 @@
  function releaseReport(draft,options={}){
   needRole(options.role,'care');
   if(options.approved!==true)throw new Error('Review the complete report and tick the clinician approval box before releasing it.');
-  if(!draft||!/^CX-1042(?:\s|·|$)/.test(String(draft.patient||'').trim()))throw new Error('This demo portal belongs to CX-1042 (Aino Lehtinen). Set that patient reference before releasing the report.');
+  if(!draft||!new RegExp(`^${PATIENT.id}(?:\\s|·|$)`).test(String(draft.patient||'').trim()))throw new Error(`This demo portal belongs to ${PATIENT.id} (${PATIENT.name}). Set that patient reference before releasing the report.`);
   const findings=String(draft.findings||'').trim(),plan=String(draft.plan||'').trim(),type=String(draft.type||'').trim();
   if(!findings||!plan||!type)throw new Error('Complete the care pathway, findings and proposed next step before review.');
   if(findings.length>6000||plan.length>6000||type.length>100)throw new Error('The report text exceeds the demo length limit.');
@@ -123,7 +128,19 @@
   const decision={id:uid(),reportId:current.currentReport.id,followUpId:current.currentFollowUp.id,outcome,destination:outcome==='issued'?destination:'',reason,recordedAt:now(),actor:'Dr. Emilia Koski'};
   state.decisions.push(decision);addEvent(state,`Referral decision: ${outcome==='issued'?'issued to demo portal':outcome==='pending'?'pending':'not required'}`,'Dr. Emilia Koski');save(state);return clone(decision);
  }
+ // Switch the active journey (Doctor → Referrals overview chooses the patient).
+ function select(patient){
+  if(!patient||!validPatientId(patient.id)||typeof patient.name!=='string'||!patient.name.trim()||patient.name.length>80)throw new Error('Choose a patient from the worklist.');
+  if(patient.id===PATIENT.id&&patient.name.trim()===PATIENT.name)return clone(PATIENT);
+  PATIENT={id:patient.id,name:patient.name.trim()};KEY=keyFor(PATIENT.id);notify();return clone(PATIENT);
+ }
+ // Read another patient's journey without switching (overview, reports, records).
+ function peek(id){
+  if(!validPatientId(id))return null;
+  const prev=[PATIENT,KEY];
+  try{PATIENT={id,name:prev[0].id===id?prev[0].name:''};KEY=keyFor(id);return snapshot();}catch{return null;}finally{[PATIENT,KEY]=prev;}
+ }
  function reset(){try{localStorage.removeItem(KEY);}catch{throw new Error('This browser could not clear the saved demo.');}notify();}
  window.addEventListener('storage',e=>{if(e.key===KEY||e.key===null)notify();});
- window.CandexReferralStore={key:KEY,patient:clone(PATIENT),methods:[...METHODS],get:()=>snapshot(),releaseReport,offeredSlots,bookAppointment,completeFollowUp,recordReferral,reset,subscribe:listener=>{listeners.add(listener);return()=>listeners.delete(listener);},validate:state=>clone(validate(clone(state)))};
+ window.CandexReferralStore={get key(){return KEY;},get patient(){return clone(PATIENT);},select,peek,methods:[...METHODS],get:()=>snapshot(),releaseReport,offeredSlots,bookAppointment,completeFollowUp,recordReferral,reset,subscribe:listener=>{listeners.add(listener);return()=>listeners.delete(listener);},validate:state=>clone(validate(clone(state)))};
 })();

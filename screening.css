@@ -1,0 +1,91 @@
+/* Health check: symptom checklist, results and the simulated cohort KPIs. */
+.symptom-group{border:1px solid var(--line);border-radius:9px;padding:6px 16px 8px;margin:16px 0 0;background:var(--soft)}
+.symptom-group legend{font-size:.78rem;font-weight:600;padding:0 6px;color:var(--ink)}
+.symptom-group .check-row .badge{margin-left:6px;vertical-align:1px}
+.field-note{font-size:.7rem;color:var(--muted);margin:10px 0 0}
+.notice-urgent{border-left-color:var(--orange);background:#fcf0df;color:#5e3d14}
+.notice-urgent strong{color:#5e3d14}
+.screening-result{margin-bottom:4px}
+.screening-row h3{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.84rem;margin:0 0 4px}
+.screening-row p{margin:0;font-size:.76rem;color:var(--muted)}
+.factor-list{margin:0 0 12px;padding-left:18px;font-size:.78rem}
+.factor-list li{margin-bottom:8px}
+/* Purple icons and artwork on the patient health check */
+.form-section.with-icon{display:flex;align-items:center;gap:10px}
+.sec-icon{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#efe6f8,#dcc8ef);color:var(--green);flex-shrink:0}
+.sec-icon .icon{width:17px;height:17px}
+.health-art{background:linear-gradient(160deg,#f7f2fb,#ece2f6);border:1px solid #e1d5ec;border-radius:12px;padding:16px 16px 14px;text-align:center}
+.health-art img{width:100%;height:auto;max-width:300px;display:block;margin:0 auto}
+.health-art p{font-size:.74rem;color:#5d4d6e;margin:8px 0 0}
+.symptom-group legend::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#9b6fc4;margin-right:7px;vertical-align:1px}
+.factor-list{list-style:none;padding-left:0}
+.factor-list li{display:flex;gap:10px;align-items:flex-start}
+.factor-icon{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;background:#efe6f8;color:var(--green);flex-shrink:0;margin-top:1px}
+.factor-icon .icon{width:13px;height:13px}
+.screening-row{align-items:flex-start}
+.editing-banner,.sent-notice{display:flex;align-items:center;gap:10px;background:#f2ecf8;border:1px solid #e0d3ec;border-radius:9px;padding:11px 14px;font-size:.75rem;margin:0 0 16px;color:var(--ink)}
+.editing-banner .icon,.sent-notice .icon{color:var(--green);width:17px;height:17px;flex-shrink:0}
+.editing-banner{flex-wrap:wrap}
+.editing-banner .text-btn{margin-left:auto}
+.sent-notice span{flex:1}
+.sent-notice{margin-top:0;border-left:3px solid var(--green)}
+
+/* Doctor: Quality & equity page, new health checks, worklist actions */
+.cohort-strip{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 18px;font-size:.74rem}
+.cohort-strip .text-btn{margin-left:auto}
+.row-new td{background:#f8f3fc}
+.cohort-new td small{display:block;color:var(--muted);font-size:.67rem}
+.row-actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.row-actions .text-btn{white-space:nowrap}
+.new-checks .record-row{flex-wrap:wrap}
+.new-checks .record-row>div{flex:1;min-width:200px}
+.new-checks .record-row>.badge,.new-checks .record-row>.text-btn{margin-left:0}
+
+/* Imaging review: patient picker and CT viewer */
+.scan-picker{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;padding:18px 22px}
+.scan-picker label{display:flex;align-items:center;gap:7px}
+.scan-picker label .icon{width:15px;height:15px;color:var(--green)}
+.ct-frame{position:relative;width:min(100%,384px);aspect-ratio:1;border-radius:8px;overflow:hidden;background:#000}
+.ct-frame img{width:100%;height:100%;display:block}
+.scan-stage .ct-frame svg{position:absolute;inset:0;width:100%;height:100%;max-width:none;pointer-events:none}
+.ct-frame polygon{fill:rgba(213,186,240,.18);stroke:#e2c6ff;stroke-width:1.2;stroke-linejoin:round}
+.ct-frame polygon.ct-other{fill:none;stroke:#f4c98b;stroke-dasharray:3 2}
+.ct-controls .ct-slider{flex:1 1 220px}
+.ct-controls input[type=range]{flex:1;min-width:120px}
+.empty-scan{text-align:center;padding:34px 22px;margin-bottom:22px}
+.empty-scan h2{margin:10px 0 6px}
+.empty-scan p{font-size:.78rem;color:var(--muted);max-width:520px;margin:0 auto}
+.empty-scan-icon{display:inline-grid;place-items:center;width:52px;height:52px;border-radius:14px;background:#efe6f8;color:var(--green)}
+@media (max-width:760px){.scan-picker{grid-template-columns:1fr}}
+
+.cohort-dropdown{margin-bottom:24px}
+.cohort-dropdown>summary{list-style:none;display:flex;align-items:center;gap:14px;cursor:pointer;border-radius:8px}
+.cohort-dropdown>summary::-webkit-details-marker{display:none}
+.cohort-dropdown>summary:focus-visible{outline:2px solid var(--green);outline-offset:4px}
+.cohort-summary-text{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.cohort-summary-text .eyebrow{margin:0}
+.cohort-summary-text strong{font-size:1rem;font-weight:600}
+.cohort-summary-text small{color:var(--muted);font-size:.72rem}
+.cohort-chevron{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:50%;flex-shrink:0}
+.cohort-chevron .icon{width:16px;height:16px;transform:rotate(90deg);transition:transform .2s}
+.cohort-dropdown[open] .cohort-chevron .icon{transform:rotate(-90deg)}
+.cohort-dropdown[open]>summary{padding-bottom:14px;border-bottom:1px solid var(--line)}
+@media (max-width:700px){.cohort-dropdown>summary{flex-wrap:wrap}.cohort-dropdown>summary .badge{order:3}}
+.cohort-card .metric-grid{margin-top:16px}
+.cohort-card .two-col{margin-bottom:12px}
+.cohort-details{margin-top:8px;font-size:.78rem}
+.cohort-details summary{cursor:pointer;font-weight:600;padding:10px 0}
+.cohort-details td{padding:10px 12px}
+.cohort-details td:first-child,.cohort-details td:nth-child(2){white-space:nowrap}
+#dialog .record-row.screening-row{padding:12px 0;border-bottom:1px solid var(--line)}
+.symptom-advice p{margin:6px 0 0}
+.symptom-advice p[translate="no"]{font-weight:550}
+
+/* AI second reader (research) on the imaging review page */
+.ct-frame circle.ct-ai{fill:none;stroke:#f4c98b;stroke-width:2;stroke-dasharray:5 3}
+.ct-frame text.ct-ai-label{fill:#f4c98b;font-size:11px;font-weight:700;font-family:sans-serif}
+.ai-card .card-head{flex-wrap:wrap;gap:8px}
+.ai-card .ai-miss{border-left-color:var(--orange);background:#fcf0df;color:#5e3d14;margin:8px 0 6px}
+.ai-card .ai-report summary{cursor:pointer;font-weight:600;font-size:.74rem;margin-top:12px}
+.ai-card .ai-report p{font-size:.74rem;color:var(--muted);margin:6px 0 0}
+.ai-card .ai-prov{font-size:.66rem;margin-top:10px}
