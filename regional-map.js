@@ -178,7 +178,7 @@
       const button = el('button', 'button');
       button.type = 'button';
       Object.assign(button.dataset, { action: 'notify-doctors', code: selected, region: row[1], regionFi: row[2], metric: metric.id, metricLabel: metric.label, metricFi: metric.fi, display: displayValue(metric, value) });
-      if (sent && window.CandexAlerts.isResolved?.(sent)) { button.disabled = true; button.textContent = text('Resolved by doctor', 'Lääkäri ratkaissut'); }
+      if (sent && window.CandexAlerts.isResolved?.(sent)) { button.disabled = true; button.textContent = text('Resolved by doctor', 'Lääkärin ratkaisema'); }
       else if (sent && sent.status === 'open') { button.disabled = true; button.textContent = text('Doctors notified · waiting for acknowledgement', 'Lääkäreille ilmoitettu · odottaa kuittausta'); }
       else if (sent) { box.append(el('p', '', text('The previous request was acknowledged by a doctor. You can send a new request if action is still needed.', 'Lääkäri kuittasi edellisen pyynnön. Voit lähettää uuden pyynnön, jos toimia tarvitaan yhä.'))); button.textContent = text('Notify doctors again', 'Ilmoita lääkäreille uudelleen'); }
       else button.textContent = text('Notify doctors', 'Ilmoita lääkäreille');
