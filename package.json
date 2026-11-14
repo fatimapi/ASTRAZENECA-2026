@@ -1,0 +1,18 @@
+{
+  "name": "candex",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Candex: accessible patient and clinician prototype for equitable cancer care in Finland (Junction 2026, AstraZeneca challenge).",
+  "scripts": {
+    "dev": "serve . --listen 8000 --no-clipboard",
+    "check": "node scripts/build.mjs --check-only",
+    "build": "node scripts/build.mjs",
+    "start": "serve dist --listen 8000 --no-clipboard"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -27,13 +27,23 @@ Do not add API credentials to browser assets. A real implementation needs authen
 
 ## Run locally
 
-Buildless HTML/CSS/JavaScript. No npm install or build is required.
+Plain HTML/CSS/JavaScript. Serve the folder over HTTP so JavaScript modules work, then visit
+http://localhost:8000.
+
+With Node.js 20 or newer:
 
 ```sh
-python -m http.server 8000
+npm install      # once
+npm run dev      # serve the project folder at http://localhost:8000
+npm run build    # check the JavaScript for errors and copy the site into dist/
+npm start        # serve the built dist/ folder at http://localhost:8000
 ```
 
-Visit http://localhost:8000. Serve over HTTP so JavaScript modules work.
+Without Node.js:
+
+```sh
+python3 -m http.server 8000
+```
 
 ## Upload to GitHub
 
