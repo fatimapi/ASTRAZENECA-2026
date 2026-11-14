@@ -10,7 +10,7 @@ Leaving or switching clears clinical-agent conversations and cached backend cred
 
 ## Appearance and readability
 
-Use **Dark mode** in the landing page or Dashboard header, or in **Accessibility**, to switch appearance. The initial appearance follows your device preference; an explicit choice is saved in this browser and synchronised across tabs. Changing appearance keeps current forms and drafts intact. Text is larger by default, with an additional **Larger text** option. KPI labels above the numbers use larger, bold text in both themes.
+Use **Dark mode** in **Accessibility** to switch appearance. The initial appearance follows your device preference; an explicit choice is saved in this browser and synchronised across tabs. Changing appearance keeps current forms and drafts intact. Text is larger by default, with an additional **Larger text** option. KPI labels above the numbers use larger, bold text in both themes.
 
 An accessible patient and doctor prototype, with a real, locally run chest-X-ray DICOM model connector. The existing records, CT illustration, appointments and quality metrics are fictional examples. The separate **Doctor → DICOM AI analysis** page displays actual model output only after a successful backend request.
 
