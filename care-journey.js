@@ -30,9 +30,9 @@ function portalPatient() {
 const healthCheck = id => window.candexScreening?.healthPatient?.(id) || null;
 const imaging = id => read().imaging[id] || null;
 
-function completeImaging(id, {ct = null, xray = false} = {}) {
+function completeImaging(id, {ct = null, xray = false, uploaded = false} = {}) {
   const v = read();
-  v.imaging[id] = {at: new Date().toISOString(), by: 'Dr. Emilia Koski', ct, xray: !!xray};
+  v.imaging[id] = {at: new Date().toISOString(), by: 'Dr. Emilia Koski', ct, xray: !!xray, ...(uploaded ? {uploaded: true} : {})};
   write(v); return v.imaging[id];
 }
 function undoImaging(id) { const v = read(); delete v.imaging[id]; write(v); }
@@ -51,7 +51,7 @@ function journeyOf(id) {
 
 // The pathway stages for one patient, in the shape app.js draws.
 function stages(id = portalPatient().id) {
-  const h = healthCheck(id), img = imaging(id), j = journeyOf(id) || {};
+  const h = healthCheck(id), img = imaging(id), j = journeyOf(id) || {}, cc = window.candexCtCompare?.forPatient?.(id, 'en');
   const report = j.currentReport, appt = j.activeAppointment, follow = j.currentFollowUp, decision = j.currentDecision;
   const hasStart = !!h || id === AINO.id && !!(img || report);
   const st = (done, current) => (done ? 'done' : current ? 'current' : 'upcoming');
@@ -76,7 +76,7 @@ function stages(id = portalPatient().id) {
     {key: 'imaging', short: 'CT and X-ray', title: 'CT and X-ray', icon: 'scan', status: s2,
       date: img ? fmt(img.at) : hasStart ? 'Being arranged' : 'After screening', shortDate: img ? fmt(img.at) : hasStart ? 'Next' : '',
       text: img ? 'Your CT scan and chest X-ray have been analysed by your doctor.' : 'A chest CT scan and X-ray look more closely at your lungs. Your doctor analyses the images.',
-      details: img ? [['Analysed by', img.by], ['Analysis completed', fmt(img.at, true)], ['Images', [img.ct ? `CT ${img.ct}` : null, img.xray ? 'Chest X-ray' : null].filter(Boolean).join(' · ') || 'CT and X-ray']] : [['Status', hasStart ? 'Waiting for your doctor’s analysis' : 'After screening']],
+      details: img ? [['Analysed by', img.by], ['Analysis completed', fmt(img.at, true)], ['Images', [img.ct ? `CT ${img.ct}` : null, img.xray ? 'Chest X-ray' : null].filter(Boolean).join(' · ') || 'CT and X-ray'], ...(cc?.approved ? [['Your CT', 'Compared with public reference scans and checked by your doctor']] : [])] : [['Status', hasStart ? 'Waiting for your doctor’s analysis' : 'After screening']],
       means: 'Many lung findings are not cancer. Your doctor explains what the images show.',
       action: img ? ['scan-record', 'Understand the imaging result'] : null},
     {key: 'results', short: 'Results', title: 'Results and report', icon: 'chat', status: s3,
@@ -108,6 +108,8 @@ function keyDates(id = portalPatient().id) {
   const out = [];
   if (h) out.push([h.submittedAt, 'Health check submitted', 'done']);
   if (img) out.push([img.at, 'CT and X-ray analysed', 'done']);
+  const cc = window.candexCtCompare?.forPatient?.(id, 'en');
+  if (cc?.approved) out.push([cc.approval.at, 'CT comparison checked by your doctor', 'done']);
   if (j.currentReport) out.push([j.currentReport.approvedAt, 'Report reviewed by your doctor', 'done']);
   if (j.activeAppointment) out.push([j.activeAppointment.startsAt, `Follow-up · ${j.activeAppointment.method}`, 'current']);
   if (j.currentFollowUp) out.push([j.currentFollowUp.completedAt, 'Follow-up completed', 'done']);
@@ -118,7 +120,8 @@ function keyDates(id = portalPatient().id) {
 // Reset every dashboard: all demo data in this browser, keeping language, theme and display settings.
 const KEEP = new Set(['candex-lang', 'candex-theme', 'candex-display']);
 function resetAll() {
-  for (const store of [localStorage, sessionStorage]) {
+  const stores = [typeof localStorage !== 'undefined' ? localStorage : null, typeof sessionStorage !== 'undefined' ? sessionStorage : null].filter(Boolean);
+  for (const store of stores) {
     try {
       const keys = []; for (let i = 0; i < store.length; i++) { const k = store.key(i); if (k && k.startsWith('candex-') && !KEEP.has(k)) keys.push(k); }
       keys.forEach(k => store.removeItem(k));
@@ -183,7 +186,7 @@ window.candexI18n?.extend?.({
   'Your doctor recorded that you do not need a specialist referral at this time.': 'Lääkärisi kirjasi, ettet tarvitse lähetettä erikoislääkärille tällä hetkellä.',
   'If your doctor refers you, a specialist reviews your images and history and decides on any further tests.': 'Jos lääkärisi tekee lähetteen, erikoislääkäri arvioi kuvasi ja taustasi ja päättää mahdollisista lisätutkimuksista.',
   'Referred to': 'Lähete kohteeseen', 'Referred by': 'Lähettäjä', 'Reason': 'Syy', 'Only if your doctor refers you': 'Vain jos lääkärisi tekee lähetteen',
-  'Health check submitted': 'Terveyskysely lähetetty', 'CT and X-ray analysed': 'TT ja röntgen analysoitu', 'Report reviewed by your doctor': 'Lääkärisi tarkisti raportin', 'Follow-up completed': 'Seuranta tehty',
+  'Health check submitted': 'Terveyskysely lähetetty', 'CT comparison checked by your doctor': 'Lääkärisi tarkisti TT-vertailun', 'Your CT': 'TT-kuvauksesi', 'Compared with public reference scans and checked by your doctor': 'Verrattu julkisiin vertailukuvauksiin ja lääkärisi tarkistama', 'Uploaded CT comparison': 'Ladatun TT:n vertailu', 'CT and X-ray analysed': 'TT ja röntgen analysoitu', 'Report reviewed by your doctor': 'Lääkärisi tarkisti raportin', 'Follow-up completed': 'Seuranta tehty',
 });
 window.candexI18n?.extend?.({}, [
   [/^Welcome, (.+)\. Let’s take your next step with confidence\.$/, (_, n) => `Tervetuloa, ${n}. Otetaan seuraava askel luottavaisin mielin.`],

@@ -44,10 +44,11 @@ function record(id) {
     ...(r.technique ? {'Imaging technique': rows(r.technique)} : {'Imaging': 'No CT study linked'}),
     ...(r.findings ? {'Structured findings': {primary: rows(r.findings.primary), otherNodules: r.findings.others, nodal: r.findings.nodal, distant: r.findings.distant, category: r.findings.category}} : {}),
     ...(r.ai && r.ai.summary ? {'AI second reader': {summary: r.ai.summary, verdict: r.ai.verdictText, comparison: r.ai.rows.map(x => x.join(' | ')), caveat: 'Unvalidated research read; not used for urgency or recommendations.'}} : {}),
+    ...(() => { const cc = window.candexCtCompare?.forPatient?.(id, 'en'); return cc ? {'Uploaded CT comparison': {status: cc.approved ? `Approved by ${cc.approval.by}; linked reference study ${cc.linked}` : 'Awaiting clinician approval: do not rely on it', closestPublicStudy: cc.closest, similarityPercent: cc.similarity, aiRead: {nodulePresent: cc.read.nodule_present, side: cc.read.location?.side, longAxisMm: cc.read.long_axis_mm, composition: cc.read.composition, lungRads: cc.read.lung_rads}, topMatches: cc.top.map(m => `${m.caseId} ${m.similarity}% (${m.diameter} mm, Lung-RADS ${m.band}, ${m.side || 'side unknown'})`), summary: cc.summary, caveat: 'Unvalidated AI read; the match compares nodule features only; the reference is a public scan, not the patient’s own.'}} : {}; })(),
     'Impression': {bottomLine: r.impression.bottomLine, keyFindings: r.impression.bullets, pertinentNegatives: r.impression.negatives, notEvaluated: r.impression.notEvaluated, recommendations: r.impression.recs},
   };
 }
-const SECTIONS = ['Patient', 'Care pathway', 'Clinical context', 'Imaging technique', 'Structured findings', 'AI second reader', 'Impression'];
+const SECTIONS = ['Patient', 'Care pathway', 'Clinical context', 'Imaging technique', 'Structured findings', 'AI second reader', 'Uploaded CT comparison', 'Impression'];
 
 // ---------- Backend calls ----------
 async function api(path, body) {

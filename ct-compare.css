@@ -1,0 +1,20 @@
+/* Doctor -> CT upload and comparison; Imaging review X-ray section */
+.ctc-layout{display:grid;grid-template-columns:minmax(260px,330px) minmax(0,1fr);gap:20px;align-items:start;margin-bottom:24px}
+.ctc-controls{display:flex;flex-direction:column;gap:12px;position:sticky;top:14px}
+.ctc-controls h2{margin:0}.ctc-label{display:block;font-weight:600;font-size:.82rem;margin-bottom:6px}
+.ctc-file{cursor:pointer}.ctc-main{min-width:0}
+.ctc-result{display:flex;flex-direction:column;gap:12px}
+.ctc-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ctc-pair figure{margin:0}.ctc-pair img{width:100%;display:block;border-radius:8px;background:#000}
+.ctc-pair figcaption{font-size:.74rem;color:var(--muted,#6b6475);margin-top:4px}
+.ctc-points{margin:0;padding-left:20px;line-height:1.5}
+.ctc-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ctc-cols h4{margin:0 0 6px}.ctc-cols ul{margin:0;padding-left:20px;line-height:1.5;font-size:.84rem}
+.ctc-raw h4{margin:12px 0 6px}
+.ctc-kv{display:grid;grid-template-columns:minmax(150px,40%) 1fr;gap:5px 12px;margin:0;font-size:.82rem}.ctc-kv dt{color:var(--muted,#6b6475);font-weight:600}.ctc-kv dd{margin:0}
+.ctc-montage{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ctc-montage img{width:100%;display:block;border-radius:6px;background:#000}
+.ctc-quote{font-size:.82rem;border-left:3px solid var(--line,#e2dce8);padding-left:10px;margin:8px 0}
+.ctc-table{font-size:.78rem}.ctc-table tr.is-top td{font-weight:600;background:rgba(109,63,192,.06)}
+.ctc-approve{border-top:1px solid var(--line,#e2dce8);padding-top:12px;display:flex;flex-direction:column;gap:9px}.ctc-approve h3{margin:0}
+.ctc-approve .button[disabled]{opacity:.5;cursor:not-allowed}
+.scan-mode{margin-bottom:16px}.scan-mode .field{max-width:360px;margin:0}
+.xray-stage{background:#000;display:flex;justify-content:center;border-radius:10px;overflow:hidden}.xray-stage img{max-width:100%;max-height:440px;display:block}
+@media (max-width:900px){.ctc-layout{grid-template-columns:1fr}.ctc-controls{position:static}.ctc-pair,.ctc-cols{grid-template-columns:1fr}}

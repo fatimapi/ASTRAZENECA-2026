@@ -1,0 +1,5 @@
+patient,readers,truth_mm,measured_mm,short_mm,error_mm,texture,seconds
+LIDC-IDRI-0005,4,7.9,7.0,6.3,-0.9,4.8,0.31
+LIDC-IDRI-0079,4,16.1,14.0,10.5,-2.1,4.8,0.3
+LIDC-IDRI-0151,3,10.2,9.9,7.9,-0.3,5,0.34
+LIDC-IDRI-0559,4,6.0,5.3,3.4,-0.7,5,0.29

@@ -18,6 +18,7 @@ from starlette.concurrency import run_in_threadpool
 from .imaging import MAX_FILE_BYTES, ImageRejected, prepare_dicom
 from .model import ChestXrayEngine, LIMITATIONS, ModelUnavailable
 from .agent import router as agent_router
+from .ct_compare import router as ct_router
 
 # pydicom may include raw tag values in both warnings and logging records.
 # Configure once at service startup, rather than toggling logging per request.
@@ -28,6 +29,7 @@ dicom_logger.propagate = False
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_BODY_BYTES = MAX_FILE_BYTES + 128 * 1024
+CT_MAX_BYTES = 400 * 1024 * 1024
 engine = ChestXrayEngine()
 analysis_slot = asyncio.Semaphore(1)
 
@@ -59,6 +61,27 @@ class InferenceRequestGuard:
                 length = 1 << 30
             if length > 256 * 1024:
                 return await JSONResponse({"detail": "Request is too large for the agent."}, status_code=413)(scope, receive, private_send)
+        if scope.get("path") == "/api/ct/compare" and scope.get("method") == "POST":
+            # A CT series is many files: authenticate first, cap the body while it streams (no buffering here).
+            key = configured_key()
+            if not key or not secrets.compare_digest(headers.get(b"authorization", b""), ("Bearer " + key).encode("ascii")):
+                return await JSONResponse({"detail": "A valid backend access token is required."}, status_code=401)(scope, receive, private_send)
+            try:
+                length = int(headers.get(b"content-length", b"0"))
+            except ValueError:
+                length = CT_MAX_BYTES + 1
+            if length > CT_MAX_BYTES:
+                return await JSONResponse({"detail": "The CT upload is too large (limit 400 MB)."}, status_code=413)(scope, receive, private_send)
+            seen = 0
+
+            async def counted():
+                nonlocal seen
+                message = await receive()
+                seen += len(message.get("body", b""))
+                if seen > CT_MAX_BYTES:
+                    raise HTTPException(413, "The CT upload is too large (limit 400 MB).")
+                return message
+            return await self.app(scope, counted, private_send)
         if scope.get("path") == "/api/analyze" and scope.get("method") == "POST":
             key = configured_key()
             if not key:
@@ -100,6 +123,7 @@ class InferenceRequestGuard:
 
 app = FastAPI(title="Candex DICOM research", docs_url=None, redoc_url=None, openapi_url=None)
 app.include_router(agent_router)
+app.include_router(ct_router)
 app.add_middleware(InferenceRequestGuard)
 origins = []
 for origin in os.getenv("CANDEX_ALLOWED_ORIGINS", "").split(","):
