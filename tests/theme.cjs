@@ -74,11 +74,11 @@ function fixture({stored, dark = false, blocked = false, dom = true, mediaAPI = 
 
 for (const [stored, systemDark, expected] of [
   ['dark', false, 'dark'], ['light', true, 'light'],
-  [undefined, false, 'light'], [undefined, true, 'dark'],
-  ['unexpected', true, 'dark'], ['__proto__', false, 'light']
+  [undefined, false, 'light'], [undefined, true, 'light'],
+  ['unexpected', true, 'light'], ['__proto__', false, 'light']
 ]) {
   const f = fixture({stored, dark: systemDark});
-  equal(f.api.mode, expected, 'Valid saved choice overrides system; absent/invalid choice follows system');
+  equal(f.api.mode, expected, 'A valid saved choice is used; otherwise light by default, even on a dark system');
   equal(f.root.attributes['data-theme'], expected, 'Initial HTML appearance is set before UI render');
   equal(f.meta.attributes.content, expected === 'dark' ? '#18121f' : '#674287', 'Browser theme colour follows appearance');
   equal(f.writes.length, 0, 'Reading initial appearance does not create an explicit user preference');
@@ -86,7 +86,7 @@ for (const [stored, systemDark, expected] of [
 
 // It is safe to run from <head>, before body, controls or metadata are present.
 {
-  const f = fixture({dom: false, dark: true});
+  const f = fixture({dom: false, stored: 'dark'});
   equal(f.root.attributes['data-theme'], 'dark', 'Dark appearance is applied without a body');
   f.mount();
   check(f.api.button().includes('aria-pressed="true"'), 'Newly rendered controls reflect the initial dark mode');
@@ -124,28 +124,24 @@ for (const [stored, systemDark, expected] of [
   check(!/<input|password|email|token|credential/i.test(f.api.button()), 'Appearance control collects no credentials');
 }
 
-// Automatic changes follow the operating system until a user makes a choice.
+// Light by default: the operating system's dark mode does not switch the app.
 {
   const f = fixture();
   f.system(true);
-  equal(f.api.mode, 'dark', 'An unconfigured preference follows a system change');
-  f.system(false);
-  equal(f.api.mode, 'light', 'System appearance can switch in either direction');
+  equal(f.api.mode, 'light', 'A dark system does not change the light default');
   f.api.setTheme('dark');
   f.system(false);
   equal(f.api.mode, 'dark', 'System changes cannot override an explicit user choice');
   f.storage('light');
   equal(f.api.mode, 'light', 'A change in another tab updates appearance');
-  f.system(true);
-  equal(f.api.mode, 'light', 'Cross-tab explicit choice also overrides the system');
+  f.storage('dark');
+  equal(f.api.mode, 'dark', 'Cross-tab dark choice applies');
   f.storage(null);
-  equal(f.api.mode, 'dark', 'Removing the preference returns to the current system appearance');
-  f.system(false);
-  equal(f.api.mode, 'light', 'System tracking resumes after clearing the preference');
+  equal(f.api.mode, 'light', 'Removing the preference returns to the light default');
   f.storage('dark', 'unrelated-key');
   equal(f.api.mode, 'light', 'Other storage events do not affect appearance');
   f.storage('invalid');
-  equal(f.api.mode, 'light', 'Invalid cross-tab values fall back to system appearance');
+  equal(f.api.mode, 'light', 'Invalid cross-tab values fall back to the light default');
 }
 
 {
@@ -158,7 +154,7 @@ for (const [stored, systemDark, expected] of [
   equal(f.api.mode, 'light', 'Blocked storage permits switching back');
   const legacy = fixture({mediaAPI: 'legacy'});
   legacy.system(true);
-  equal(legacy.api.mode, 'dark', 'Older media-query change listeners remain supported');
+  equal(legacy.api.mode, 'light', 'Older browsers also start in light mode');
   equal(fixture({mediaAPI: 'missing'}).api.mode, 'light', 'Without system detection, the initial appearance remains usable');
 }
 

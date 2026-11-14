@@ -3,7 +3,12 @@
 let currentCleanup;
 let sessionBackend = '';
 let sessionToken = '';
+// Latest analysed X-ray per patient, for Imaging review and the report. Page memory only
+// (never browser storage): cleared on "Clear image & results", on leaving the session and on reload.
+const xrayStore = () => (window.candexXray ||= {byPatient: {}});
+const currentPatient = () => { try { return typeof state !== 'undefined' && state?.selected ? String(state.selected) : null; } catch { return null; } };
 export function resetDicomSession() {
+  if (window.candexXray) window.candexXray.byPatient = {};
   sessionBackend = '';
   sessionToken = '';
   window.candexAgent?.setToken?.('');
@@ -374,6 +379,7 @@ export function mountDicomPanel(container) {
   listen(permissionCheck, 'change', syncControls);
   listen(cancelButton, 'click', () => activeController?.abort());
   listen(clearButton, 'click', () => {
+    const pid = currentPatient(); if (pid && window.candexXray) delete window.candexXray.byPatient[pid];
     fileInput.value = '';
     chestCheck.checked = false;
     permissionCheck.checked = false;
@@ -422,6 +428,12 @@ export function mountDicomPanel(container) {
       if (!alive) return;
       validateResult(result);
       lastResult = result;
+      const pid = currentPatient();
+      if (pid && result.image?.preview_png_base64) {
+        const sorted = [...result.findings].sort((a, b) => b.score - a.score);
+        xrayStore().byPatient[pid] = {at: new Date().toISOString(), image: `data:image/png;base64,${result.image.preview_png_base64}`, model: modelName(result.model),
+          top: sorted.slice(0, 3).map(f => ({label: text(f.label, 80), score: f.score})), nodule: sorted.filter(f => /^(Nodule|Mass)$/.test(f.label)).map(f => ({label: f.label, score: f.score})), summary: null, points: [], live: false, lang: reportLang()};
+      }
       renderResult(result);
       setStatus(requestStatus, 'Analysis completed by the backend. Review the model outputs and limitations below.', 'success');
     } catch (error) { if (alive) setStatus(requestStatus, networkError(error, 'Analysis'), 'error'); }
@@ -448,6 +460,8 @@ export function mountDicomPanel(container) {
         add.disabled = true; add.textContent = 'Added to the report draft';
       });
       card.replaceChildren(head, element('p', 'dicom-ai-text', text(data.summary, 3000)), list, element('p', 'dicom-small-note', note), add);
+      const rec = xrayStore().byPatient[currentPatient()];
+      if (rec && result === lastResult) Object.assign(rec, {summary: text(data.summary, 1500), points: data.key_points.slice(0, 4).map(x => text(x, 300)), live, lang});
     };
     card.replaceChildren(element('h2', '', 'AI summary'), element('p', 'dicom-status', 'Writing a short summary of these scores with live AI, then checking it against the raw numbers…'));
     const L = (en, fi) => (lang === 'fi' ? fi : en);

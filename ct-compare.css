@@ -8,7 +8,11 @@
 .ctc-pair figcaption{font-size:.74rem;color:var(--muted,#6b6475);margin-top:4px}
 .ctc-points{margin:0;padding-left:20px;line-height:1.5}
 .ctc-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}.ctc-cols h4{margin:0 0 6px}.ctc-cols ul{margin:0;padding-left:20px;line-height:1.5;font-size:.84rem}
-.ctc-raw h4{margin:12px 0 6px}
+.ctc-raw{border-top:1px solid var(--line,#e2dce8);padding-top:12px}.ctc-raw>h3{margin:0 0 4px}.ctc-raw h4{margin:12px 0 6px}
+.ctc-sub{margin-top:10px}.ctc-sub>summary{font-size:.84rem}
+.ctc-sum>summary{flex-wrap:wrap}.ctc-sum>summary .badge{font-weight:500}.ctc-sum .ctc-points{margin-bottom:8px}
+.ctc-compare h3{margin:4px 0 8px}.ctc-compare .table-wrap{margin-bottom:8px}
+.ctc-feat th[scope=row]{text-align:left;font-weight:600;white-space:nowrap}.ctc-feat td:last-child,.ctc-obs td:first-child{white-space:nowrap;width:1%}
 .ctc-kv{display:grid;grid-template-columns:minmax(150px,40%) 1fr;gap:5px 12px;margin:0;font-size:.82rem}.ctc-kv dt{color:var(--muted,#6b6475);font-weight:600}.ctc-kv dd{margin:0}
 .ctc-montage{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ctc-montage img{width:100%;display:block;border-radius:6px;background:#000}
 .ctc-quote{font-size:.82rem;border-left:3px solid var(--line,#e2dce8);padding-left:10px;margin:8px 0}
@@ -18,3 +22,14 @@
 .scan-mode{margin-bottom:16px}.scan-mode .field{max-width:360px;margin:0}
 .xray-stage{background:#000;display:flex;justify-content:center;border-radius:10px;overflow:hidden}.xray-stage img{max-width:100%;max-height:440px;display:block}
 @media (max-width:900px){.ctc-layout{grid-template-columns:1fr}.ctc-controls{position:static}.ctc-pair,.ctc-cols{grid-template-columns:1fr}}
+/* Imaging review overview and results */
+.ir-overview{margin-bottom:16px}.ir-overview .ir-functions{margin:0 0 12px;padding-left:20px;line-height:1.55;font-size:.88rem}
+.ir-results{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.ir-result{display:flex;flex-direction:column;gap:10px}.ir-result .card-head{margin-bottom:0}
+.ir-points{margin:0;padding-left:20px;line-height:1.5;font-size:.84rem}
+.ir-xray{max-height:300px}.ir-xray img{max-height:300px}
+.ir-empty p{margin:0}
+.ir-more{margin:8px 0 16px}.ir-more>summary{font-size:.92rem}
+@media (max-width:900px){.ir-results{grid-template-columns:1fr}}
+.ctc-table .badge{white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
+.ctc-feat td:last-child,.ctc-obs td:first-child{min-width:104px}

@@ -4,11 +4,11 @@
   const KEY = 'candex-theme';
   const valid = value => value === 'light' || value === 'dark';
   const FI = {'Dark mode':'Tumma tila','Switch to dark mode':'Vaihda tummaan tilaan','Switch to light mode':'Vaihda vaaleaan tilaan'};
-  let preference = null, media;
+  // Light by default, whatever the operating system uses; dark only when chosen.
+  const DEFAULT = 'light';
+  let preference = null;
   try { const saved = localStorage.getItem(KEY); if (valid(saved)) preference = saved; } catch {}
-  try { media = window.matchMedia('(prefers-color-scheme: dark)'); } catch {}
-  const system = () => media?.matches ? 'dark' : 'light';
-  let mode = preference || system();
+  let mode = preference || DEFAULT;
   const tr = value => window.candexI18n?.lang === 'fi' ? FI[value] || value : value;
   function sync() {
     const dark = mode === 'dark';
@@ -44,11 +44,8 @@
   window.addEventListener('storage', event => {
     if (event.key !== KEY) return;
     preference = valid(event.newValue) ? event.newValue : null;
-    mode = preference || system(); sync();
+    mode = preference || DEFAULT; sync();
   });
-  const systemChanged = () => { if (!preference) { mode = system(); sync(); } };
-  if (media?.addEventListener) media.addEventListener('change', systemChanged);
-  else media?.addListener?.(systemChanged);
   window.CandexTheme = Object.freeze({get mode() { return mode; }, setTheme, toggle: () => setTheme(mode === 'dark' ? 'light' : 'dark'), button});
   sync();
 })();
