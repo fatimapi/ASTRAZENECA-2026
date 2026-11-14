@@ -170,6 +170,21 @@
       svg.setAttribute('viewBox', `${x} ${y} ${width} ${height}`);
       zoomOut.disabled = zoom === 1; zoomIn.disabled = zoom >= 4; reset.disabled = zoom === 1;
     }
+    // Red regions: let the quality administrator send an urgent-action request to doctors (handled by app.js).
+    function notifyBox(metric, value) {
+      const box = el('div', 'regional-map-notify');
+      box.append(el('p', '', text('This region needs urgent action. Notify the doctors so patients from this region are reviewed first.', 'Maakunta tarvitsee kiireellisiä toimia. Ilmoita lääkäreille, jotta tämän maakunnan potilaat arvioidaan ensin.')));
+      const row = FALLBACK_NAMES.find(r => r[0] === selected), sent = window.CandexAlerts?.find(selected, metric.id);
+      const button = el('button', 'button');
+      button.type = 'button';
+      Object.assign(button.dataset, { action: 'notify-doctors', code: selected, region: row[1], regionFi: row[2], metric: metric.id, metricLabel: metric.label, metricFi: metric.fi, display: displayValue(metric, value) });
+      if (sent && window.CandexAlerts.isResolved?.(sent)) { button.disabled = true; button.textContent = text('Resolved by doctor', 'Lääkäri ratkaissut'); }
+      else if (sent && sent.status === 'open') { button.disabled = true; button.textContent = text('Doctors notified · waiting for acknowledgement', 'Lääkäreille ilmoitettu · odottaa kuittausta'); }
+      else if (sent) { box.append(el('p', '', text('The previous request was acknowledged by a doctor. You can send a new request if action is still needed.', 'Lääkäri kuittasi edellisen pyynnön. Voit lähettää uuden pyynnön, jos toimia tarvitaan yhä.'))); button.textContent = text('Notify doctors again', 'Ilmoita lääkäreille uudelleen'); }
+      else button.textContent = text('Notify doctors', 'Ilmoita lääkäreille');
+      box.append(button);
+      return box;
+    }
     function updateDetails() {
       const metric = METRICS[metricIndex], value = FIXTURES[selected][metricIndex], status = evaluate(metric.id, value);
       const title = el('h3', '', selectedName(selected)); const code = el('p', 'regional-map-code', `${text('Administrative region', 'Maakunta')} ${selected} · 2026`);
@@ -179,6 +194,7 @@
       const basis = el('p', 'regional-map-basis', String(status.thresholdLabel || status.basis || text('No applicable threshold', 'Ei soveltuvaa raja-arvoa')));
       const note = el('p', 'regional-map-note', text('This is an illustrative value, not a measurement of this region’s healthcare. Red signals a pathway-management action under the stated rule; it is not an individual patient’s clinical urgency.', 'Tämä on kuvitteellinen arvo, ei maakunnan terveydenhuollon mittaustulos. Punainen tarkoittaa hoitopolun hallinnan toimenpidetarvetta ilmoitetun säännön mukaan, ei yksittäisen potilaan kliinistä kiireellisyyttä.'));
       detail.replaceChildren(title, code, heading, number, statusNode, basisTitle, basis);
+      if (status.level === 'red') detail.insertBefore(notifyBox(metric, value), basisTitle);
       if (status.source) {
         const href = typeof status.source === 'string' ? status.source : status.source.url;
         if (typeof href === 'string' && /^https:\/\//.test(href)) {
