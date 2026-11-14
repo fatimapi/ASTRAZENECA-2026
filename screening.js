@@ -18,7 +18,6 @@
 //    Cancer Society of Finland (Syöpäjärjestöt) symptom guidance.
 //  - Alcohol: AUDIT-C; Finnish Current Care threshold >=6 men, >=5 women.
 //  - Activity: UKK Institute / WHO >=150 min moderate activity per week.
-//  - Radon: STUK reference level 300 Bq/m³ for homes.
 //  - IARC: processed meat Group 1; night-shift work Group 2A.
 (() => {
 // Translate a piece of text now (Finnish when selected). Used for text built
@@ -159,8 +158,6 @@ function assess(h) {
   if (h.processed_meat === 'Most days') add(factors, {key: 'diet', label: 'Processed meat', detail: 'Processed meat raises bowel cancer risk (IARC Group 1). Limit sausages, ham and cold cuts.'});
   if (h.fruit_veg === '0–1 portions') add(factors, {key: 'fibre', label: 'Fruit, vegetables and fibre', detail: 'Low intake. Fibre-rich diets lower bowel cancer risk; aim for at least 500 g of vegetables, fruit and berries a day.'});
   if (h.sunburn === 'Several times') add(factors, {key: 'sun', label: 'Sun exposure', detail: 'Repeated blistering sunburns raise melanoma risk. Check your skin regularly and protect it from the sun.'});
-  if (h.radon === 'Measured above 300 Bq/m³') add(factors, {key: 'radon', label: 'Radon at home', detail: 'Above STUK’s 300 Bq/m³ reference level. Radon is the second biggest cause of lung cancer in Finland, and it can be reduced.'});
-  if (h.radon === 'Never measured') add(factors, {key: 'radon-unknown', label: 'Radon not measured', detail: 'Radon is common in Finnish homes, especially in the south. STUK offers affordable home test kits.', minor: true});
   if (h.occupation === 'Yes') add(factors, {key: 'occupation', label: 'Work exposures', detail: 'Asbestos, silica, diesel exhaust, wood dust and some solvents raise cancer risk. Tell your occupational health service.'});
   if (h.family === 'Two or more close relatives, or one diagnosed under 50') add(factors, {key: 'family', label: 'Family history', detail: 'This pattern can mean an inherited risk (for example BRCA or Lynch syndrome). Ask whether a genetics clinic referral is right for you.'});
   else if (h.family === 'One close relative') add(factors, {key: 'family1', label: 'Family history', detail: 'One close relative with cancer. Mention which cancer and their age at diagnosis to your care team.', minor: true});
@@ -222,7 +219,7 @@ ${sec('file','Health history and exposures')}<div class="form-grid">
 ${sel('family', 'Close relatives (parent, sibling, child) with cancer', ['Not sure / prefer not to say', 'No known family history', 'One close relative', 'Two or more close relatives, or one diagnosed under 50'], h, 'span2')}
 ${sel('history', 'Have you had cancer before?', ['No', 'Yes', 'Prefer not to say'], h)}
 ${sel('hpv', 'HPV vaccine', ['Not sure', 'Yes', 'No'], h)}
-${sel('radon', 'Radon at home', ['Never measured', 'Measured below 300 Bq/m³', 'Measured above 300 Bq/m³', 'Not sure'], h)}
+
 ${sel('occupation', 'Work exposure to asbestos, silica, diesel or solvents', ['No', 'Yes', 'Not sure'], h)}
 </div>
 ${sec('location','Where you live and how care works for you')}<div class="form-grid">
@@ -296,7 +293,6 @@ function simulate(seed = 39, size = 50) {
       sunburn: pick(['Never', 'Once or twice', 'Several times'], [30, 45, 25]),
       family: pick(['Not sure / prefer not to say', 'No known family history', 'One close relative', 'Two or more close relatives, or one diagnosed under 50'], [12, 50, 30, 8]),
       history: chance(0.06) ? 'Yes' : 'No', hpv: age < 40 ? pick(['Yes', 'No', 'Not sure'], [5, 3, 2]) : 'No',
-      radon: pick(['Never measured', 'Measured below 300 Bq/m³', 'Measured above 300 Bq/m³', 'Not sure'], [60, 25, 7, 8]),
       occupation: pick(['No', 'Yes', 'Not sure'], [80, 10, 10]),
       last_mammo: chance(pAttend) ? 'Within the last 2 years' : pick(['More than 2 years ago', 'Never'], [6, 4]),
       last_cervical: chance(pAttend - 0.05) ? 'Within the last 5 years' : pick(['More than 5 years ago', 'Never'], [6, 4]),
@@ -360,6 +356,8 @@ function register(data) {
   if (existing) submitted[submitted.indexOf(existing)] = h; else submitted.push(h);
   currentPid = id;
   save(); upsertPatient(h);
+  // Each submitted health check restarts this patient's care journey (pathway, report, booking, referral).
+  window.CandexJourney?.restart(id, h.name);
   if (h.focus === 'Lung') window.candexImaging?.autoLink(id);
   return h;
 }
@@ -392,7 +390,8 @@ function kpis(cohort = fullCohort()) {
   const pub = group('Public health centre', h => h.route === 'Public health centre');
   const symptomatic = rows.filter(x => x.r.symptoms.length);
   const days = k => median(symptomatic.filter(x => k(x.h)).map(x => x.h.days_to_gp));
-  const answered = cohort.reduce((acc, h) => { const keys = ['age', 'sex', 'smoking', 'family', 'region', 'radon', 'language', 'travel']; return acc + keys.filter(k => h[k] && !/prefer not|not sure/i.test(h[k])).length; }, 0);
+  const CORE_KEYS = ['age', 'sex', 'smoking', 'family', 'region', 'language', 'travel'];
+  const answered = cohort.reduce((acc, h) => { const keys = CORE_KEYS; return acc + keys.filter(k => h[k] && !/prefer not|not sure/i.test(h[k])).length; }, 0);
   const share = f => rows.filter(f).length;
   return {
     n: cohort.length, simulated: cohort.filter(h => !h.fromForm).length, fromForm: cohort.filter(h => h.fromForm).length, rows,
@@ -407,7 +406,7 @@ function kpis(cohort = fullCohort()) {
     smokers: share(x => x.h.smoking === 'Currently smoke'), alcohol: share(x => x.r.factors.some(f => f.key === 'alcohol')),
     inactive: share(x => x.r.factors.some(f => f.key === 'activity')), obese: share(x => x.r.bmi >= 30),
     support: share(x => x.h.support), genetics: share(x => x.r.factors.some(f => f.key === 'family')),
-    completeness: pct(answered, cohort.length * 8),
+    completeness: pct(answered, cohort.length * CORE_KEYS.length),
   };
 }
 
@@ -461,10 +460,10 @@ function patientDialog(id) {
 }
 
 function exportCohort() {
-  const cols = ['id', 'source', 'age', 'sex', 'region', 'travel', 'language', 'route', 'smoking', 'pack_years', 'audit_c', 'bmi', 'activity', 'sleep', 'family', 'radon', 'breast', 'cervical', 'bowel', 'lung_uspstf', 'symptoms', 'urgent', 'days_to_gp', 'support'];
+  const cols = ['id', 'source', 'age', 'sex', 'region', 'travel', 'language', 'route', 'smoking', 'pack_years', 'audit_c', 'bmi', 'activity', 'sleep', 'family', 'breast', 'cervical', 'bowel', 'lung_uspstf', 'symptoms', 'urgent', 'days_to_gp', 'support'];
   const lines = [cols.join(',')].concat(kpis().rows.map(({h, r}) => {
     const st = k => r.programmes.find(p => p.key === k)?.status || '';
-    return [h.id, h.fromForm ? 'health check' : 'simulated', h.age, h.sex, h.region, h.travel, h.language, h.route, h.smoking, r.py ?? '', r.audit ?? '', r.bmi ?? '', h.activity, h.sleep, h.family, h.radon, st('breast'), st('cervical'), st('bowel'), r.lungEligible ? 'yes' : 'no', r.symptoms.map(s => s.label).join('; '), r.urgent ? 'yes' : 'no', h.days_to_gp ?? '', h.support ? 'yes' : 'no']
+    return [h.id, h.fromForm ? 'health check' : 'simulated', h.age, h.sex, h.region, h.travel, h.language, h.route, h.smoking, r.py ?? '', r.audit ?? '', r.bmi ?? '', h.activity, h.sleep, h.family, st('breast'), st('cervical'), st('bowel'), r.lungEligible ? 'yes' : 'no', r.symptoms.map(s => s.label).join('; '), r.urgent ? 'yes' : 'no', h.days_to_gp ?? '', h.support ? 'yes' : 'no']
       .map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',');
   }));
   download('candex-health-check-cohort.csv', lines.join('\n'), 'text/csv');
@@ -473,6 +472,7 @@ function exportCohort() {
 window.candexScreening = {
   healthView, summaryHTML, resultHTML, assess, kpis, cohortView, newChecksCard, patientDialog, restore, healthPatient, simulate, COHORT, SYMPTOMS, GENERAL,
   get currentPid() { return currentPid; },
+  latestCheck: () => (currentPid && submitted.find(h => h.id === currentPid)) || submitted[submitted.length - 1] || null,
   actions: {
     'export-cohort': exportCohort,
     'new-health-check': () => { currentPid = null; state.health = null; render(true); },

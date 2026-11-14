@@ -20,6 +20,8 @@
     'Quality Administrator': 'Laadun ylläpitäjä',
     'Explore care quality, regional gaps and actions.': 'Tutki hoidon laatua, alueellisia eroja ja toimenpiteitä.',
     'Enter demo Dashboard': 'Avaa demon koontinäkymä',
+    'Reset all dashboards': 'Nollaa kaikki koontinäkymät',
+    'Start the demo again: clears health checks, imaging analyses, reports, appointments and referrals in this browser for the patient, doctor and quality dashboards.': 'Aloita demo alusta: tyhjentää tämän selaimen terveyskyselyt, kuvantamisanalyysit, raportit, ajanvaraukset ja lähetteet potilaan, lääkärin ja laadun koontinäkymistä.',
     'Demo access uses fictional records. This does not verify a patient or professional identity.': 'Demossa käytetään kuvitteellisia tietoja. Tämä ei varmista potilaan tai ammattilaisen henkilöllisyyttä.',
     'Language': 'Kieli',
     'Accessibility': 'Saavutettavuus',
@@ -82,6 +84,7 @@
             <button class="entry-submit" type="submit">${t('Enter demo Dashboard')}${icon('arrow')}</button>
             <p class="entry-disclosure">${icon('info')}<span>${t('Demo access uses fictional records. This does not verify a patient or professional identity.')}</span></p>
           </form>
+          <div class="entry-reset"><button type="button" class="entry-reset-btn" data-entry-action="reset-all">${t('Reset all dashboards')}</button><p>${t('Start the demo again: clears health checks, imaging analyses, reports, appointments and referrals in this browser for the patient, doctor and quality dashboards.')}</p></div>
         </section>
       </main>
       <footer class="entry-footer"><span translate="no">© 2026 Candex</span><span>${t('Interactive demo · Fictional data')}</span></footer>

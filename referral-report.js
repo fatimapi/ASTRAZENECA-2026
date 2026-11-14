@@ -106,6 +106,7 @@ function approveNow(id, {release = false} = {}) {
   if (previewed[id] !== fp) throw new Error('Preview the current report before approving it.');
   const entry = {by: CLINICIAN, at: new Date().toISOString(), fp, version: (approvals[id]?.version || 0) + 1, released: false};
   let releaseError = null;
+  if (release && window.CandexJourney && !window.CandexJourney.imaging(id)) throw new Error('Complete the CT and X-ray analysis in Imaging review before releasing the report to the patient.');
   if (release) {
     try {
       const r = build(id, {lang: 'en', skipApproval: true}), S = window.CandexReferralStore;
@@ -223,7 +224,6 @@ function build(id, opts = {}) {
     [t('Lung-screening eligibility (USPSTF 2021)', 'Keuhkoseulontakelpoisuus (USPSTF 2021)'), r ? (r.lungEligible ? t('Eligible: age 50–80, ≥20 pack-years, current or quit within 15 years', 'Täyttyy: ikä 50–80, ≥20 askivuotta, tupakoi tai lopetti alle 15 vuotta sitten') : t('Not eligible', 'Ei täyty')) : nr],
     [t('Alcohol (AUDIT-C)', 'Alkoholi (AUDIT-C)'), r?.audit != null ? `${r.audit} (${t('risk threshold', 'riskiraja')} ${h.sex === 'Male' ? 6 : 5})` : nr],
     [t('Body mass index', 'Painoindeksi'), r?.bmi != null ? num(r.bmi) : nr],
-    [t('Radon at home', 'Radon kotona'), h?.radon ? V(h.radon) : nr],
     [t('Work exposures', 'Työperäiset altisteet'), h?.occupation ? V(h.occupation) : nr],
     [t('Other factors to discuss', 'Muut keskusteltavat tekijät'), factorLabels.length ? factorLabels.join(', ') : (h ? t('None flagged', 'Ei merkittyjä') : nr)],
     [t('Screening programmes', 'Seulontaohjelmat'), r?.programmes?.length ? r.programmes.map(x => `${V(x.name)}: ${progStatus(x.status)}`).join('; ') : (h ? t('None apply by age', 'Ikäryhmään ei kohdistu ohjelmia') : nr)],
@@ -382,8 +382,6 @@ function build(id, opts = {}) {
   if (!c && symptoms.length) recs.push(t('Clinical assessment of the reported symptoms; arrange imaging appropriate to the pathway (for example chest X-ray or CT for lung symptoms).', 'Ilmoitettujen oireiden kliininen arvio; järjestä hoitopolkuun sopiva kuvantaminen (esimerkiksi keuhkoröntgen tai TT keuhko-oireissa).'));
   if (h?.smoking === 'Currently smoke') recs.push(t('Offer smoking-cessation support (Stumppi.fi or the health centre).', 'Tarjoa tukea tupakoinnin lopettamiseen (Stumppi.fi tai terveysasema).'));
   if (r?.factors?.some(f => f.key === 'family')) recs.push(t('Consider referral to a clinical genetics service.', 'Harkitse lähetettä perinnöllisyyspoliklinikalle.'));
-  if (h?.radon === 'Never measured') recs.push(t('Advise a home radon measurement (STUK).', 'Suosittele kodin radonmittausta (STUK).'));
-  if (h?.radon === 'Measured above 300 Bq/m³') recs.push(t('Advise radon remediation (above the STUK 300 Bq/m³ reference level).', 'Suosittele radonkorjausta (yli STUKin 300 Bq/m³ viitearvon).'));
   (r?.programmes || []).filter(x => x.status === 'due').forEach(x => recs.push(`${V(x.name)}: ${t('due; send or renew the invitation.', 'ajankohtainen; lähetä tai uusi kutsu.')}`));
   if (lng && !['Finnish', 'Swedish', 'English'].includes(lng)) recs.push(t(`Book an interpreter (${lng}) for appointments.`, `Varaa tulkki (${V(lng).toLowerCase()}) vastaanotoille.`));
   if (h?.support) recs.push(t('Arrange access support (travel, language, technology or cost) before booking.', 'Järjestä tuki hoitoon pääsyyn (matkat, kieli, teknologia tai kustannukset) ennen ajanvarausta.'));
@@ -978,6 +976,7 @@ window.candexReport = {
   // Set the referring clinician's note (used by the clinical agent's "Add to referral note").
   setNote: v => { note = String(v ?? '').slice(0, 800); },
   makeKit, loadJsPDF,
+  clearApproval: id => { if (approvals[id]) { delete approvals[id]; saveApprovals(); } },
   build, buildPatient, previewHTML, approvalStatus, approveNow, withdrawApproval, markPreviewed, patientHTML, geometry, section, clean, pdfBlob,
   patientPdfDataUri: async (id, opts = {}) => { const lib = await loadJsPDF(); return writePatientPDF(lib.jsPDF, buildPatient(id, opts)).output('datauristring'); },
   // The finished PDF as a data URI (used by tests and for embedding).
