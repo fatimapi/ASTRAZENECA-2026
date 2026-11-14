@@ -1,0 +1,154 @@
+/* Larger shared type, with an additional user-controlled large-text step.
+ * Loaded after component styles. Image pixels and clinical SVG coordinates
+ * are deliberately left unchanged. */
+:root{font-size:18px}
+:root.large-text{font-size:22px}
+body{font-size:1rem;line-height:1.65}
+
+/* Main prose and controls previously ranged from .65rem to .85rem. */
+:is(.content,.entry-page,.entry-about,dialog) :is(p,li,label,input,select,textarea,summary,td,th){font-size:.95rem;line-height:1.65}
+:is(.content,.entry-page,.entry-about,dialog) small{font-size:.9rem;line-height:1.6}
+.content :is(.button,.text-btn),dialog :is(.button,.text-btn),.entry-about .button{font-size:.95rem;line-height:1.5;min-height:44px;white-space:normal;text-align:left}
+.content :is(.card-head h2,.section-line h2),.content .referrals-review-panel h3{font-size:1.12rem;line-height:1.4}
+.content :is(.record-row h3,.appointment h3,.action-card h3,.timeline-entry h3,.screening-row h3){font-size:1.05rem;line-height:1.45}
+.content :is(.card,.metric,.action-card,.feature-card),.app-body{min-width:0}
+.content{overflow-wrap:anywhere}
+.content :is(.hero p,.info-panel p,.findings li p,.concept-strip p,.record-row p,.appointment p,.timeline-entry p,.journey-note p,.feature-card p){font-size:.95rem;line-height:1.7}
+.content :is(.concept-strip strong,.pathway-now strong){font-size:1rem}
+
+/* Only legacy inline declarations below 1rem need an !important override. */
+:is(.content,dialog) [style*="font-size:."]{font-size:.95rem!important}
+
+/* The label directly above every Doctor / Quality KPI number is prominent. */
+.content .metric>p{font-size:1.05rem;line-height:1.45;font-weight:700;color:var(--ink);min-height:2.9em}
+.content .metric>strong{font-size:2rem;line-height:1.2;margin:12px 0 9px}
+.content .metric>small{font-size:.9rem;line-height:1.6}
+.content .metric :is(.kpi-status,.kpi-target,.kpi-details,.kpi-details summary,.kpi-details p,.kpi-details a){font-size:.9rem;line-height:1.6}
+.content .kpi-reference h2{font-size:1.2rem;line-height:1.4}
+.content :is(.kpi-reference p,.kpi-profile label,.kpi-profile select,.kpi-source-panel li){font-size:.95rem}
+.content .kpi-legend,.content .kpi-legend span{font-size:.9rem;line-height:1.6}
+.metric-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+
+/* Navigation and top-level controls stay readable outside .content. */
+.sidebar .nav-item{font-size:.95rem;line-height:1.45;min-height:48px;overflow-wrap:anywhere}
+.sidebar :is(.brand-caption,.nav-label){font-size:.78rem;line-height:1.6;letter-spacing:1.1px}
+.sidebar .brand-caption{margin-bottom:24px}
+.sidebar :is(.support-box p,.support-box .text-btn,.profile strong,.profile small,.leave-demo){font-size:.9rem;line-height:1.5}
+.sidebar .profile{align-items:flex-start}
+.sidebar .profile>div{min-width:0;overflow-wrap:anywhere}
+.sidebar .nav-count{font-size:.82rem;min-width:24px;line-height:24px}
+.topbar{height:auto;min-height:84px;padding-top:12px;padding-bottom:12px;flex-wrap:wrap}
+.breadcrumb{font-size:.9rem;line-height:1.5;min-width:0;flex-wrap:wrap}
+.top-actions{gap:12px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
+.topbar :is(.workspace-switch,.access-btn,.role-switch button){font-size:.9rem;line-height:1.5;min-height:42px}
+.site-footer{font-size:.85rem;line-height:1.6;flex-wrap:wrap}
+
+/* Small explanatory text now has a shared secondary size. */
+.content :is(.eyebrow,.date-chip,.hero-tag,.art-label,.demo-banner,.notice,.field,.check-row,.field-note,.form-actions small,.chat-message,.chat-meta,.tabs button,.data-line,.findings li,.bar-row,.feature-number,.workflow span,.integration-row a,.journey-step,.step-circle,.appt-meta,.pathway-now small,.pathway-now span,.guide-step small,.urgent-item p,.urgent-item small,.urgent-flag){font-size:.9rem;line-height:1.6}
+.content .badge{font-size:.85rem;line-height:1.45;white-space:normal}
+.content :is(.stat-card small,.stat-card .mini){font-size:.9rem;line-height:1.5}
+.content .stat-card strong{font-size:1.05rem;line-height:1.4}
+.content :is(.patient-record-status,.patient-record-copy,.patient-record-note){font-size:.95rem;line-height:1.7}
+.content .patient-record-grid h3{font-size:1.05rem}
+.content .patient-record-workspace .data-line{font-size:.95rem}
+.content :is(.screening-row p,.factor-list,.health-art p,.editing-banner,.sent-notice,.cohort-strip,.cohort-details){font-size:.95rem}
+.content :is(.symptom-group legend,.cohort-summary-text small,.ai-card .ai-report summary,.ai-card .ai-report p,.ai-card .ai-prov){font-size:.9rem;line-height:1.6}
+
+/* Tables may scroll within their own container, never widen the whole page. */
+.table-wrap{max-width:100%;overflow-x:auto}
+.content table{font-size:.95rem}
+.content th{font-size:.9rem;white-space:normal;line-height:1.5}
+.content :is(td strong,td small,.rh-table td small,.cohort-new td small){font-size:.9rem;line-height:1.6}
+.content .dicom-score-table :is(th,td),.content .dicom-score-table tbody th{font-size:.95rem}
+.rh-actions .text-btn,.rh-open{white-space:normal}
+.content :is(.rh-msg,.rh-file,.rh-remove,.rh-open,.rh-active,.rh-appr){font-size:.9rem;line-height:1.6}
+
+/* Map controls, source explanations and status labels. */
+.content :is(.regional-map-toolbar label,.regional-map-toolbar select,.regional-map-loading,.regional-map-hint,.regional-map-legend,.regional-map-code,.regional-map-state,.regional-map-basis,.regional-map-note,.regional-map-attribution,.regional-map-detail .text-btn){font-size:.9rem;line-height:1.65}
+.content .regional-map-detail h4{font-size:1rem;font-weight:700}
+.content .regional-map-table-details :is(th,td){font-size:.95rem}
+.content .regional-map-notify p{font-size:.95rem}
+.content .regional-map-zoom button{min-height:42px;min-width:42px;font-size:1rem}
+
+/* Referrals, editable report previews and clinical-assistant text. */
+.content :is(.referrals-demo p,.referrals-steps li,.referrals-note,.referrals-meta,.referrals-report,.referrals-activity li,.referrals-activity small,.referrals-clinical-copy,.referrals-feedback,.referrals-history-entry,.referrals-workspace .check-row,.referrals-review-panel .check-row){font-size:.95rem;line-height:1.7}
+.content :is(.referrals-status,.referrals-step-mark){font-size:.9rem}
+.content .rr-doc{font-size:.95rem;line-height:1.7}
+.content :is(.rr-includes li,.rr-head small,.rr-bottom small,.rr-note,.rr-img figcaption,.rr-cxr figcaption,.rr-approval-head){font-size:.9rem;line-height:1.6}
+.content .rr-sec h3{font-size:1.1rem}
+.content .rr-sec h4{font-size:1rem}
+.content :is(.agent-status,.agent-sees,.agent-how,.agent-empty,.agent-msg,.agent-draft,.agent-note,.agent-msg details,.agent-issues,.agent-chip,.agent-form textarea){font-size:.95rem;line-height:1.65}
+.content :is(.agent-cite,.agent-actions small){font-size:.9rem;line-height:1.6}
+.content .agent-h3{font-size:1.05rem}
+.content :is(.dicom-section-copy,.dicom-status,.dicom-file-details,.dicom-small-note,.dicom-report-draft,.dicom-result-placeholder p,.dicom-provenance,.dicom-limitations ul,.dicom-implementation p){font-size:.95rem;line-height:1.7}
+.content :is(.dicom-controls .field>label,.dicom-controls .field>small,.dicom-upload-form .check-row,.dicom-upload-form input[type=file],.dicom-image-card>p,.dicom-image-heading h3,.dicom-image-heading span){font-size:.9rem;line-height:1.6}
+.content .dicom-image-heading span{white-space:normal;overflow-wrap:anywhere}
+.content .dicom-provenance{grid-template-columns:minmax(90px,auto) minmax(0,1fr)}
+.content .scan-caption,.content .scan-toolbar,.content .scan-controls :is(button,label){font-size:.9rem;line-height:1.6}
+.content .scan-toolbar{flex-wrap:wrap}
+.content .about-page .about-links .text-btn{font-size:.95rem}
+
+/* Quality agent and generated quality reports use the same readable scale. */
+.content :is(.q-sees li,.q-unverified,.q-review-warn,.q-kv){font-size:.95rem;line-height:1.65}
+.content :is(.q-prov,.q-tag,.q-tech,.q-tech summary,.q-tech code){font-size:.9rem;line-height:1.6}
+.content .q-prov,.content .q-tag{white-space:normal;overflow-wrap:anywhere}
+.content .q-doc h4{font-size:1.05rem;line-height:1.45;font-weight:700}
+.content .q-doc .rr-head strong,.content .q-controls h2{font-size:1.15rem;line-height:1.4}
+.content .q-kv dt{font-weight:700}
+.content .q-kv :is(dt,dd),.content .q-tech code{overflow-wrap:anywhere;min-width:0}
+.content .q-preview,.content .q-controls{min-width:0}
+.q-reports{grid-template-columns:minmax(260px,340px) minmax(0,1fr)}
+
+/* Landing and public About need the same larger secondary type. */
+.entry-page :is(.entry-role-copy strong,.entry-submit){font-size:1rem;line-height:1.5}
+.entry-page :is(.entry-role-copy>span,.entry-signin-intro,.entry-disclosure,.entry-error,.entry-purpose p,.entry-footer,.entry-language button,.entry-access){font-size:.9rem;line-height:1.6}
+.entry-page .entry-eyebrow,.entry-page .entry-signin .entry-eyebrow{font-size:.8rem;letter-spacing:1.3px}
+.entry-page .entry-header-actions{flex-wrap:wrap;justify-content:flex-end}
+.entry-page .entry-header{align-items:flex-start}
+.entry-page .entry-role{min-height:106px}
+dialog p,dialog .check-row{font-size:.95rem;line-height:1.7}
+
+@media(max-width:1250px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1100px){
+ .two-col,.quality-grid{grid-template-columns:minmax(0,1fr)}
+ .agent-layout{grid-template-columns:minmax(0,1fr)}
+ .q-reports{grid-template-columns:minmax(0,1fr)}
+ .q-controls{position:static}
+ .entry-main{grid-template-columns:minmax(0,1fr) minmax(340px,430px);gap:36px}
+}
+@media(max-width:900px){
+ .entry-main{grid-template-columns:minmax(0,1fr);max-width:680px;gap:30px}
+ .entry-story h1{max-width:15ch}
+ .entry-purpose{display:none}
+ .entry-header{flex-wrap:wrap}
+}
+@media(max-width:700px){
+ .stats-row,.bottom-grid,.bottom-grid.two,.feature-grid{grid-template-columns:minmax(0,1fr)}
+ .journey{grid-auto-flow:row;grid-template-columns:1fr;gap:14px}
+ .journey-step{text-align:left;align-items:flex-start;padding-left:48px;min-height:42px}
+ .journey-step .step-circle{position:absolute;left:0;top:0}
+ .journey-step:before{display:none}
+ .content .metric>p{font-size:1.05rem}
+ .content .metric>strong{font-size:2rem}
+ .content .page-heading p{max-width:none}
+ .content :is(.card-head,.section-line,.card-footer,.concept-strip){flex-wrap:wrap}
+ .content .concept-strip .text-btn{white-space:normal;margin-left:0}
+ .content .date-chip{white-space:normal}
+ .top-actions{gap:8px;justify-content:flex-start}
+ .entry-signin{padding:24px 20px}
+ .entry-page .entry-header-actions{gap:10px}
+ .entry-page .entry-role{padding:15px 12px;column-gap:9px}
+ .entry-footer{flex-wrap:wrap}
+}
+@media(max-width:520px){
+ .metric-grid,.referrals-steps{grid-template-columns:minmax(0,1fr)}
+ .content .metric>p{min-height:0}
+ .content .regional-map-toolbar{grid-template-columns:minmax(0,1fr)}
+ .content .regional-map-layout{grid-template-columns:minmax(0,1fr)}
+ .content .regional-map-detail{min-width:0}
+ .content .dicom-provenance{grid-template-columns:minmax(0,1fr);row-gap:5px}
+ .content .dicom-provenance dd{margin-bottom:12px}
+ .content .q-kv{grid-template-columns:minmax(0,1fr);row-gap:4px}
+ .content .q-kv dd{margin-bottom:10px}
+ .entry-header,.entry-main,.entry-footer{padding-left:20px;padding-right:20px}
+}

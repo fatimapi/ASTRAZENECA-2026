@@ -4,6 +4,9 @@
 // Mark user-entered content with translate="no" to keep it untouched.
 (()=>{
 const FI={
+'Dark mode':'Tumma tila',
+'Switch to dark mode':'Vaihda tummaan tilaan',
+'Switch to light mode':'Vaihda vaaleaan tilaan',
 // About Candex: services, integration ambitions and visible demo limits.
 'About Candex':'Tietoa Candexista',
 'About us':'Tietoa meistä',
@@ -22,7 +25,7 @@ const FI={
 'For quality teams':'Laatutiimeille',
 'See where care can improve.':'Näe, missä hoitoa voi parantaa.',
 'Explore regional differences on a detailed Finnish map, review quality and equity indicators and export data for improvement work. Indicator references explain which Finnish or recognised international benchmarks apply; unsupported measures remain unassessed.':'Tutki alueellisia eroja tarkalla Suomen kartalla, tarkastele laadun ja yhdenvertaisuuden mittareita ja vie tietoja kehittämistyöhön. Mittareiden lähteet kertovat sovellettavat suomalaiset tai tunnustetut kansainväliset vertailuarvot. Ilman vertailuperustetta olevia mittareita ei arvioida.',
-'Explore the quality workspace':'Tutustu laadun työtilaan',
+'Explore the quality Dashboard':'Tutustu laadun koontinäkymään',
 'Access belongs in the pathway.':'Saavutettavuus kuuluu hoitopolkuun.',
 'English and Finnish, readable text and keyboard-friendly controls support different needs. Patients can record remote-care and access preferences. In a connected service, a care coordinator would help arrange travel, language and other practical support.':'Englannin ja suomen kieli, luettava teksti ja näppäimistöllä käytettävät toiminnot tukevat erilaisia tarpeita. Potilas voi kirjata etähoitoon ja hoitoon pääsyyn liittyviä toiveita. Hoitopalveluun liitetyssä järjestelmässä hoitokoordinaattori auttaisi järjestämään matka-, kieli- ja muuta käytännön tukea.',
 'Future connections':'Tulevat yhteydet',
@@ -113,9 +116,9 @@ const FI={
 'Skip to main content':'Siirry pääsisältöön',
 'Main navigation':'Päänavigaatio','Candex home':'Candexin etusivu','Close navigation':'Sulje navigaatio','Open navigation':'Avaa navigaatio','Choose interface':'Valitse näkymä','View notifications':'Näytä ilmoitukset','Language':'Kieli',
 'No patient left behind':'Ketään potilasta ei jätetä jälkeen','No patient left behind.':'Ketään potilasta ei jätetä jälkeen.','No patient':'Ketään potilasta','left behind.':'ei jätetä jälkeen.',
-'Your health, connected':'Terveytesi yhdessä paikassa','Clinical workspace':'Kliininen työtila',
+'Your health, connected':'Terveytesi yhdessä paikassa','Clinical Dashboard':'Kliininen koontinäkymä',
 'My overview':'Oma yleiskatsaus','Health check':'Terveyskysely','My care pathway':'Oma hoitopolkuni','My records':'Omat tietoni','Messages':'Viestit',
-'Workspace':'Työtila','Patient worklist':'Potilastyölista','Imaging review':'Kuvantamisen arvio','Reports':'Raportit','AI workspace':'Tekoälytyötila','Quality & equity':'Laatu ja yhdenvertaisuus',
+'Dashboard':'Koontinäkymä','Patient worklist':'Potilastyölista','Imaging review':'Kuvantamisen arvio','Reports':'Raportit','AI Dashboard':'Tekoälyn koontinäkymä','Quality & equity':'Laatu ja yhdenvertaisuus',
 'Overview':'Yleiskatsaus','Care pathway':'Hoitopolku','Records & preferences':'Tiedot ja asetukset','Care team messages':'Hoitotiimin viestit','Clinical reports':'Kliiniset raportit','The Candex approach':'Candexin lähestymistapa','DICOM AI analysis':'DICOM-tekoälyanalyysi',
 'Explore Candex':'Tutustu Candexiin','Care without barriers.':'Hoitoa ilman esteitä.','Support for every step, wherever you are.':'Tukea joka vaiheeseen, missä ikinä oletkin.','Find support':'Etsi tukea',
 'Patient · demo account':'Potilas · demotili','Clinician · demo account':'Ammattilainen · demotili','Quality · demo account':'Laatu · demotili','Quality administrator':'Laatuvastaava','Quality Administrator':'Laatuvastaava',
@@ -123,7 +126,7 @@ const FI={
 'My health':'Oma terveys','Care team':'Hoitotiimi','Quality team':'Laatutiimi',
 'Patient':'Potilas','Doctor':'Lääkäri','Accessibility':'Saavutettavuus',
 '© 2026 Candex · No patient left behind.':'© 2026 Candex · Ketään potilasta ei jätetä jälkeen.','Concept environment · Fictional data':'Konseptiympäristö · Kuvitteellista dataa',
-'Interactive concept · This page uses fictional patient records and metrics. The separate DICOM AI workspace can connect to a research model backend.':'Interaktiivinen konsepti · Tällä sivulla käytetään kuvitteellisia potilastietoja ja mittareita. Erillinen DICOM-tekoälytyötila voi yhdistyä tutkimusmallin taustapalveluun.',
+'Interactive concept · This page uses fictional patient records and metrics. The separate DICOM AI Dashboard can connect to a research model backend.':'Interaktiivinen konsepti · Tällä sivulla käytetään kuvitteellisia potilastietoja ja mittareita. Erillinen DICOM-tekoälyn koontinäkymä voi yhdistyä tutkimusmallin taustapalveluun.',
 'Close dialog':'Sulje ikkuna','Demo':'Demo','View':'Näytä','Open':'Avaa','Review':'Arvioi','Reviewed':'Arvioitu','View all':'Näytä kaikki','Yes':'Kyllä','No':'Ei',
 
 // Patient overview
@@ -182,7 +185,7 @@ const FI={
 'Decided together':'Päätetään yhdessä','The right next step for you':'Sinulle sopiva seuraava vaihe',
 'Options may include monitoring, further imaging, a specialist appointment or tests such as a biopsy. A finding does not automatically mean cancer.':'Vaihtoehtoja voivat olla seuranta, lisäkuvantaminen, erikoislääkärin vastaanotto tai tutkimukset, kuten koepala. Löydös ei automaattisesti tarkoita syöpää.',
 'Your care team stays with you':'Hoitotiimisi pysyy rinnallasi','Follow-up without falling through the gaps':'Seuranta, jossa kukaan ei putoa väliin',
-'Track agreed next steps, reminders and questions. The doctor’s workspace highlights overdue actions.':'Seuraa sovittuja vaiheita, muistutuksia ja kysymyksiä. Lääkärin työtila korostaa myöhässä olevat toimet.',
+'Track agreed next steps, reminders and questions. The doctor’s Dashboard highlights overdue actions.':'Seuraa sovittuja vaiheita, muistutuksia ja kysymyksiä. Lääkärin koontinäkymä korostaa myöhässä olevat toimet.',
 'Ask your team a question':'Kysy tiimiltäsi','Your care coordinator':'Hoitokoordinaattorisi','Cancer care nurse · Example team':'Syöpähoitaja · Esimerkkitiimi',
 'A named point of contact to help you understand your pathway and find the support you need.':'Nimetty yhteyshenkilö, joka auttaa ymmärtämään hoitopolkuasi ja löytämään tarvitsemasi tuen.','Prepare a message':'Valmistele viesti',
 'Distance shouldn’t decide your care.':'Etäisyys ei saa ratkaista hoitoasi.','Video and phone appointments, travel support needs and clear follow-up reminders are built into the concept.':'Video- ja puhelinvastaanotot, matkatuen tarpeet ja selkeät seurantamuistutukset ovat osa konseptia.',
@@ -381,7 +384,7 @@ const FI={
 'Report and referral history belongs to this ID only and is stored on this browser. No hospital has been contacted.':'Raportti- ja lähetehistoria kuuluu vain tälle tunnisteelle ja on tallennettu tähän selaimeen. Sairaalaan ei ole otettu yhteyttä.',
 'No reviewed report or browser-local referral journey is linked to this patient. A worklist status alone does not confirm a referral or appointment.':'Tälle potilaalle ei ole liitetty tarkistettua raporttia eikä selaimeen tallennettua lähetepolkua. Pelkkä työlistan tila ei vahvista lähetettä tai aikaa.',
 'This page brings existing demo information together; it does not calculate a new risk score or recommend treatment.':'Tämä sivu kokoaa olemassa olevat demotiedot yhteen; se ei laske uutta riskipistemäärää eikä suosittele hoitoa.',
-'The record could not be opened. Check the workspace and refresh the page.':'Tietoja ei voitu avata. Tarkista työtila ja päivitä sivu.',
+'The record could not be opened. Check the Dashboard and refresh the page.':'Tietoja ei voitu avata. Tarkista koontinäkymä ja päivitä sivu.',
 
 'STM — Access to treatment (nonurgent specialist care)':'STM — Hoitoonpääsy (kiireetön erikoissairaanhoito)',
 'Finnish Cancer Strategy 2026–2035, p. 5':'Kansallinen syöpästrategia 2026–2035, s. 5',
@@ -436,7 +439,7 @@ const FI={
 'Longest − shortest regional median · Illustrative':'Pisin − lyhin alueellinen mediaani · Havainnollistava',
 'Largest group sensitivity difference · Illustrative':'Suurin ryhmien välinen herkkyysero · Havainnollistava',
 'Complete / eligible structured records · Illustrative':'Täydelliset / soveltuvat rakenteiset tietueet · Havainnollistava',
-'Open referral workspace':'Avaa lähetetyötila',
+'Open referral Dashboard':'Avaa lähetteiden koontinäkymä',
 'Inspect the source, target and limitation behind each status.':'Tarkastele kunkin tilan taustalla olevaa lähdettä, tavoitetta ja rajoitusta.',
 'All metric and regional values are invented examples, not measured Finnish performance or evaluated Candex model performance.':'Kaikki mittari- ja aluearvot ovat keksittyjä esimerkkejä, eivät mitattua suomalaista suorituskykyä tai arvioitua Candex-mallin suorituskykyä.',
 'Source-backed references · local warnings identified':'Lähteisiin perustuvat viitearvot · paikalliset varoitusrajat merkitty',
@@ -464,7 +467,7 @@ const FI={
 'AI second reader':'Tekoäly toisena lukijana',
 'A precomputed research read is shown under the radiologist reference. Compare it with the outlines; it does not change urgency or recommendations.':'Ennalta laskettu tutkimustulkinta näytetään radiologin viitemerkintöjen alla. Vertaa sitä ääriviivoihin; se ei muuta kiireellisyyttä tai suosituksia.',
 'Release a reviewed report, follow the patient booking and record the follow-up decision.':'Julkaise tarkistettu raportti, seuraa potilaan ajanvarausta ja kirjaa seurantapäätös.',
-'The referral workspace could not load. Refresh the page.':'Lähetetyötilaa ei voitu ladata. Päivitä sivu.',
+'The referral Dashboard could not load. Refresh the page.':'Lähetteiden koontinäkymää ei voitu ladata. Päivitä sivu.',
 'Use an exact internal identifier to review the linked demonstration information.':'Hae tarkalla sisäisellä tunnisteella ja tarkastele siihen liitettyjä esittelytietoja.','No open notifications. All urgent requests have been resolved.':'Ei avoimia ilmoituksia. Kaikki kiireelliset pyynnöt on ratkaistu.','Resolved by doctor':'Lääkärin ratkaisema','Reviewed in this session':'Arvioitu tässä istunnossa','No patients match this search.':'Haulla ei löytynyt potilaita.','Fictional patient':'Kuvitteellinen potilas',
 'Candex is designed for all cancer pathways. The PDF’s lung workflow is the imaging demonstration; breast, colorectal and prostate entries illustrate the shared care-coordination model.':'Candex on suunniteltu kaikille syöpien hoitopoluille. PDF:n keuhkotyönkulku on kuvantamisen demo; rinta-, suolisto- ja eturauhassyövän rivit havainnollistavat yhteistä hoidon koordinoinnin mallia.',
 
@@ -531,7 +534,7 @@ const FI={
 'Signals to review this month':'Tämän kuun tarkasteltavat signaalit','3 areas':'3 aluetta','Research-ready completeness':'Tutkimusvalmiin aineiston kattavuus','Review with pathway owners before acting.':'Käy läpi hoitopolun vastuuhenkilöiden kanssa ennen toimia.','Explore all measures':'Tutustu kaikkiin mittareihin',
 
 // AI workspace
-'Agent workspace':'Agenttityötila','Candex intelligence':'Candex-äly','Purposeful AI. Human accountability.':'Tarkoituksellista tekoälyä. Ihmisen vastuu.','Open-source support for understanding the platform, research and clinical workflows.':'Avoimen lähdekoodin tukea alustan, tutkimuksen ja kliinisten työnkulkujen ymmärtämiseen.',
+'Agent Dashboard':'Agentin koontinäkymä','Candex intelligence':'Candex-äly','Purposeful AI. Human accountability.':'Tarkoituksellista tekoälyä. Ihmisen vastuu.','Open-source support for understanding the platform, research and clinical workflows.':'Avoimen lähdekoodin tukea alustan, tutkimuksen ja kliinisten työnkulkujen ymmärtämiseen.',
 'The browser-based Candex guide can run a real open-source language model for semantic search. Medical frameworks below require separate Python/model services and are not connected.':'Selaimessa toimiva Candex-opas voi käyttää oikeaa avoimen lähdekoodin kielimallia semanttiseen hakuun. Alla olevat lääketieteelliset kehykset vaativat erilliset Python- ja mallipalvelut, eikä niitä ole yhdistetty.',
 'Candex guide':'Candex-opas','Medical agents':'Lääketieteelliset agentit','Your Candex guide':'Candex-oppaasi','Open-source · Browser-local':'Avoin lähdekoodi · Toimii selaimessa',
 'Ask how to use a feature or find your next step in the platform. The guide matches your question to reviewed explanations; it does not assess symptoms or give medical advice.':'Kysy, miten jotain toimintoa käytetään, tai löydä seuraava askeleesi alustalla. Opas yhdistää kysymyksesi tarkistettuihin selityksiin; se ei arvioi oireita eikä anna lääketieteellisiä neuvoja.',
@@ -578,7 +581,7 @@ const FI={
 'Research datasets & registries':'Tutkimusaineistot ja rekisterit',
 'Public datasets can support research; patient-level register reuse requires appropriate permissions. Finnish Cancer Registry statistics provide context, not access to private records.':'Julkiset aineistot voivat tukea tutkimusta; rekisteritietojen käyttö potilastasolla edellyttää asianmukaisia lupia. Suomen Syöpärekisterin tilastot antavat taustaa, eivät pääsyä yksityisiin tietoihin.',
 'Clear about what this is':'Selkeästi, mistä on kyse','Is Candex providing real clinical care?':'Tarjoaako Candex oikeaa hoitoa?',
-'No. This is an interactive concept with fictional data. The browser AI guide supports platform navigation only. Existing care records, schematic findings, priorities, appointments and metrics are examples. The separate DICOM AI workspace returns real research-model outputs only when a backend is running; these are not clinical diagnoses.':'Ei. Tämä on interaktiivinen konsepti kuvitteellisella datalla. Selaimen tekoälyopas tukee vain alustalla liikkumista. Esitetyt potilastiedot, kaavamaiset löydökset, kiireellisyydet, vastaanotot ja mittarit ovat esimerkkejä. Erillinen DICOM-tekoälytyötila palauttaa oikeita tutkimusmallin tuloksia vain, kun taustapalvelu on käynnissä; ne eivät ole kliinisiä diagnooseja.',
+'No. This is an interactive concept with fictional data. The browser AI guide supports platform navigation only. Existing care records, schematic findings, priorities, appointments and metrics are examples. The separate DICOM AI Dashboard returns real research-model outputs only when a backend is running; these are not clinical diagnoses.':'Ei. Tämä on interaktiivinen konsepti kuvitteellisella datalla. Selaimen tekoälyopas tukee vain alustalla liikkumista. Esitetyt potilastiedot, kaavamaiset löydökset, kiireellisyydet, vastaanotot ja mittarit ovat esimerkkejä. Erillinen DICOM-tekoälyn koontinäkymä palauttaa oikeita tutkimusmallin tuloksia vain, kun taustapalvelu on käynnissä; ne eivät ole kliinisiä diagnooseja.',
 'Does the platform cover all cancer types?':'Kattaako alusta kaikki syöpätyypit?',
 'The shared patient journey, care coordination, reports and analytics are designed for multiple cancer pathways. The detailed imaging example is a lung pilot. Each cancer-specific AI tool would need its own evidence, appropriate data and clinical validation.':'Yhteinen potilaspolku, hoidon koordinointi, raportit ja analytiikka on suunniteltu useille syöpien hoitopoluille. Yksityiskohtainen kuvantamisesimerkki on keuhkopilotti. Jokainen syöpäkohtainen tekoälytyökalu tarvitsisi omaa näyttöä, sopivaa dataa ja kliinisen validoinnin.',
 'How does Candex support rural and underserved patients?':'Miten Candex tukee haja-asutusalueiden ja heikommassa asemassa olevia potilaita?',
@@ -628,7 +631,7 @@ const FI={
 'CANDEX — DEMONSTRATION REPORT':'CANDEX — DEMORAPORTTI','UNAPPROVED DRAFT · NOT FOR CLINICAL USE':'HYVÄKSYMÄTÖN LUONNOS · EI KLIINISEEN KÄYTTÖÖN','FINDINGS':'LÖYDÖKSET','PROPOSED NEXT STEP':'EHDOTETTU SEURAAVA VAIHE',
 'All imaging and findings are examples. No medical AI has run.':'Kaikki kuvat ja löydökset ovat esimerkkejä. Lääketieteellistä tekoälyä ei ole ajettu.','Clinician review and appropriate clinical evidence are required.':'Ammattilaisen arvio ja asianmukainen kliininen näyttö ovat välttämättömiä.',
 'Review your example report':'Tarkastele esimerkkiraporttiasi','Download text draft':'Lataa tekstiluonnos','No report prepared.':'Raporttia ei ole laadittu.',
-'The DICOM workspace could not load. Start Candex with python -m backend and open http://localhost:8000, then refresh.':'DICOM-työtilaa ei voitu ladata. Käynnistä Candex komennolla python -m backend, avaa http://localhost:8000 ja päivitä sivu.',
+'The DICOM Dashboard could not load. Start Candex with python -m backend and open http://localhost:8000, then refresh.':'DICOM-koontinäkymää ei voitu ladata. Käynnistä Candex komennolla python -m backend, avaa http://localhost:8000 ja päivitä sivu.',
 
 // Toasts and status messages
 'Demo reminder enabled for this session. No notification will be sent.':'Demomuistutus otettu käyttöön tälle istunnolle. Ilmoitusta ei lähetetä.','Demo reminder removed.':'Demomuistutus poistettu.',
@@ -644,11 +647,11 @@ const FI={
 'Topic matching without AI. Enable the local model for semantic matching. Platform guidance only.':'Aiheiden haku ilman tekoälyä. Ota paikallinen malli käyttöön semanttista hakua varten. Vain alustan käyttöohjeita.',
 'Guidance is temporarily unavailable. Use the navigation to explore each feature.':'Ohjeet eivät ole tilapäisesti saatavilla. Tutustu toimintoihin navigaation kautta.',
 'Analyze a chest X-ray DICOM':'Analysoi keuhkoröntgenin DICOM-kuva',
-'The Doctor DICOM AI workspace connects to the supplied Python backend. It accepts permitted single-frame CR/DX chest X-rays and returns actual pretrained model scores, not cancer probabilities. Start the backend, check its connection, enter its session API key, then choose your sample. CT/MRI are not supported.':'Lääkärin DICOM-tekoälytyötila yhdistyy mukana tulevaan Python-taustapalveluun. Se hyväksyy luvallisia yksikuvaisia CR/DX-keuhkoröntgenkuvia ja palauttaa esikoulutetun mallin todelliset pisteet, ei syövän todennäköisyyksiä. Käynnistä taustapalvelu, tarkista yhteys, syötä istunnon API-avain ja valitse sitten näytteesi. TT- ja MRI-kuvia ei tueta.',
+'The Doctor DICOM AI Dashboard connects to the supplied Python backend. It accepts permitted single-frame CR/DX chest X-rays and returns actual pretrained model scores, not cancer probabilities. Start the backend, check its connection, enter its session API key, then choose your sample. CT/MRI are not supported.':'Lääkärin DICOM-tekoälyn koontinäkymä yhdistyy mukana tulevaan Python-taustapalveluun. Se hyväksyy luvallisia yksikuvaisia CR/DX-keuhkoröntgenkuvia ja palauttaa esikoulutetun mallin todelliset pisteet, ei syövän todennäköisyyksiä. Käynnistä taustapalvelu, tarkista yhteys, syötä istunnon API-avain ja valitse sitten näytteesi. TT- ja MRI-kuvia ei tueta.',
 'Prepare for your appointment':'Valmistaudu vastaanottoon',
 'Write down your questions and any changes you want to discuss. The care pathway shows the example appointment and your coordinator. This prototype does not book appointments.':'Kirjoita ylös kysymyksesi ja muutokset, joista haluat keskustella. Hoitopolku näyttää esimerkkivastaanoton ja hoitokoordinaattorisi. Tämä prototyyppi ei varaa vastaanottoja.',
 'Compare previous imaging':'Vertaa aiempaan kuvantamiseen',
-'The doctor’s imaging workspace lets you switch between current and prior lung illustrations and turn annotations on or off. Measurements are examples, not AI results.':'Lääkärin kuvantamistyötilassa voit vaihtaa nykyisen ja aiemman keuhkokuvituksen välillä sekä näyttää tai piilottaa merkinnät. Mittaukset ovat esimerkkejä, eivät tekoälyn tuloksia.',
+'The doctor’s imaging Dashboard lets you switch between current and prior lung illustrations and turn annotations on or off. Measurements are examples, not AI results.':'Lääkärin kuvantamisen koontinäkymässä voit vaihtaa nykyisen ja aiemman keuhkokuvituksen välillä sekä näyttää tai piilottaa merkinnät. Mittaukset ovat esimerkkejä, eivät tekoälyn tuloksia.',
 'Understand research participation':'Ymmärrä tutkimukseen osallistuminen',
 'Research participation is optional in the concept. The records page demonstrates the preference and explains proposed data use. Nothing is shared by this website.':'Tutkimukseen osallistuminen on konseptissa vapaaehtoista. Tietosivu esittelee asetuksen ja selittää ehdotetun tietojen käytön. Tämä sivusto ei jaa mitään.',
 'Understand regional differences':'Ymmärrä alueelliset erot',

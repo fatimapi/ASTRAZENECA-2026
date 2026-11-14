@@ -11,22 +11,22 @@
     'An all-cancer vision. A lung-care pilot.': 'Visio kaikille syöpätyypeille. Keuhkosyövän hoidon pilotti.',
     'Demo sign-in': 'Demokirjautuminen',
     'Welcome to Candex': 'Tervetuloa Candexiin',
-    'Choose your workspace to continue.': 'Valitse työtilasi jatkaaksesi.',
-    'Choose your workspace': 'Valitse työtilasi',
+    'Choose your Dashboard to continue.': 'Valitse koontinäkymäsi jatkaaksesi.',
+    'Choose your Dashboard': 'Valitse koontinäkymäsi',
     'Patient': 'Potilas',
     'Understand your care and see your next step.': 'Ymmärrä hoitoasi ja näe seuraava vaihe.',
     'Doctor': 'Lääkäri',
     'Review patient information, imaging and follow-up.': 'Tarkastele potilastietoja, kuvantamista ja jatkohoitoa.',
     'Quality Administrator': 'Laadun ylläpitäjä',
     'Explore care quality, regional gaps and actions.': 'Tutki hoidon laatua, alueellisia eroja ja toimenpiteitä.',
-    'Enter demo workspace': 'Avaa demotyötila',
+    'Enter demo Dashboard': 'Avaa demon koontinäkymä',
     'Demo access uses fictional records. This does not verify a patient or professional identity.': 'Demossa käytetään kuvitteellisia tietoja. Tämä ei varmista potilaan tai ammattilaisen henkilöllisyyttä.',
     'Language': 'Kieli',
     'Accessibility': 'Saavutettavuus',
     'Interactive demo · Fictional data': 'Interaktiivinen demo · Kuvitteelliset tiedot',
     'Candex home': 'Candexin etusivu',
     'Choose a role to continue.': 'Valitse rooli jatkaaksesi.',
-    'Switch workspace': 'Vaihda työtilaa',
+    'Switch Dashboard': 'Vaihda koontinäkymää',
     'Leave demo': 'Poistu demosta',
     'Back to demo sign-in': 'Takaisin demokirjautumiseen',
     'Choose Patient, Doctor or Quality Administrator.': 'Valitse potilas, lääkäri tai laadun ylläpitäjä.',
@@ -49,6 +49,7 @@
       <header class="entry-header">
         <a class="entry-brand" href="#" aria-label="${t('Candex home')}">${wordmark}</a>
         <div class="entry-header-actions">
+          ${window.CandexTheme?.button() || ''}
           <div class="entry-language" role="group" aria-label="${t('Language')}">
             <button type="button" data-entry-lang="en" lang="en" translate="no" aria-pressed="${language !== 'fi'}" title="English">EN</button>
             <button type="button" data-entry-lang="fi" lang="fi" translate="no" aria-pressed="${language === 'fi'}" title="Suomi">FI</button>
@@ -67,10 +68,10 @@
         <section class="entry-signin" aria-labelledby="entry-signin-title">
           <p class="entry-eyebrow">${t('Demo sign-in')}</p>
           <h2 id="entry-signin-title">${t('Welcome to Candex')}</h2>
-          <p class="entry-signin-intro">${t('Choose your workspace to continue.')}</p>
+          <p class="entry-signin-intro">${t('Choose your Dashboard to continue.')}</p>
           <form id="candex-entry-form">
             <fieldset class="entry-roles">
-              <legend class="sr-only">${t('Choose your workspace')}</legend>
+              <legend class="sr-only">${t('Choose your Dashboard')}</legend>
               ${roles.map(item => `<label class="entry-role${item.id === selected ? ' is-selected' : ''}">
                 <input type="radio" name="entry-role" id="entry-role-${item.id}" value="${item.id}" ${item.id === selected ? 'checked' : ''} required aria-labelledby="entry-role-${item.id}-title" aria-describedby="entry-role-${item.id}-description">
                 <span class="entry-role-icon" aria-hidden="true">${icon(item.icon)}</span>
@@ -78,7 +79,7 @@
               </label>`).join('')}
             </fieldset>
             <p class="entry-error" id="entry-error" role="alert" tabindex="-1" ${error ? '' : 'hidden'}>${t(error)}</p>
-            <button class="entry-submit" type="submit">${t('Enter demo workspace')}${icon('arrow')}</button>
+            <button class="entry-submit" type="submit">${t('Enter demo Dashboard')}${icon('arrow')}</button>
             <p class="entry-disclosure">${icon('info')}<span>${t('Demo access uses fictional records. This does not verify a patient or professional identity.')}</span></p>
           </form>
         </section>

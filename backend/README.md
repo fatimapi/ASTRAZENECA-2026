@@ -125,7 +125,7 @@ No model weights or patient images are committed to this repository.
 
 ## Clinical agent (optional, live Gemini)
 
-The Doctor → AI workspace → **Clinical agent** calls Gemini only through this backend. The key never reaches the browser.
+The Doctor → AI Dashboard → **Clinical agent** calls Gemini only through this backend. The key never reaches the browser.
 
 Start the backend with the key from a file outside the repo, and optionally the DICOM folder, so CT reads use the original 512-px images:
 

@@ -76,7 +76,7 @@ window.candexI18n?.extend?.({
 "Upload a permitted chest X-ray DICOM to your research backend for model inference.": "Lähetä luvallinen keuhkoröntgenkuvan DICOM-tiedosto tutkimuspalvelimellesi mallin analysoitavaksi.",
 "Doctor · DICOM AI": "Lääkäri · DICOM-tekoäly",
 "DICOM AI analysis": "DICOM-tekoälyanalyysi",
-"Loading the analysis workspace…": "Ladataan analyysityötilaa…",
+"Loading the analysis Dashboard…": "Ladataan analyysin koontinäkymää…",
 "Experimental · Chest X-ray DICOM": "Kokeellinen · Keuhkoröntgen-DICOM",
 "Run the open-source TorchXRayVision classifier on one permitted chest X-ray. These model scores are research outputs for clinician review—not a cancer diagnosis or a validated cancer-risk estimate.": "Aja avoimen lähdekoodin TorchXRayVision-luokittelija yhdelle luvalliselle keuhkoröntgenkuvalle. Mallin pisteet ovat tutkimustuloksia lääkärin arvioitaviksi – eivät syöpädiagnoosi eivätkä validoitu syöpäriskin arvio.",
 "Connect your analysis service": "Yhdistä analyysipalveluun",
@@ -121,7 +121,7 @@ window.candexI18n?.extend?.({
 "Analysis completed by the backend. Review the model outputs and limitations below.": "Palvelin suoritti analyysin. Tarkista mallin tulokset ja rajoitukset alta.",
 "Analysis results": "Analyysin tulokset",
 "Real results begin with a real connection.": "Todelliset tulokset alkavat todellisesta yhteydestä.",
-"Your image preview, model outputs and report draft will appear here after the backend completes an analysis. No sample findings are mixed into this workspace.": "Kuvan esikatselu, mallin tulokset ja raporttiluonnos näkyvät tässä, kun palvelin on suorittanut analyysin. Työtilaan ei sekoiteta esimerkkilöydöksiä.",
+"Your image preview, model outputs and report draft will appear here after the backend completes an analysis. No sample findings are mixed into this Dashboard.": "Kuvan esikatselu, mallin tulokset ja raporttiluonnos näkyvät tässä, kun palvelin on suorittanut analyysin. Koontinäkymään ei sekoiteta esimerkkilöydöksiä.",
 "What runs, and what this model cannot tell you": "Mitä ajetaan ja mitä malli ei pysty kertomaan",
 "The backend reads supported DICOM pixels, prepares a chest X-ray and runs the pretrained TorchXRayVision DenseNet model. It returns image-level pathology scores. It does not locate a lesion, segment a tumour, compare CT volumes, determine malignancy or recommend treatment. Model outputs require independent clinical interpretation.": "Palvelin lukee tuetut DICOM-pikselit, valmistelee keuhkoröntgenkuvan ja ajaa esikoulutetun TorchXRayVision DenseNet -mallin. Se palauttaa koko kuvaa koskevat patologiapisteet. Se ei paikanna muutosta, rajaa kasvainta, vertaa TT-kuvia, määritä pahanlaatuisuutta eikä suosittele hoitoa. Mallin tulokset vaativat itsenäisen kliinisen tulkinnan.",
 "The first analysis may download model weights and take longer. No artificial progress or findings are shown. For a separately hosted backend, configure an explicit allowed website origin on that server; a browser connection can also fail if an HTTPS page tries to use an HTTP backend.": "Ensimmäinen analyysi voi ladata mallin painot ja kestää pidempään. Keinotekoista edistymistä tai löydöksiä ei näytetä. Erikseen isännöidylle palvelimelle on määritettävä sallittu verkkosivuston alkuperä; selainyhteys voi myös epäonnistua, jos HTTPS-sivu yrittää käyttää HTTP-palvelinta.",
@@ -283,7 +283,7 @@ export function mountDicomPanel(container) {
   resultTitle.id = 'dicom-results-title';
   resultArea.append(resultTitle);
   const placeholder = element('div', 'dicom-result-placeholder');
-  placeholder.append(element('div', 'dicom-placeholder-mark', '+'), element('h3', '', 'Real results begin with a real connection.'), element('p', '', 'Your image preview, model outputs and report draft will appear here after the backend completes an analysis. No sample findings are mixed into this workspace.'));
+  placeholder.append(element('div', 'dicom-placeholder-mark', '+'), element('h3', '', 'Real results begin with a real connection.'), element('p', '', 'Your image preview, model outputs and report draft will appear here after the backend completes an analysis. No sample findings are mixed into this Dashboard.'));
   resultArea.append(placeholder);
   layout.append(controls, resultArea);
   root.append(layout);

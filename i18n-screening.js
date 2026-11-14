@@ -80,7 +80,7 @@ const FI = {
 'Start a new health check': 'Aloita uusi terveyskysely',
 'Added to the demo care team as': 'Lisätty demohoitotiimille tunnuksella',
 '. Switch to': '. Vaihda näkymään',
-'to see it in the workspace, patient worklist and Quality & equity.': 'nähdäksesi sen työtilassa, potilastyölistalla ja Laatu ja yhdenvertaisuus -sivulla.',
+'to see it in the Dashboard, patient worklist and Quality & equity.': 'nähdäksesi sen koontinäkymässä, potilastyölistalla ja Laatu ja yhdenvertaisuus -sivulla.',
 // Counties (option values stay in English)
 'Helsinki': 'Helsinki', 'East Uusimaa': 'Itä-Uusimaa', 'Central Uusimaa': 'Keski-Uusimaa', 'West Uusimaa': 'Länsi-Uusimaa', 'Vantaa and Kerava': 'Vantaa ja Kerava',
 'Southwest Finland': 'Varsinais-Suomi', 'Satakunta': 'Satakunta', 'Kanta-Häme': 'Kanta-Häme', 'Pirkanmaa': 'Pirkanmaa', 'Päijät-Häme': 'Päijät-Häme',
