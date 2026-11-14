@@ -12,7 +12,7 @@ const FI = {
 'Tested on 8 real frontal chest X-rays from LIDC-IDRI patients whose CT shows 8–36 mm nodules: the “Nodule” and “Mass” scores stayed low (at most 0.10 and 0.12). This classifier is not a nodule detector; suspected nodules need CT.': 'Testattu kahdeksalla todellisella LIDC-IDRI-potilaiden keuhkokuvalla (edestä), joiden TT:ssä on 8–36 mm:n pesäke: ”Nodule”- ja ”Mass”-pisteet jäivät mataliksi (enintään 0,10 ja 0,12). Tämä luokittelija ei tunnista pesäkkeitä; epäillyt pesäkkeet vaativat TT-tutkimuksen.',
 'Purple cancer awareness ribbon in the Candex style': 'Violetti syöpätietoisuuden nauha Candexin tyylissä',
 'About you': 'Tietoja sinusta',
-'Your name (use a made-up name)': 'Nimesi (käytä keksittyä nimeä)',
+'Your name': 'Nimesi',
 'e.g. Aino Example': 'esim. Aino Esimerkki',
 'Shown to the demo care team so you can find yourself in the worklist.': 'Näytetään demohoitotiimille, jotta löydät itsesi työlistalta.',
 'Sex assigned at birth': 'Syntymässä määritetty sukupuoli',
