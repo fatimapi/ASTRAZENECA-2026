@@ -1,0 +1,22 @@
+/* Doctor → Referrals & follow-up: referral worklist above the journey. */
+.referral-hub .card-head{align-items:flex-start;flex-wrap:wrap;gap:12px}
+.rh-chips{display:flex;flex-wrap:wrap;gap:6px}
+.rh-msg{background:#eef6ee;border-left:3px solid #4b8a52;padding:10px 14px;border-radius:6px;font-size:.76rem;margin:0 0 14px}
+.rh-msg.is-error{background:#fcf0df;border-left-color:var(--orange)}
+.rh-table td{vertical-align:top;padding:14px 12px}
+.rh-table td small{display:block;color:var(--muted);font-size:.67rem;margin-top:2px}
+.rh-table tr.is-active td{background:#f6f0fb}
+.rh-table tr.is-active td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+.rh-pdf{max-width:220px}
+.rh-file{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--green);word-break:break-all;font-size:.74rem}
+.rh-file .icon{width:15px;height:15px;flex-shrink:0}
+.rh-remove{font-size:.68rem;margin-top:4px;padding:0}
+.rh-actions{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:190px}
+.rh-actions .text-btn{white-space:nowrap}
+.rh-upload{cursor:pointer;position:relative}
+.rh-upload:focus-within{outline:2px solid var(--green);outline-offset:3px;border-radius:4px}
+.rh-open{min-height:36px;padding:8px 12px;font-size:.72rem;white-space:nowrap}
+.rh-active{display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:#ede8f2;border:1px solid #ded7e6;border-radius:10px;padding:13px 18px;margin:0 0 18px;font-size:.8rem;scroll-margin-top:16px}
+.rh-active>.icon{color:var(--green)}
+.rh-active .text-btn,.rh-active .muted{margin-left:auto}
+.rr-advice{background:#fcf0df;border-left-color:var(--orange)}
