@@ -17,6 +17,7 @@ from starlette.concurrency import run_in_threadpool
 
 from .imaging import MAX_FILE_BYTES, ImageRejected, prepare_dicom
 from .model import ChestXrayEngine, LIMITATIONS, ModelUnavailable
+from .agent import router as agent_router
 
 # pydicom may include raw tag values in both warnings and logging records.
 # Configure once at service startup, rather than toggling logging per request.
@@ -51,6 +52,13 @@ class InferenceRequestGuard:
                 message.setdefault("headers", []).extend([(b"cache-control", b"no-store"), (b"pragma", b"no-cache"), (b"x-content-type-options", b"nosniff")])
             await send(message)
 
+        if scope.get("path", "").startswith("/api/agent/") and scope.get("method") == "POST":
+            try:
+                length = int(headers.get(b"content-length", b"0"))
+            except ValueError:
+                length = 1 << 30
+            if length > 256 * 1024:
+                return await JSONResponse({"detail": "Request is too large for the agent."}, status_code=413)(scope, receive, private_send)
         if scope.get("path") == "/api/analyze" and scope.get("method") == "POST":
             key = configured_key()
             if not key:
@@ -91,6 +99,7 @@ class InferenceRequestGuard:
 
 
 app = FastAPI(title="Candex DICOM research", docs_url=None, redoc_url=None, openapi_url=None)
+app.include_router(agent_router)
 app.add_middleware(InferenceRequestGuard)
 origins = []
 for origin in os.getenv("CANDEX_ALLOWED_ORIGINS", "").split(","):
@@ -168,10 +177,19 @@ async def lidc_ai_reads():
     return FileResponse(path, media_type="text/javascript", headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store"})
 
 
+@app.get("/data/lidc/cxr-reads.js")
+async def lidc_cxr_reads():
+    """Precomputed chest X-ray classifier scores with AI summaries (research); no AI is called."""
+    path = LIDC_DIR / "cxr-reads.js"
+    if not path.is_file():
+        raise HTTPException(404, "Not found")
+    return FileResponse(path, media_type="text/javascript", headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store"})
+
+
 @app.get("/data/lidc/{case}/{frame}")
 async def lidc_frame(case: str, frame: str):
     """Exported CT slices only: LIDC-IDRI-NNNN/sNN.jpg, nothing else under data/."""
-    if not re.fullmatch(r"LIDC-IDRI-\d{4}", case) or not re.fullmatch(r"s\d{2}\.jpg", frame):
+    if not re.fullmatch(r"LIDC-IDRI-\d{4}", case) or not re.fullmatch(r"s\d{2}\.jpg|cxr\.jpg", frame):
         raise HTTPException(404, "Not found")
     path = LIDC_DIR / case / frame
     if not path.is_file():

@@ -9,6 +9,7 @@ const FI = {
 'A guided check of screening, symptoms and lifestyle, to prepare for a conversation with your care team.': 'Ohjattu kysely seulonnoista, oireista ja elintavoista keskustelua varten hoitotiimisi kanssa.',
 'Try the health check with fictional information only. It maps your answers onto Finnish screening programmes and published guidance. It does not calculate cancer risk or give a diagnosis.': 'Kokeile terveyskyselyä vain kuvitteellisilla tiedoilla. Se vertaa vastauksiasi suomalaisiin seulontaohjelmiin ja julkaistuihin suosituksiin. Se ei laske syöpäriskiä eikä anna diagnoosia.',
 'About 6 minutes': 'Noin 6 minuuttia',
+'Tested on 8 real frontal chest X-rays from LIDC-IDRI patients whose CT shows 8–36 mm nodules: the “Nodule” and “Mass” scores stayed low (at most 0.10 and 0.12). This classifier is not a nodule detector; suspected nodules need CT.': 'Testattu kahdeksalla todellisella LIDC-IDRI-potilaiden keuhkokuvalla (edestä), joiden TT:ssä on 8–36 mm:n pesäke: ”Nodule”- ja ”Mass”-pisteet jäivät mataliksi (enintään 0,10 ja 0,12). Tämä luokittelija ei tunnista pesäkkeitä; epäillyt pesäkkeet vaativat TT-tutkimuksen.',
 'Purple cancer awareness ribbon in the Candex style': 'Violetti syöpätietoisuuden nauha Candexin tyylissä',
 'About you': 'Tietoja sinusta',
 'Your name (use a made-up name)': 'Nimesi (käytä keksittyä nimeä)',

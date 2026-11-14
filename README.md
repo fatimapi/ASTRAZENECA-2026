@@ -52,6 +52,12 @@ The role switch is a prototype interface choice, not professional identity verif
 
 - Doctor → Referrals & follow-up: a referral worklist for every patient (health-check date, attached report PDF, referral status) with Upload report PDF, Create & attach PDF, and Open referral & follow-up. Each patient now has their own referral journey
 - Patient summary PDF in plain language (English or Finnish) with the symptoms from the health check, screening, lifestyle points and where to get help. Available from Reports and from the patient's own health-check summary
+- **Doctor → AI workspace → Clinical agent (research):**
+  - Chat about one patient, grounded in their record, with cited sections.
+  - Draft a referral note, a patient message or an MDT summary. Each draft goes through a drafter, then a separate safety reviewer, and can be added to the referral note.
+  - Run a Gemini CT read of the linked study.
+  - Live Gemini calls go through the backend: the key stays on the server, and the doctor pastes the backend token into the page. Without live AI, every tool falls back to record-only answers labelled "without AI".
+  - Design follows MedRAX (tools) and Radiology Swarm / mAIstro (review roles).
 - **AI second reader (research):** a precomputed Gemini read of each CT study, shown next to the radiologists on the Imaging review page and in PDF section 6, with agreement badges and caveats. It is never used for urgency or recommendations. Method, results and limits: [docs/ai-second-reader.md](docs/ai-second-reader.md); pipeline: `tools/ai-second-reader/`
 - Doctor → Reports: **Approve report**. The doctor previews the report, confirms two checks and approves it, optionally releasing it to the patient's referral journey. The PDF then shows the approval; any later change to the content needs re-approval
 - Doctor → Reports: a patient summary & oncology referral as an on-page preview and a PDF, in English or Finnish. It covers patient reference, care pathway, health-check date, family history and symptoms, the CT key image with the radiologists' outlines and findings, Lung-RADS, a planned AI comparison and a plain-language summary. The structure is explained in [docs/oncology-referral-framework.md](docs/oncology-referral-framework.md)

@@ -133,13 +133,20 @@ def _prepare_dicom(content: bytes, confirmed_chest: bool) -> PreparedImage:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             pixels = np.asarray(apply_modality_lut(pixels, ds), dtype=np.float64)
-            if "VOILUTSequence" in ds or ("WindowCenter" in ds and "WindowWidth" in ds):
+            windowed = "VOILUTSequence" in ds or ("WindowCenter" in ds and "WindowWidth" in ds)
+            if windowed:
                 pixels = np.asarray(apply_voi_lut(pixels, ds, index=0), dtype=np.float64)
         if not np.isfinite(pixels).all():
             raise ImageRejected("The image contains non-finite pixel values.")
         low, high = float(pixels.min()), float(pixels.max())
         if high <= low:
             raise ImageRejected("The image has no usable pixel-intensity range.")
+        # A display window that pins most pixels to black or white (for example a
+        # CT lung window stored on a radiograph) would be scored as a blank image.
+        if windowed:
+            clipped = float(np.mean((pixels <= low) | (pixels >= high)))
+            if clipped > 0.5:
+                raise ImageRejected(f"The DICOM display window clips {clipped:.0%} of the image to black or white, so it cannot be analysed reliably. Check WindowCenter and WindowWidth.")
         scaled = np.clip((pixels - low) / (high - low), 0.0, 1.0)
         if str(ds.PhotometricInterpretation) == "MONOCHROME1":
             scaled = 1.0 - scaled

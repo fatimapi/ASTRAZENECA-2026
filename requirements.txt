@@ -11,3 +11,5 @@ torchvision==0.25.0; sys_platform != "darwin" or platform_machine != "x86_64"
 torch==2.2.2; sys_platform == "darwin" and platform_machine == "x86_64"
 torchvision==0.17.2; sys_platform == "darwin" and platform_machine == "x86_64"
 torchxrayvision==1.5.7
+# Clinical agent (optional): live Gemini calls from the backend only
+google-genai==3.3.0

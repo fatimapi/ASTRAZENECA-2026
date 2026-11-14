@@ -23,6 +23,10 @@ These scripts produce `data/lidc/ai-reads.js`, the precomputed AI reads that the
 | 4. Compare inputs and prompts | `gemini_experiments.py`, then `score_experiments.py` | `experiments/*.json`, `experiments/scoreboard.csv` |
 | 5. Publish the chosen read to the site | `export_ai_reads.py --results experiments/dicom512-plain__gemini-4-argon.json --model gemini-4-argon --prompt-file gemini_experiments.py --input "…"` | `data/lidc/ai-reads.js` |
 
+| 6. Chest X-ray test copies (frontal only, view from header evidence; drops clipping windows; visual fixes) | `make_cxr_test_copies.py` (needs `LIDC-CXR/<patient>/*.dcm`) | `frontal-test/*.dcm`, `cxr_manifest.csv`; results in `cxr_results.csv` (see backend/README.md) |
+| 7. Run the X-ray classifier on the test copies | `CANDEX_API_KEY=<token> run_cxr_tests.py` (backend running) | `results/<patient>.json`, `cxr_results.csv` |
+| 8. AI summaries of the X-ray scores (Gemini drafter + reviewer, EN/FI) | `summarise_cxr.py` | `data/lidc/cxr-reads.js`, `data/lidc/<patient>/cxr.jpg` |
+
 `model_leaderboard.csv` and `experiments_scoreboard.csv` in this folder are the results behind the current export.
 
 ## Rules
