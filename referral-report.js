@@ -90,7 +90,7 @@ function fingerprint(id) {
   const saved = lang;
   try {
     const r = build(id, {lang: 'en', skipApproval: true});
-    return hash(JSON.stringify([r.patient, r.pathway.filter(([k]) => !JOURNEY_ROWS.includes(k)), r.context, r.technique, r.findings, r.ai?.rows, r.impression, r.plain]));
+    return hash(JSON.stringify([r.patient, r.pathway.filter(([k]) => !JOURNEY_ROWS.includes(k)), r.context, r.technique, r.findings, r.ai?.rows, window.candexAiReads?.provenance?.promptSha || null, r.impression, r.plain]));
   } finally { lang = saved; }
 }
 function approvalStatus(id) {
@@ -133,7 +133,7 @@ function applyApproval(rep) {
     rep.signoff = [
       [t('Status', 'Tila'), t(`Approved, version ${st.version}`, `Hyväksytty, versio ${st.version}`)],
       [t('Approved by', 'Hyväksyjä'), `${st.by}, ${fmtDate(st.at)}`],
-      [t('Clinician confirmed', 'Lääkäri vahvisti'), t('Patient details, findings and key image reviewed; recommendations, destination and urgency clinically appropriate.', 'Potilastiedot, löydökset ja avainkuva tarkistettu; suositukset, kohde ja kiireellisyys kliinisesti asianmukaisia.')],
+      [t('Clinician confirmed', 'Lääkäri vahvisti'), t('Patient details, findings and key image reviewed; recommendations, destination and urgency clinically appropriate. AI research comparison reviewed; not used for urgency or recommendations.', 'Potilastiedot, löydökset ja avainkuva tarkistettu; suositukset, kohde ja kiireellisyys kliinisesti asianmukaisia. Tekoälyn tutkimusvertailu tarkistettu; ei käytetty kiireellisyyteen eikä suosituksiin.')],
       ...(st.released ? [[t('Released', 'Julkaistu'), t("To the patient's referral journey (demo portal).", 'Potilaan lähetepolulle (demoportaali).')]] : []),
       provenance,
     ];
@@ -262,18 +262,61 @@ function build(id, opts = {}) {
       category: t(`Lung-RADS v2022 category ${band} (approximated): ${lr.meaning}. Approximated from the readers' size and ratings; LIDC-IDRI has no Lung-RADS labels, and part-solid and ground-glass rules are simplified.`, `Lung-RADS v2022 -luokka ${band} (arvioitu): ${lr.meaning}. Arvioitu lukijoiden koko- ja arviotiedoista; LIDC-IDRI-aineistossa ei ole Lung-RADS-merkintöjä, ja osittain kiinteiden ja mattalasimaisten pesäkkeiden säännöt on yksinkertaistettu.`),
       treatment: t('Not applicable: no cancer treatment has been given.', 'Ei sovellu: syöpähoitoa ei ole annettu.'),
     };
+    // AI second reader (research): precomputed read from ai-second-reader.js.
+    // Shown for comparison only; it never feeds urgency, bottom line or recommendations.
+    const A = window.candexAi, aiRead = A?.read(c.id) || null, prov = A?.provenance() || null, ag = aiRead ? A.agreement(c, aiRead) : null;
     const pend = t('Pending', 'Odottaa');
-    ai = {
-      rows: [
-        [t('Nodule detected', 'Pesäke havaittu'), t(`Yes (${main.readers} of 4 readers)`, `Kyllä (${main.readers}/4 lukijaa)`), pend, '—'],
-        [t('Long × short axis', 'Pitkä × lyhyt akseli'), `${num(g.long)} × ${num(g.short)} mm`, pend, '—'],
-        [t('Composition', 'Rakenne'), composition(main.texture), pend, '—'],
-        [t('Lung-RADS (approx.)', 'Lung-RADS (arvio)'), band, pend, '—'],
-        [t('Outline overlap (Dice)', 'Rajausten päällekkäisyys (Dice)'), t('Reference outlines available', 'Vertailurajaukset saatavilla'), pend, '—'],
-      ],
-      note: t('Planned model: a CT lung-nodule detector (for example MONAI lung_nodule_ct_detection). It is not connected yet, so this report contains no AI output. That model was trained on LUNA16, which is built from LIDC-IDRI, so agreement on these cases would overstate real-world accuracy; validate on independent Finnish data before clinical use.',
-        'Suunniteltu malli: TT-kuvien keuhkopesäkkeiden tunnistin (esimerkiksi MONAI lung_nodule_ct_detection). Sitä ei ole vielä yhdistetty, joten raportissa ei ole tekoälyn tuottamia tietoja. Malli on koulutettu LIDC-IDRI-aineistosta johdetulla LUNA16-aineistolla, joten yhtäpitävyys näissä tapauksissa yliarvioisi todellista tarkkuutta; validoi riippumattomalla suomalaisella aineistolla ennen kliinistä käyttöä.'),
-    };
+    if (aiRead && ag) {
+      const yn = b => (b ? t('Yes', 'Kyllä') : t('No', 'Ei'));
+      const tick = ok => (ok ? '✓' : '✗');
+      const sideT = s => t(s, ({right: 'oikea', left: 'vasen', 'not seen': 'ei nähty'})[s] || s);
+      const lobeT = l => t(l, ({upper: 'ylälohko', middle: 'keskilohko', lower: 'alalohko', lingula: 'lingula', uncertain: 'epävarma'})[l] || l);
+      const compT = x => t(x, ({solid: 'kiinteä', 'part-solid': 'osittain kiinteä', 'ground-glass': 'mattalasimainen', calcified: 'kalkkeutunut', 'not applicable': 'ei sovellu'})[x] || x);
+      const found = !!aiRead.nodule_present;
+      const verdict = {agrees: t('Agrees with radiologists', 'Yhtäpitävä radiologien kanssa'), partly: t('Partly agrees with radiologists', 'Osittain yhtäpitävä radiologien kanssa'), disagrees: t('Disagrees with radiologists', 'Eriävä radiologien kanssa')}[ag.verdict];
+      const lb = prov?.leaderboard || {};
+      ai = {
+        verdict: ag.verdict,
+        verdictText: verdict,
+        summary: found
+          ? t(`AI found a ${aiRead.composition || 'nodule'} nodule in the ${aiRead.location?.side || ''} lung${aiRead.location?.lobe && aiRead.location.lobe !== 'uncertain' ? `, ${aiRead.location.lobe} lobe` : ''}, ${aiRead.long_axis_mm != null ? `${aiRead.long_axis_mm} mm` : 'size not given'}, Lung-RADS ${aiRead.lung_rads || '—'} (model confidence ${Math.round((aiRead.confidence ?? 0) * 100)} %, not calibrated).`,
+              `Tekoäly löysi ${compT(aiRead.composition || 'nodule').replace('nodule', 'pesäkkeen')} pesäkkeen ${sideT(aiRead.location?.side) === 'oikea' ? 'oikeasta' : sideT(aiRead.location?.side) === 'vasen' ? 'vasemmasta' : ''} keuhkosta${aiRead.location?.lobe && aiRead.location.lobe !== 'uncertain' ? ` (${lobeT(aiRead.location.lobe)})` : ''}, ${aiRead.long_axis_mm != null ? `${num(aiRead.long_axis_mm)} mm` : 'koko ei tiedossa'}, Lung-RADS ${aiRead.lung_rads || '—'} (mallin varmuus ${Math.round((aiRead.confidence ?? 0) * 100)} %, ei kalibroitu).`)
+          : t(`AI reported no nodule (model confidence ${Math.round((aiRead.confidence ?? 0) * 100)} %, not calibrated).`, `Tekoäly ei löytänyt pesäkettä (mallin varmuus ${Math.round((aiRead.confidence ?? 0) * 100)} %, ei kalibroitu).`),
+        miss: !found ? t('AI reported no nodule; radiologists marked one. A negative AI read must never be used to rule out a nodule.', 'Tekoäly ei löytänyt pesäkettä; radiologit merkitsivät sen. Negatiivista tekoälyluentaa ei saa koskaan käyttää pesäkkeen poissulkemiseen.')
+          : ag.wrongSide ? t('AI reported a finding on the other side, so the radiologists\u2019 nodule was not found. Treat this as a miss plus a possible false positive.', 'Tekoäly ilmoitti löydöksen toisella puolella, joten radiologien pesäkettä se ei löytänyt. Käsittele tätä ohituksena ja mahdollisena vääränä positiivisena.') : null,
+        report: aiRead.short_report || null,
+        markers: Array.isArray(aiRead.candidates) ? aiRead.candidates.filter(cd => cd.x != null && cd.y != null && (cd.frame == null || Math.abs(cd.frame - g.frame) <= 1)) : [],
+        rows: [
+          [t('Nodule detected', 'Pesäke havaittu'), t(`Yes (${main.readers} of 4 readers)`, `Kyllä (${main.readers}/4 lukijaa)`), yn(found), tick(found)],
+          [t('Side · lobe', 'Puoli · lohko'), `${sideT(ag.refSide)} · ${t('lobe to confirm', 'lohko varmistettava')}`, found ? `${sideT(aiRead.location?.side)} · ${lobeT(aiRead.location?.lobe || 'uncertain')}` : '—', found ? tick(ag.side) : '—'],
+          [t('Size (long axis)', 'Koko (pitkä akseli)'), t(`${main.diameter} mm readers' mean; ${g.long} × ${g.short} mm on key image`, `${num(main.diameter)} mm lukijoiden keskiarvo; ${num(g.long)} × ${num(g.short)} mm avainkuvassa`), aiRead.long_axis_mm != null ? `${num(aiRead.long_axis_mm)}${aiRead.short_axis_mm != null ? ` × ${num(aiRead.short_axis_mm)}` : ''} mm` : '—', found ? (ag.size ? '✓' : `✗ (±${num(ag.sizeTol)} mm)`) : '—'],
+          [t('Composition', 'Rakenne'), composition(main.texture), found && aiRead.composition ? compT(aiRead.composition) : '—', found ? tick(compT(aiRead.composition) === composition(main.texture)) : '—'],
+          [t('Lung-RADS (approx.)', 'Lung-RADS (arvio)'), band, aiRead.lung_rads || '—', ag.lrExact ? '✓' : ag.lrNear ? t('≈ one category apart', '≈ yhden luokan ero') : '✗'],
+          ...(ag.slice !== null ? [[t('Slice (of 11 in excerpt)', 'Leike (11:stä otteessa)'), String(g.frame + 1), String(ag.slice + 1), Math.abs(ag.slice - g.frame) <= 1 ? '✓' : '✗']] : []),
+          [t('Model confidence', 'Mallin varmuus'), '—', aiRead.confidence != null ? `${Math.round(aiRead.confidence * 100)} %` : '—', t('not calibrated', 'ei kalibroitu')],
+          ...(aiRead.votes?.of ? [[t('Runs that agree', 'Yhtäpitävät ajot'), '—', `${aiRead.votes.agree} / ${aiRead.votes.of}`, '—']] : []),
+          ...(ag.located !== null ? [[t('AI position on the radiologists’ nodule', 'Tekoälyn sijainti radiologien pesäkkeessä'), '—', yn(ag.located), tick(ag.located)]] : []),
+          [t('Overall', 'Kokonaisuus'), '', '', verdict],
+        ],
+        note: [
+          t('Exploratory research comparison, not for clinical use.', 'Alustava tutkimusvertailu, ei kliiniseen käyttöön.'),
+          prov ? t(`AI: ${prov.model} (general-purpose model, unvalidated), precomputed ${prov.generated}; input: ${prov.input}${prov.coordinates ? '; image coordinates withheld as unreliable' : ''}${prov.runs > 1 ? `; ${prov.runs} runs, majority vote` : ''}.`, `Tekoäly: ${prov.model} (yleiskäyttöinen, validoimaton malli), laskettu ${prov.generated}; syöte: ${prov.inputFi || prov.input}${prov.runs > 1 ? `; ${prov.runs} ajoa, enemmistöpäätös` : ''}.`) : '',
+          lb.found ? t(`Across the 5 public study nodules it found ${lb.found} on the correct side (95% CI ${lb.ci})${lb.consensusFound ? `, and ${lb.consensusFound} of those marked by at least 3 of 4 radiologists` : ''}${lb.wrongSideFindings ? `; ${lb.wrongSideFindings} finding${lb.wrongSideFindings === 1 ? ' was' : 's were'} on the wrong side` : ''}.`, `Viiden julkisen tutkimuksen pesäkkeistä se löysi oikealta puolelta ${lb.found} (95 %:n LV ${lb.ci})${lb.consensusFound ? ` ja vähintään 3/4 radiologin merkitsemistä ${lb.consensusFound}` : ''}${lb.wrongSideFindings ? `; ${lb.wrongSideFindings} löydös oli väärällä puolella` : ''}.`) : '',
+          t('It may miss or invent findings and misstate size; its confidence is not calibrated. LIDC-IDRI is public and widely redistributed, so the model may have seen these images in training, which would inflate agreement. Not used for urgency or recommendations.', 'Se voi jättää löydöksiä huomaamatta, keksiä niitä tai arvioida koon väärin; sen varmuus ei ole kalibroitu. LIDC-IDRI on julkinen ja laajasti jaettu, joten malli on voinut nähdä nämä kuvat koulutuksessa, mikä liioittelisi yhtäpitävyyttä. Ei käytetty kiireellisyyteen eikä suosituksiin.'),
+        ].filter(Boolean).join(' '),
+      };
+    } else {
+      ai = {
+        verdict: null,
+        rows: [
+          [t('Nodule detected', 'Pesäke havaittu'), t(`Yes (${main.readers} of 4 readers)`, `Kyllä (${main.readers}/4 lukijaa)`), pend, '—'],
+          [t('Long × short axis', 'Pitkä × lyhyt akseli'), `${num(g.long)} × ${num(g.short)} mm`, pend, '—'],
+          [t('Composition', 'Rakenne'), composition(main.texture), pend, '—'],
+          [t('Lung-RADS (approx.)', 'Lung-RADS (arvio)'), band, pend, '—'],
+        ],
+        note: t('No AI second read is available for this study. Any future AI read will be shown here as a research comparison and will not set urgency or recommendations.', 'Tälle tutkimukselle ei ole tekoälyluentaa. Mahdollinen tuleva luenta näytetään tässä tutkimusvertailuna, eikä se vaikuta kiireellisyyteen tai suosituksiin.'),
+      };
+    }
   }
 
   // 6. Impression
@@ -348,7 +391,7 @@ function build(id, opts = {}) {
       [t('Status', 'Tila'), t('Unsigned draft for clinician review. Not a diagnosis.', 'Allekirjoittamaton luonnos lääkärin tarkistettavaksi. Ei diagnoosi.')],
       [t('Prepared', 'Laadittu'), `${created} ${t('in Candex (demonstration)', 'Candexissa (demo)')}`],
       [t('To be signed by', 'Allekirjoittaja'), t('Responsible clinician', 'Vastuulääkäri')],
-      [t('Data provenance', 'Tietojen alkuperä'), t('Fictional patient and simulated health check. CT images: LIDC-IDRI, The Cancer Imaging Archive (CC BY 3.0); Armato SG III et al., Medical Physics 2011;38(2):915–931.', 'Kuvitteellinen potilas ja simuloitu terveyskysely. TT-kuvat: LIDC-IDRI, The Cancer Imaging Archive (CC BY 3.0); Armato SG III ym., Medical Physics 2011;38(2):915–931.')],
+      [t('Data provenance', 'Tietojen alkuperä'), t('Fictional patient and simulated health check. CT images: LIDC-IDRI, The Cancer Imaging Archive (CC BY 3.0); Armato SG III et al., Medical Physics 2011;38(2):915–931; data doi:10.7937/K9/TCIA.2015.LO9QL9SX; Clark K et al., J Digit Imaging 2013 (TCIA). Prototype for research use only: not a medical device, not CE-marked.', 'Kuvitteellinen potilas ja simuloitu terveyskysely. TT-kuvat: LIDC-IDRI, The Cancer Imaging Archive (CC BY 3.0); Armato SG III ym., Medical Physics 2011;38(2):915–931; aineisto doi:10.7937/K9/TCIA.2015.LO9QL9SX; Clark K ym., J Digit Imaging 2013 (TCIA). Vain tutkimuskäyttöön tarkoitettu prototyyppi: ei lääkinnällinen laite, ei CE-merkitty.')],
     ],
     labels: {
       bottom: t('Bottom line', 'Johtopäätös lyhyesti'), draft: t('Unsigned draft · demo', 'Allekirjoittamaton luonnos · demo'),
@@ -361,7 +404,8 @@ function build(id, opts = {}) {
       nodal: t('Nodal disease', 'Imusolmukkeet'), distant: t('Distant metastases', 'Etäpesäkkeet'), category: t('Standardised category', 'Standardoitu luokitus'), treatment: t('Treatment-related changes', 'Hoitoon liittyvät muutokset'),
       keyImg: g ? t(`Key image ${g.frame + 1}, table position ${g.z} mm. Purple: radiologist outlines of the main nodule.`, `Avainkuva ${g.frame + 1}, pöydän sijainti ${num(g.z)} mm. Violetti: radiologien rajaukset pääpesäkkeestä.`) : '',
       zoom: t('Main nodule, zoomed x4.', 'Pääpesäke, suurennettu 4x.'),
-      s6: t('AI model comparison (planned)', 'Vertailu tekoälymalliin (suunniteltu)'), aiHead: [t('Measure', 'Mittari'), t('Radiologists (LIDC)', 'Radiologit (LIDC)'), t('AI model', 'Tekoälymalli'), t('Agreement', 'Yhtäpitävyys')],
+      s6: t('AI second reader: research comparison', 'Tekoäly toisena lukijana: tutkimusvertailu'),
+      aiFinding: t('AI finding (from imaging review)', 'Tekoälyn löydös (kuvantamisen arviosta)'), aiReport: t('AI report text (verbatim, unedited)', 'Tekoälyn raporttiteksti (sellaisenaan, muokkaamaton)'), aiMarker: t('Amber dashed circle: AI marker.', 'Oranssi katkoviivaympyrä: tekoälyn merkintä.'), aiHead: [t('Measure', 'Mittari'), t('Radiologists (LIDC)', 'Radiologit (LIDC)'), t('AI model', 'Tekoälymalli'), t('Agreement', 'Yhtäpitävyys')],
       s7: t('Impression', 'Johtopäätökset'), keyFindings: t('Key findings, in order of importance', 'Keskeiset löydökset tärkeysjärjestyksessä'), negatives: t('Pertinent negatives', 'Merkitykselliset negatiiviset löydökset'), recs: t('Recommendations', 'Suositukset'),
       s8: t('For the patient: plain-language summary', 'Potilaalle: selkokielinen yhteenveto'), terms: t('Terms used', 'Käytetyt termit'), s9: t('Sign-off', 'Hyväksyntä'),
       header: t('unsigned draft', 'allekirjoittamaton luonnos'),
@@ -389,6 +433,10 @@ function keyImages(rep) {
             ctx.beginPath(); o.pts.forEach(([x, y], i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, (x - sx) * k, (y - sy) * k)); ctx.closePath();
             ctx.lineWidth = Math.max(1.5, k * 0.9); ctx.strokeStyle = o.n === 0 ? '#e2c6ff' : '#f4c98b'; ctx.setLineDash(o.n === 0 ? [] : [4, 3]); ctx.stroke();
           }
+          for (const m of rep.ai?.markers || []) {
+            ctx.beginPath(); ctx.arc((m.x - sx) * k, (m.y - sy) * k, 16 * k, 0, Math.PI * 2);
+            ctx.lineWidth = Math.max(2, k * 1.2); ctx.strokeStyle = '#f4c98b'; ctx.setLineDash([6, 4]); ctx.stroke();
+          }
           return cv.toDataURL('image/jpeg', 0.9);
         };
         const g = rep.geometry, half = 48;
@@ -415,7 +463,7 @@ ${sec(n++, L.s2, kvHTML(rep.pathway))}
 ${sec(n++, L.s3, kvHTML(rep.context))}
 ${rep.technique ? sec(n++, L.s4, kvHTML(rep.technique)) : sec(n++, L.s4none, `<p>${esc(L.noImgHint)}</p>`)}
 ${f ? sec(n++, L.s5, `<div class="rr-img"><figure><img id="rr-full" alt="${esc(L.keyImg)}"><figcaption>${esc(L.keyImg)}</figcaption></figure><figure><img id="rr-zoom" alt="${esc(L.zoom)}"><figcaption>${esc(L.zoom)}</figcaption></figure></div><h4>${esc(L.primary)}</h4>${kvHTML(f.primary)}<h4>${esc(L.others)}</h4><ul>${f.others.map(x => `<li>${esc(x)}</li>`).join('')}</ul><h4>${esc(L.nodal)}</h4><p>${esc(f.nodal)}</p><h4>${esc(L.distant)}</h4><p>${esc(f.distant)}</p><h4>${esc(L.category)}</h4><p>${esc(f.category)}</p><h4>${esc(L.treatment)}</h4><p>${esc(f.treatment)}</p>`) : ''}
-${rep.ai ? sec(n++, L.s6, `<div class="table-wrap"><table><thead><tr>${L.aiHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.ai.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="rr-note">${esc(rep.ai.note)}</p>`) : ''}
+${rep.ai ? sec(n++, L.s6, `${rep.ai.summary ? `<div class="rr-bottom rr-ai ${rep.ai.verdict === 'agrees' ? '' : 'rr-ai-warn'}"><small>${esc(L.aiFinding)} · ${esc(rep.ai.verdictText)}</small><p>${esc(rep.ai.summary)}</p></div>` : ''}${rep.ai.miss ? `<p class="rr-ai-miss">${esc(rep.ai.miss)}</p>` : ''}<div class="table-wrap"><table><thead><tr>${L.aiHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.ai.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${rep.ai.report ? `<h4>${esc(L.aiReport)}</h4><blockquote class="rr-quote">${esc(rep.ai.report)}</blockquote>` : ''}<p class="rr-note">${esc(rep.ai.note)}</p>`) : ''}
 ${sec(n++, L.s7, `<p class="rr-bl">${esc(rep.impression.bottomLine)}</p><h4>${esc(L.keyFindings)}</h4><ol>${rep.impression.bullets.map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rep.impression.negatives.length ? `<h4>${esc(L.negatives)}</h4><ul>${rep.impression.negatives.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="rr-note">${esc(rep.impression.notEvaluated)}</p><h4>${esc(L.recs)}</h4><ol>${rep.impression.recs.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`)}
 ${sec(n++, L.s8, `<p>${esc(rep.plain)}</p><h4>${esc(L.terms)}</h4>${kvHTML(rep.glossary)}`)}
 ${sec(n++, L.s9, kvHTML(rep.signoff))}
@@ -543,7 +591,7 @@ function writePDF(jsPDF, rep, images) {
       const s1 = 74, s2 = 56; k.ensure(s1 + 12);
       doc.addImage(images.full, 'JPEG', k.M, k.y, s1, s1); doc.addImage(images.zoom, 'JPEG', k.M + s1 + 6, k.y, s2, s2);
       k.font(7.8, false, k.MUTED);
-      doc.text(doc.splitTextToSize(clean(L.keyImg), s1), k.M, k.y + s1 + 4);
+      doc.text(doc.splitTextToSize(clean(L.keyImg + (rep.ai?.markers?.length ? ` ${L.aiMarker}` : '')), s1), k.M, k.y + s1 + 4);
       doc.text(clean(L.zoom), k.M + s1 + 6, k.y + s2 + 4);
       k.y += s1 + 12;
     }
@@ -556,7 +604,12 @@ function writePDF(jsPDF, rep, images) {
   }
   if (rep.ai) {
     k.section(n++, L.s6);
-    k.table(L.aiHead, rep.ai.rows, [46, 62, 36, k.CW - 144]);
+    if (rep.ai.summary) k.callout(`${L.aiFinding} · ${rep.ai.verdictText}`, rep.ai.summary, rep.ai.verdict === 'agrees' ? {} : {fill: [252, 240, 223], bar: [154, 90, 41]});
+    if (rep.ai.miss) k.para(rep.ai.miss, {bold: true, color: [131, 85, 29]});
+    // The built-in PDF fonts cannot draw ✓ ✗ ≈, so spell the agreement out.
+    const sym = v => String(v).replace(/✓/g, rep.lang === 'fi' ? 'Täsmää' : 'Match').replace(/✗/g, rep.lang === 'fi' ? 'Eroaa' : 'Differs').replace(/≈/g, '~');
+    k.table(L.aiHead, rep.ai.rows.map(r => r.map(sym)), [46, 62, 36, k.CW - 144]);
+    if (rep.ai.report) { k.sub(L.aiReport); k.para(`"${rep.ai.report}"`, {color: [80, 72, 88]}); }
     k.para(rep.ai.note, {size: 8.4, color: k.MUTED});
   }
   k.section(n++, L.s7);
@@ -675,7 +728,7 @@ function section() {
 <div class="field"><label for="rr-service">Refer to</label><select id="rr-service"><option value="auto" ${service === 'auto' ? 'selected' : ''}>Automatic, from findings and pathway</option>${SERVICES.map(s => `<option value="${esc(s)}" ${service === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
 <div class="field"><label for="rr-lang">Report language</label><select id="rr-lang"><option value="en" ${rl === 'en' ? 'selected' : ''} translate="no">English</option><option value="fi" ${rl === 'fi' ? 'selected' : ''} translate="no">Suomi</option></select></div>
 <div class="field span2"><label for="rr-note">Referring clinician's note (optional)</label><textarea id="rr-note" maxlength="800" translate="no" placeholder="${esc(T('Add context the receiving team should know. Use fictional details only.'))}">${esc(note)}</textarea></div></div>
-<ul class="rr-includes">${['Patient reference', 'Care pathway', 'Health-check date', 'Family history & symptoms', 'CT key image & findings', 'AI comparison (pending)', 'Impression & recommendations', 'Plain-language summary'].map(x => `<li>${icon('check')}${x}</li>`).join('')}</ul>
+<ul class="rr-includes">${['Patient reference', 'Care pathway', 'Health-check date', 'Family history & symptoms', 'CT key image & findings', 'AI comparison (research)', 'Impression & recommendations', 'Plain-language summary'].map(x => `<li>${icon('check')}${x}</li>`).join('')}</ul>
 <div class="form-actions"><small>The report is an unsigned draft for clinician review.</small><button class="button secondary" type="button" data-action="report-preview">${icon('file')}Preview</button><button class="button secondary" type="button" data-action="patient-summary-pdf">${icon('heart')}Patient summary PDF</button><button class="button" type="button" data-action="report-pdf">${icon('download')}Download PDF</button></div>
 <div class="rr-approval" id="rr-approval" aria-live="polite">${approvalPanel(id)}</div>
 <div id="referral-preview"></div></section>`;
@@ -795,7 +848,7 @@ window.candexI18n?.extend?.({
   "Referring clinician's note (optional)": 'Lähettävän lääkärin huomio (valinnainen)',
   'Add context the receiving team should know. Use fictional details only.': 'Lisää tietoja, jotka vastaanottavan tiimin tulee tietää. Käytä vain kuvitteellisia tietoja.',
   'Health-check date': 'Terveyskyselyn päivämäärä', 'Family history & symptoms': 'Sukuhistoria ja oireet', 'CT key image & findings': 'TT-avainkuva ja löydökset',
-  'AI comparison (pending)': 'Tekoälyvertailu (tulossa)', 'Impression & recommendations': 'Johtopäätös ja suositukset', 'Plain-language summary': 'Selkokielinen yhteenveto',
+  'AI comparison (research)': 'Tekoälyvertailu (tutkimus)', 'Impression & recommendations': 'Johtopäätös ja suositukset', 'Plain-language summary': 'Selkokielinen yhteenveto',
   'The report is an unsigned draft for clinician review.': 'Raportti on allekirjoittamaton luonnos lääkärin tarkistettavaksi.',
   'Approve report': 'Hyväksy raportti', 'Withdraw approval': 'Peru hyväksyntä', 'Draft: not approved': 'Luonnos: ei hyväksytty', 'Changed since approval': 'Muuttunut hyväksynnän jälkeen',
   'Preview the report, check it, then approve it.': 'Esikatsele raportti, tarkista se ja hyväksy se.',

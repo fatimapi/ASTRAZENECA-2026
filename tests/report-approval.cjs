@@ -8,7 +8,7 @@ const listeners = {};
 const document = {querySelector: () => node(), querySelectorAll: () => [], addEventListener: (n, fn) => (listeners[n] ??= []).push(fn), createElement: () => node(), documentElement: node(), title: ''};
 const win = {scrollTo() {}, addEventListener() {}};
 const ctx = vm.createContext({document, window: win, location: {hash: '#care/reports'}, localStorage: mem(), sessionStorage: mem(), Blob, URL: {createObjectURL: () => 'blob:x', revokeObjectURL() {}}, FormData: class { constructor(f) { this.f = f; } *[Symbol.iterator]() { yield* Object.entries(this.f.values || {}); } }, setTimeout: () => 1, clearTimeout() {}, console, Set, Map, Intl, crypto: globalThis.crypto});
-for (const f of ['referral-store.js', 'screening.js', 'data/lidc/cases.js', 'imaging.js', 'referral-report.js', 'referral-hub.js']) vm.runInContext(read(f), ctx);
+for (const f of ['referral-store.js', 'screening.js', 'data/lidc/cases.js', 'data/lidc/ai-reads.js', 'ai-second-reader.js', 'imaging.js', 'referral-report.js', 'referral-hub.js']) vm.runInContext(read(f), ctx);
 vm.runInContext(read('app.js') + '\nglobalThis.api={state,patients};', ctx);
 const R = win.candexReport, store = win.CandexReferralStore, I = win.candexImaging;
 let checks = 0; const defects = [];

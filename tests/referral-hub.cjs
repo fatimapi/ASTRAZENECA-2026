@@ -10,7 +10,7 @@ let urls = 0;
 class FileReader { readAsDataURL(b) { b.arrayBuffer().then(buf => { this.result = `data:${b.type};base64,` + Buffer.from(buf).toString('base64'); this.onload(); }); } }
 const win = {scrollTo() {}, addEventListener() {}};
 const ctx = vm.createContext({document, window: win, location: {hash: '#care/referrals'}, localStorage: mem(), sessionStorage: mem(), Blob, FileReader, atob: s => Buffer.from(s, 'base64').toString('binary'), URL: {createObjectURL: () => `blob:${++urls}`, revokeObjectURL() {}}, FormData: class { constructor(f) { this.f = f; } *[Symbol.iterator]() { yield* Object.entries(this.f.values || {}); } }, setTimeout: () => 1, clearTimeout() {}, console, Set, Map, Intl, crypto: globalThis.crypto});
-for (const f of ['referral-store.js', 'screening.js', 'data/lidc/cases.js', 'imaging.js', 'referral-report.js', 'referral-hub.js']) vm.runInContext(read(f), ctx);
+for (const f of ['referral-store.js', 'screening.js', 'data/lidc/cases.js', 'data/lidc/ai-reads.js', 'ai-second-reader.js', 'imaging.js', 'referral-report.js', 'referral-hub.js']) vm.runInContext(read(f), ctx);
 vm.runInContext(read('app.js') + '\nglobalThis.api={state,patients};', ctx);
 const store = win.CandexReferralStore, hub = win.candexReferralHub, R = win.candexReport, api = ctx.api;
 let checks = 0; const defects = [];
