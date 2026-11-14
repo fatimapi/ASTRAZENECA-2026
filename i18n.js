@@ -236,7 +236,7 @@ const FI={
 'Urgent action':'Kiireellisiä toimia','Acknowledged':'Kuitattu','Acknowledge':'Kuittaa','All acknowledged':'Kaikki kuitattu','Show affected patients':'Näytä koskevat potilaat','Open patient worklist':'Avaa potilastyölista',
 '1 patient in your worklist':'1 potilas työlistallasi','Urgent action requested by the quality team':'Laatutiimi pyytää kiireellisiä toimia',
 'Sent to doctors · waiting for acknowledgement':'Lähetetty lääkäreille · odottaa kuittausta','Acknowledged by doctor':'Lääkäri on kuitannut',
-'Request acknowledged. The quality team can see it has been received.':'Pyyntö kuitattu. Laatutiimi näkee, että se on vastaanotettu.','Request acknowledged and closed. The quality team can see it has been received.':'Pyyntö kuitattu, ja se on suljettu. Laatutiimi näkee, että se on vastaanotettu.',
+'Request acknowledged. The quality team can see it has been received.':'Pyyntö kuitattu. Laatutiimi näkee, että se on vastaanotettu.','Notification closed. Affected patients stay flagged until their follow-up is done.':'Ilmoitus suljettu. Potilaat pysyvät merkittyinä, kunnes seuranta on tehty.','Request acknowledged and closed. The quality team can see it has been received.':'Pyyntö kuitattu, ja se on suljettu. Laatutiimi näkee, että se on vastaanotettu.',
 'Specialist appointment · 10:30':'Erikoislääkärin vastaanotto · 10.30','Chest CT scan':'Keuhkojen TT-kuvaus','Diagnosis discussion':'Diagnoosikeskustelu',
 
 // Records
