@@ -294,9 +294,19 @@ def test_ct_compare_needs_token_confirmations_and_ct_series(client, monkeypatch)
     files = [("files", ("a.dcm", synthetic_dicom_bytes(), "application/dicom"))]
     assert client.post("/api/ct/compare", files=files, data={"confirmed_chest": "true", "permitted_data": "true"}).status_code == 401
     assert client.post("/api/ct/compare", files=files, data={"confirmed_chest": "true"}, headers=AUTH).status_code == 422
-    # The synthetic file is an X-ray (not CT): rejected before any AI call.
+    # The synthetic file is an X-ray (not CT): the job is rejected before any AI call.
     r = client.post("/api/ct/compare", files=files, data={"confirmed_chest": "true", "permitted_data": "true"}, headers=AUTH)
-    assert r.status_code == 415 and "CT" in r.json()["detail"]
+    assert r.status_code == 202 and r.json()["job"]
+    jid = r.json()["job"]
+    assert client.get(f"/api/ct/jobs/{jid}").status_code == 401
+    import time
+    for _ in range(100):
+        job = client.get(f"/api/ct/jobs/{jid}", headers=AUTH).json()
+        if job["status"] != "running":
+            break
+        time.sleep(0.05)
+    assert job["status"] == "error" and job["code"] == 415 and "CT" in job["detail"]
+    assert client.get("/api/ct/jobs/unknown", headers=AUTH).status_code == 404
     # Matching: all 25 public studies scored; similar nodules rank first.
     refs = reference_cases()
     assert len(refs) == 25 and all(r["band"] and r["diameter"] for r in refs)

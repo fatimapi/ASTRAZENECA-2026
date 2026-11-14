@@ -28,6 +28,9 @@ from typing import List, Literal, Optional
 
 import importlib
 import os
+import secrets
+import shutil
+import tempfile
 
 from fastapi import APIRouter, File, Form, Header, HTTPException, UploadFile
 from pydantic import BaseModel, Field
@@ -46,39 +49,109 @@ MEASURE = importlib.import_module(os.getenv("CANDEX_CT_MEASURE", "backend.ct_mea
 
 
 # ---------- DICOM series ----------
-def load_series(blobs: List[bytes]):
+MAX_VOLUME_SLICES = int(os.getenv("CANDEX_CT_MAX_VOLUME_SLICES", "200"))
+
+
+class DiskVolume:
+    """A CT volume kept on disk (int16 HU, z × rows × cols); slices are read only when indexed.
+
+    Supports what the pipeline and the measurement use: .shape, vol[k], vol[a:b] and
+    vol[a:b, r0:r1, c0:c1]. Only the requested slices are in memory at any time, so the whole
+    series never is (the hosted backend has 512 MB)."""
+
+    dtype = "int16"
+    ndim = 3
+
+    def __init__(self, path, n, rows, cols):
+        self.path, self.shape = str(path), (n, rows, cols)
+        self._per = rows * cols
+
+    def __len__(self):
+        return self.shape[0]
+
+    def _read(self, a, b):
+        import numpy as np
+        n, rows, cols = self.shape
+        if b <= a:
+            return np.empty((0, rows, cols), dtype=np.int16)
+        return np.fromfile(self.path, dtype=np.int16, count=(b - a) * self._per, offset=a * self._per * 2).reshape(b - a, rows, cols)
+
+    def __getitem__(self, key):
+        import numpy as np
+        rest = ()
+        if isinstance(key, tuple):
+            key, rest = key[0], key[1:]
+        n = self.shape[0]
+        if isinstance(key, (int, np.integer)):
+            k = int(key) + (n if int(key) < 0 else 0)
+            if not 0 <= k < n:
+                raise IndexError("slice index out of range")
+            out = self._read(k, k + 1)[0]
+        elif isinstance(key, slice):
+            a, b, step = key.indices(n)
+            out = self._read(a, b) if step == 1 else self._read(a, b)[::step]
+            rest = (slice(None),) + rest if rest else rest  # keep the z axis; crop rows/cols
+        else:
+            raise TypeError("DiskVolume supports integer and slice indexing on the first axis")
+        return out[rest] if rest else out
+
+
+def load_series(sources, workdir=None):
+    """One CT series as a disk-backed HU volume (DiskVolume), with slice positions and metadata.
+
+    sources: file paths (uploads saved to disk) or bytes. Headers are read first without pixels;
+    then each slice of the chosen series is decoded on its own and appended to an int16 file.
+    Very long thin-slice series keep at most MAX_VOLUME_SLICES evenly spaced slices (the slice
+    spacing is adjusted, so measurements stay in millimetres)."""
     import numpy as np
     import pydicom
+    open_src = lambda src: io.BytesIO(src) if isinstance(src, (bytes, bytearray)) else src
     series = {}
-    for b in blobs:
+    for i, src in enumerate(sources):
         try:
-            ds = pydicom.dcmread(io.BytesIO(b))
+            ds = pydicom.dcmread(open_src(src), stop_before_pixels=True)
         except Exception:
             continue
-        if str(ds.get("Modality", "")) != "CT" or "PixelData" not in ds or not hasattr(ds, "ImagePositionPatient"):
+        if str(ds.get("Modality", "")) != "CT" or not hasattr(ds, "ImagePositionPatient") or not ds.get("Rows"):
             continue
-        series.setdefault(str(ds.get("SeriesInstanceUID", "")), []).append(ds)
+        series.setdefault(str(ds.get("SeriesInstanceUID", "")), []).append((float(ds.ImagePositionPatient[2]), i, ds))
     if not series:
         raise HTTPException(415, "No CT DICOM images were found. Upload the files of one chest CT series (Modality CT).")
-    slices = max(series.values(), key=len)
-    if len(slices) < MIN_SLICES:
-        raise HTTPException(422, f"The series has {len(slices)} images; at least {MIN_SLICES} axial slices are needed.")
-    slices.sort(key=lambda s: float(s.ImagePositionPatient[2]))
-    zs = [float(s.ImagePositionPatient[2]) for s in slices]
-    gaps = sorted(abs(b - a) for a, b in zip(zs, zs[1:]))
-    spacing = gaps[len(gaps) // 2] if gaps else float(slices[0].get("SliceThickness", 0) or 0)
-    px = float(slices[0].PixelSpacing[0])
-    vol = []
-    for s in slices:
-        arr = s.pixel_array.astype(np.float32) * float(s.get("RescaleSlope", 1) or 1) + float(s.get("RescaleIntercept", 0) or 0)
-        if arr.shape != (int(slices[0].Rows), int(slices[0].Columns)):
-            raise HTTPException(422, "The slices have different sizes; upload one axial CT series.")
-        vol.append(arr)
-    vol = np.stack(vol)
-    meta = {"slices": len(slices), "sliceSpacingMm": round(spacing, 2), "sliceThicknessMm": float(slices[0].get("SliceThickness", 0) or 0),
-            "pixelMm": round(px, 3), "matrix": f"{int(slices[0].Rows)} x {int(slices[0].Columns)}",
+    chosen = max(series.values(), key=len)
+    if len(chosen) < MIN_SLICES:
+        raise HTTPException(422, f"The series has {len(chosen)} images; at least {MIN_SLICES} axial slices are needed.")
+    chosen.sort(key=lambda t: t[0])
+    uploaded = len(chosen)
+    zs_all = [z for z, _, _ in chosen]
+    gaps = sorted(abs(b - a) for a, b in zip(zs_all, zs_all[1:]))
+    spacing = gaps[len(gaps) // 2] if gaps else float(chosen[0][2].get("SliceThickness", 0) or 0)
+    step = max(1, math.ceil(uploaded / MAX_VOLUME_SLICES))
+    if step > 1:
+        chosen = chosen[::step]
+        spacing *= step
+    first = chosen[0][2]
+    rows, cols = int(first.Rows), int(first.Columns)
+    px = float(first.PixelSpacing[0])
+    workdir = workdir or tempfile.mkdtemp(prefix="candex-ct-")
+    path = os.path.join(workdir, "volume.i16")
+    with open(path, "wb") as out:
+        for _, i, hdr in chosen:
+            try:
+                arr = pydicom.dcmread(open_src(sources[i])).pixel_array
+            except Exception:
+                raise HTTPException(422, "A slice of the series could not be decoded; upload one complete axial CT series.") from None
+            if arr.shape != (rows, cols):
+                raise HTTPException(422, "The slices have different sizes; upload one axial CT series.")
+            hu = arr.astype(np.float32) * float(hdr.get("RescaleSlope", 1) or 1) + float(hdr.get("RescaleIntercept", 0) or 0)
+            out.write(np.clip(np.rint(hu), -32768, 32767).astype(np.int16).tobytes())
+            if isinstance(sources[i], (bytes, bytearray)) and isinstance(sources, list):
+                sources[i] = None  # release each in-memory upload once decoded
+            del arr, hu
+    zs = [z for z, _, _ in chosen]
+    meta = {"slices": uploaded, "slicesUsed": len(chosen), "sliceSpacingMm": round(spacing, 2), "sliceThicknessMm": float(first.get("SliceThickness", 0) or 0),
+            "pixelMm": round(px, 3), "matrix": f"{rows} x {cols}",
             "zRangeMm": round(zs[-1] - zs[0], 1), "seriesInFiles": len(series)}
-    return vol, zs, meta
+    return DiskVolume(path, len(chosen), rows, cols), zs, meta
 
 
 def window(arr, level=-600, width=1500):
@@ -97,7 +170,12 @@ def png(img, size=None, fmt="PNG", quality=85):
 def body_box(vol):
     """Bounding box of the body (HU > -400) on the middle slices, so the lungs fill the views."""
     import numpy as np
-    mid = vol[vol.shape[0] // 4: 3 * vol.shape[0] // 4].max(axis=0) > -400
+    a, b = vol.shape[0] // 4, max(vol.shape[0] // 4 + 1, 3 * vol.shape[0] // 4)
+    peak = None
+    for k in range(a, b, 16):  # a few slices at a time (the volume may be on disk)
+        m = vol[k:min(b, k + 16)].max(axis=0)
+        peak = m if peak is None else np.maximum(peak, m)
+    mid = peak > -400
     rows, cols = np.where(mid.any(axis=1))[0], np.where(mid.any(axis=0))[0]
     if len(rows) < 10 or len(cols) < 10:
         return 0, vol.shape[1], 0, vol.shape[2]
@@ -226,28 +304,29 @@ def jpeg_b64(img, size=384):
     return base64.b64encode(png(img, size, "JPEG")).decode()
 
 
-@router.post("/compare")
-async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False),
-                  authorization: str = Header(default="")):
-    require_token(authorization)
-    if not confirmed_chest or not permitted_data:
-        raise HTTPException(422, "Confirm a chest CT series and permission to process this de-identified research or test image.")
-    if len(files) > MAX_SLICES:
-        raise HTTPException(413, f"Upload at most {MAX_SLICES} DICOM files (one CT series).")
-    if _slot.locked():
-        raise HTTPException(429, "Another CT comparison is running. Try again when it finishes.")
+# ---------- Background jobs ----------
+# A comparison takes about a minute (longer on a small hosted CPU), more than a proxy may wait for one
+# HTTP response. POST saves the upload and starts a job; the page polls GET /api/ct/jobs/{id}.
+JOB_TTL_S = 30 * 60
+_jobs: dict = {}
+_busy = False
+
+
+def _prune_jobs():
+    now = time.time()
+    for jid in [j for j, v in _jobs.items() if now - v["started"] > JOB_TTL_S]:
+        _jobs.pop(jid, None)
+
+
+async def _pipeline(job, paths, workdir, original):
+    t0 = job["started"]
     async with _slot:
-        t0 = time.time()
-        blobs = []
-        for f in files:
-            b = await f.read(MAX_SLICE_BYTES + 1)
-            await f.close()
-            if len(b) > MAX_SLICE_BYTES:
-                raise HTTPException(413, "A file is larger than 4 MB; upload the DICOM slices of one CT series.")
-            blobs.append(b)
-        vol, zs, meta = await asyncio.to_thread(load_series, blobs)
-        del blobs
+        job["stage"] = "reading"
+        vol, zs, meta = await asyncio.to_thread(load_series, paths, workdir)
+        if original:
+            meta["slicesOriginal"] = original
         from google.genai import types
+        job["stage"] = "search"
         sheets, slabs, sheets_small = await asyncio.to_thread(montage, vol)
         # 2. Find the slab with the most suspicious nodule.
         find_prompt = (f"These two montages show {len(slabs)} numbered slab maximum-intensity views (lung window, about "
@@ -276,6 +355,7 @@ async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = F
             rr = await generate(VISION_MODEL, [*parts, read_prompt], types.GenerateContentConfig(temperature=0, response_mime_type="application/json", response_schema=CtRead))
             return (rr.parsed if isinstance(rr.parsed, CtRead) else CtRead.model_validate_json(rr.text)).model_dump(), idx, centre
 
+        job["stage"] = "read"
         # 3. Read the nodule on full-resolution slices: first candidate; the second if the first shows none.
         tile = candidates[0] if candidates else None
         read, idx, centre = await read_at(tile)
@@ -289,6 +369,7 @@ async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = F
         read.pop("answer", None)
         key = idx[n] if 0 <= n < len(idx) else centre
         read["keySliceZ"] = round(zs[key], 1)
+        job["stage"] = "measure"
         # 3b. Measure from the pixels: Gemini boxes the nodule on the key slice; the size is measured deterministically.
         read["measured"], read["box"], why = None, None, []
         if read["nodule_present"]:
@@ -307,6 +388,7 @@ async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = F
                     read["measured"] = {k: (round(float(v), 1) if isinstance(v, float) or (hasattr(v, "item") and isinstance(v.item(), float)) else (v.item() if hasattr(v, "item") else v)) for k, v in read["measured"].items()}
         if read["nodule_present"] and not read["measured"]:
             read["measureNote"] = why[-1] if why else "no box from the AI"
+        job["stage"] = "match"
         # 4. Deterministic match against the public studies.
         matches = match(read, reference_cases())
         best = matches[0]
@@ -324,6 +406,7 @@ async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = F
                                           types.Part.from_bytes(data=ref_img, mime_type="image/jpeg"), cmp_prompt],
                            types.GenerateContentConfig(temperature=0, response_mime_type="application/json", response_schema=Comparison))
         comparison = (r.parsed if isinstance(r.parsed, Comparison) else Comparison.model_validate_json(r.text)).model_dump()
+        job["stage"] = "summary"
         # 6. Summary of the raw data + independent review (numbers checked).
         raw = {"series": meta, "find": {"candidates": candidates, "readTiles": tried, "tile": tile, "tiles": len(slabs), "side": found.side, "note": found.note},
                "read": read, "matching": {"weights": WEIGHTS, "top": [{k: m[k] for k in ("caseId", "score", "similarity", "components", "diameter", "band", "side", "composition")} for m in matches[:3]]},
@@ -355,5 +438,71 @@ async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = F
             "images": {"key": jpeg_b64(window(vol[key])), "montage": [base64.b64encode(x).decode() for x in sheets_small], "montageTile": tile},
             "models": {"vision": VISION_MODEL, "text": CHAT_MODEL}, "seconds": round(time.time() - t0, 1),
         }
-        del vol
         return result
+
+
+async def _run_job(job, paths, workdir, original):
+    global _busy
+    try:
+        job["result"] = await _pipeline(job, paths, workdir, original)
+        job["status"] = "done"
+    except HTTPException as exc:
+        job.update(status="error", code=exc.status_code, detail=exc.detail)
+    except Exception as exc:  # never echo internals; the server log shows the type
+        print(f"CT comparison failed: {type(exc).__name__}", flush=True)
+        job.update(status="error", code=500, detail="The CT comparison failed unexpectedly. Try again; if it repeats, try another series.")
+    finally:
+        job["finished"] = time.time()
+        shutil.rmtree(workdir, ignore_errors=True)
+        _busy = False
+
+
+@router.post("/compare", status_code=202)
+async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False),
+                  original_slices: int = Form(0), authorization: str = Header(default="")):
+    global _busy
+    require_token(authorization)
+    if not confirmed_chest or not permitted_data:
+        raise HTTPException(422, "Confirm a chest CT series and permission to process this de-identified research or test image.")
+    if len(files) > MAX_SLICES:
+        raise HTTPException(413, f"Upload at most {MAX_SLICES} DICOM files (one CT series).")
+    if _busy:
+        raise HTTPException(429, "Another CT comparison is running. Try again when it finishes.")
+    _busy = True
+    _prune_jobs()
+    workdir = tempfile.mkdtemp(prefix="candex-ct-")
+    try:
+        paths = []
+        for n, f in enumerate(files):  # to disk, one file at a time: the upload is never all in memory
+            b = await f.read(MAX_SLICE_BYTES + 1)
+            await f.close()
+            if len(b) > MAX_SLICE_BYTES:
+                raise HTTPException(413, "A file is larger than 4 MB; upload the DICOM slices of one CT series.")
+            path = os.path.join(workdir, f"{n:04d}.dcm")
+            with open(path, "wb") as fh:
+                fh.write(b)
+            paths.append(path)
+            del b
+    except BaseException:
+        shutil.rmtree(workdir, ignore_errors=True)
+        _busy = False
+        raise
+    jid = secrets.token_urlsafe(12)
+    job = _jobs[jid] = {"id": jid, "status": "running", "stage": "queued", "started": time.time()}
+    asyncio.get_running_loop().create_task(_run_job(job, paths, workdir, max(0, min(int(original_slices or 0), 5000))))
+    return {"job": jid, "status": "running", "stage": "queued"}
+
+
+@router.get("/jobs/{jid}")
+async def job_status(jid: str, authorization: str = Header(default="")):
+    require_token(authorization)
+    _prune_jobs()
+    job = _jobs.get(jid)
+    if not job:
+        raise HTTPException(404, "This CT comparison is no longer available (the server restarted or it expired). Upload the series again.")
+    out = {"job": jid, "status": job["status"], "stage": job["stage"], "seconds": round((job.get("finished") or time.time()) - job["started"], 1)}
+    if job["status"] == "done":
+        out["result"] = job["result"]
+    elif job["status"] == "error":
+        out.update(code=job["code"], detail=job["detail"])
+    return out

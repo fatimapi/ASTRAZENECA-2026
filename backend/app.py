@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
 
 from .imaging import MAX_FILE_BYTES, ImageRejected, prepare_dicom
-from .model import ChestXrayEngine, LIMITATIONS, ModelUnavailable
+from .model import ChestXrayEngine, LIMITATIONS, ModelUnavailable, make_engine
 from .agent import router as agent_router
 from .ct_compare import router as ct_router
 
@@ -30,7 +30,7 @@ dicom_logger.propagate = False
 ROOT = Path(__file__).resolve().parents[1]
 MAX_BODY_BYTES = MAX_FILE_BYTES + 128 * 1024
 CT_MAX_BYTES = 400 * 1024 * 1024
-engine = ChestXrayEngine()
+engine = make_engine()
 analysis_slot = asyncio.Semaphore(1)
 
 

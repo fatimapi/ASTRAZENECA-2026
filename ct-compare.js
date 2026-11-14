@@ -22,7 +22,69 @@ const sideT = s => T(s === 'right' ? 'Right' : s === 'left' ? 'Left' : s === 'no
 const fp = (rec, caseId) => { let h = 5381; const s = JSON.stringify([rec?.at, rec?.result?.matches?.slice(0, 3), rec?.result?.raw?.read, caseId]); for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(16); };
 const approval = id => { const r = get(id); if (!r?.approval) return {state: r ? 'pending' : 'none'}; return {...r.approval, state: r.approval.fp === fp(r, r.approval.caseId) ? 'approved' : 'changed'}; };
 
-const S = {pid: null, files: [], busy: false, error: null, started: 0};
+const S = {pid: null, files: [], busy: false, error: null, started: 0, stage: '', note: '', original: 0, scanning: false};
+const MAX_SEND = 200; // slices sent per series (the server keeps the same cap)
+
+// ---------- Choosing what to send (step 4: only the key data) ----------
+// Reads the start of each file's DICOM header in the browser (no pixels): Modality, SeriesInstanceUID
+// and the slice position. Returns null when the header cannot be read; then everything is sent as before.
+async function dicomHeader(file) {
+  try {
+    const buf = await file.slice(0, 262144).arrayBuffer(), v = new DataView(buf), n = buf.byteLength;
+    if (n < 140 || String.fromCharCode(v.getUint8(128), v.getUint8(129), v.getUint8(130), v.getUint8(131)) !== 'DICM') return null;
+    const LONG = new Set(['OB', 'OW', 'OF', 'SQ', 'UT', 'UN', 'UC', 'UR', 'OD', 'OL', 'OV', 'SV', 'UV']), UNDEF = 0xFFFFFFFF;
+    let implicit = false; const out = {};
+    const need = k => { if (k > n) throw new RangeError('short'); };
+    const text = (o, len) => { let t = ''; for (let i = 0; i < len; i++) { const c = v.getUint8(o + i); if (c) t += String.fromCharCode(c); } return t.trim(); };
+    const elem = p => {
+      need(p + 8); const g = v.getUint16(p, true), e = v.getUint16(p + 2, true);
+      if (g === 0xFFFE) return {g, e, len: v.getUint32(p + 4, true), val: p + 8};
+      if (g === 0x0002 || !implicit) {
+        const vr = String.fromCharCode(v.getUint8(p + 4), v.getUint8(p + 5));
+        if (LONG.has(vr)) { need(p + 12); return {g, e, len: v.getUint32(p + 8, true), val: p + 12}; }
+        return {g, e, len: v.getUint16(p + 6, true), val: p + 8};
+      }
+      return {g, e, len: v.getUint32(p + 4, true), val: p + 8};
+    };
+    const skipSeq = p => { // undefined-length sequence: items until the sequence delimiter
+      for (;;) { const it = elem(p); if (it.g === 0xFFFE && it.e === 0xE0DD) return it.val; p = it.len === UNDEF ? skipItem(it.val) : it.val + it.len; }
+    };
+    const skipItem = p => { // undefined-length item: elements until the item delimiter
+      for (;;) { const el = elem(p); if (el.g === 0xFFFE && el.e === 0xE00D) return el.val; p = el.len === UNDEF ? skipSeq(el.val) : el.val + el.len; }
+    };
+    let p = 132;
+    while (p + 8 <= n) {
+      const el = elem(p);
+      if (el.g > 0x0020) break; // tags are in order: everything needed has been read
+      if (el.len === UNDEF) { p = skipSeq(el.val); continue; }
+      need(el.val + el.len);
+      if (el.g === 0x0002 && el.e === 0x0010) { const ts = text(el.val, el.len); if (ts === '1.2.840.10008.1.2.2') return null; implicit = ts === '1.2.840.10008.1.2'; }
+      else if (el.g === 0x0008 && el.e === 0x0060) out.modality = text(el.val, el.len);
+      else if (el.g === 0x0020 && el.e === 0x000E) out.series = text(el.val, el.len);
+      else if (el.g === 0x0020 && el.e === 0x0032) out.z = Number(text(el.val, el.len).split('\\')[2]);
+      p = el.val + el.len;
+    }
+    // A non-CT file only needs its modality (it is left out); a CT slice needs its series and position.
+    return out.modality && (out.modality !== 'CT' || (out.series && Number.isFinite(out.z))) ? out : null;
+  } catch { return null; }
+}
+// One CT series, at most MAX_SEND evenly spaced slices. Unreadable headers: send all (the server decides).
+async function chooseFiles(files) {
+  const heads = await Promise.all(files.map(dicomHeader));
+  if (heads.some(h => !h)) return {files: files.slice(0, 800), original: 0, note: ''};
+  const series = new Map();
+  heads.forEach((h, i) => { if (h.modality === 'CT') { if (!series.has(h.series)) series.set(h.series, []); series.get(h.series).push({f: files[i], z: h.z}); } });
+  if (!series.size) return {files: [], original: 0, note: T('No CT images were found in these files.')};
+  const best = [...series.values()].sort((a, b) => b.length - a.length)[0].sort((a, b) => a.z - b.z);
+  const step = Math.max(1, Math.ceil(best.length / MAX_SEND));
+  const keep = best.filter((_, k) => k % step === 0).map(x => x.f);
+  const left = files.length - best.length;
+  const note = [step > 1 ? `${T('Sending')} ${keep.length} ${T('of')} ${best.length} ${T('slices (every')} ${step}${T('th slice), to keep the upload small.')}` : '',
+    left > 0 ? `${left} ${T('other files left out (other series or not CT).')}` : ''].filter(Boolean).join(' ');
+  return {files: keep, original: step > 1 ? best.length : 0, note};
+}
+const STAGES = {queued: 'Upload received; starting…', reading: 'Reading the CT series…', search: 'The AI is searching the scan for nodules…', read: 'The AI is reading the nodule on full-resolution slices…',
+  measure: 'Measuring the nodule from the pixels…', match: 'Scoring the 25 public reference studies…', summary: 'Writing and safety-checking the summary…'};
 const pid = () => (S.pid && patients.some(p => p.id === S.pid) ? S.pid : (state.selected && patients.some(p => p.id === state.selected) ? state.selected : patients[0].id));
 const token = () => (window.candexAgent?.getToken?.() || '').trim();
 
@@ -106,12 +168,12 @@ function body() {
   return `<div class="ctc-layout"><aside class="card ctc-controls"><h2>${T('Upload a chest CT')}</h2>
 <div class="field"><label for="ctc-patient">${icon('users')}${T('Patient')}</label><select id="ctc-patient">${patients.map(x => `<option value="${esc(x.id)}" ${x.id === id ? 'selected' : ''}>${esc(x.name)} · ${esc(x.id)}</option>`).join('')}</select></div>
 <div class="field"><span class="ctc-label">${T('CT series (DICOM files)')}</span><div class="button-row"><label class="button secondary ctc-file">${icon('upload')}${T('Choose folder')}<input type="file" id="ctc-folder" webkitdirectory multiple hidden></label><label class="button secondary ctc-file">${T('Choose files')}<input type="file" id="ctc-files" accept=".dcm,application/dicom" multiple hidden></label></div>
-<small>${S.files.length ? `${S.files.length} ${T('files')} · ${num(totalMb)} MB` : T('Choose the folder of one CT series (all its .dcm files). Up to 800 files, 400 MB.')}</small></div>
+<small>${S.scanning ? T('Checking the files…') : S.files.length ? `${S.files.length} ${T('files')} · ${num(totalMb)} MB${S.note ? ` · ${esc(S.note)}` : ''}` : S.note ? esc(S.note) : T('Choose the folder of one CT series (all its .dcm files). Up to 800 files, 400 MB.')}</small></div>
 <label class="check-row"><input type="checkbox" id="ctc-chest"><span>${T('This is one axial chest CT series.')}</span></label>
 <label class="check-row"><input type="checkbox" id="ctc-permit"><span>${T('I have permission to process this de-identified research or test image.')}</span></label>
 ${window.candexAgent?.tokenDrop ? window.candexAgent.tokenDrop('ctc-token') : ''}
-<button type="button" class="button" data-ctc-run ${S.busy ? 'disabled' : ''}>${icon('scan')}${S.busy ? T('Comparing… (about 1 minute)') : T('Upload and compare')}</button>
-${S.busy ? `<p class="field-note" role="status">${T('The AI is searching the scan, reading the nodule, scoring all 25 public studies and writing the summary.')}</p>` : ''}
+<button type="button" class="button" data-ctc-run ${S.busy ? 'disabled' : ''}>${icon('scan')}${S.busy ? T('Comparing… (1–2 minutes)') : T('Upload and compare')}</button>
+${S.busy ? `<p class="field-note" role="status">${T(STAGES[S.stage] || 'Uploading the CT series…')} <span translate="no">(${Math.round((Date.now() - S.started) / 1000)} s)</span></p>` : ''}
 ${S.error ? `<p class="notice" role="alert">${esc(S.error)}</p>` : ''}
 <p class="field-note">${T('Use only de-identified research or test scans. Images are processed on your backend and are not stored; only the result and two small images are kept in this browser.')}</p>
 ${rec ? `<button type="button" class="text-btn" data-ctc-clear>${T('Remove this patient’s comparison')}</button>` : ''}</aside>
@@ -132,14 +194,29 @@ async function run() {
   const fd = new FormData();
   for (const f of S.files) fd.append('files', f, f.name);
   fd.append('confirmed_chest', 'true'); fd.append('permitted_data', 'true');
-  Object.assign(S, {busy: true, error: null, started: Date.now()}); paint();
+  if (S.original) fd.append('original_slices', String(S.original));
+  Object.assign(S, {busy: true, error: null, started: Date.now(), stage: ''}); paint();
+  const ask = async (url, opts = {}) => { const res = await fetch(url, {...opts, headers: {Authorization: `Bearer ${token()}`, Accept: 'application/json'}}); let data = null; try { data = await res.json(); } catch { data = null; } return {res, data}; };
   try {
-    const res = await fetch('/api/ct/compare', {method: 'POST', headers: {Authorization: `Bearer ${token()}`, Accept: 'application/json'}, body: fd});
-    let data = null; try { data = await res.json(); } catch { data = null; }
-    if (!res.ok) throw new Error(res.status === 401 ? T('The backend token was not accepted. Paste the current token.') : data?.detail || `HTTP ${res.status}`);
+    let {res, data} = await ask('/api/ct/compare', {method: 'POST', body: fd});
+    // Step 3: the server answers at once with a job; poll it (a proxy may not wait a minute for one reply).
+    if (res.ok && data?.job) {
+      const jid = data.job, until = Date.now() + 15 * 60 * 1000;
+      for (;;) {
+        await new Promise(r => setTimeout(r, 3000));
+        if (Date.now() > until) throw new Error(T('The comparison is taking too long. Try again later.'));
+        let poll;
+        try { poll = await ask(`/api/ct/jobs/${encodeURIComponent(jid)}`); } catch { continue; } // brief network hiccup: keep polling
+        if (!poll.res.ok) { res = poll.res; data = poll.data; break; }
+        S.stage = poll.data.stage; paint();
+        if (poll.data.status === 'done') { data = poll.data.result; break; }
+        if (poll.data.status === 'error') { res = {ok: false, status: poll.data.code || 500}; data = {detail: poll.data.detail}; break; }
+      }
+    }
+    if (!res.ok) throw new Error(res.status === 401 ? `${T('The backend token was not accepted.')} ${window.candexAgent?.tokenWhere?.() || ''}` : data?.detail || (res.status >= 500 ? `${T('The backend did not answer properly')} (HTTP ${res.status}). ${T('Check that the backend is running and that you opened the site from http://127.0.0.1:8000, then try again.')}` : `HTTP ${res.status}`));
     const all = read(); all[id] = {at: new Date().toISOString(), result: data, approval: null};
     if (!write(all)) throw new Error(T('This browser could not save the result.'));
-    S.files = [];
+    Object.assign(S, {files: [], note: '', original: 0});
     toast(T('Comparison ready. Review it and approve it below.'));
   } catch (e) { S.error = e.message; }
   S.busy = false; paint();
@@ -160,7 +237,11 @@ function withdraw() { const all = read(); if (all[pid()]) { all[pid()].approval 
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'ctc-patient') { S.pid = t.value; S.error = null; paint(); }
-  if (t.id === 'ctc-folder' || t.id === 'ctc-files') { S.files = [...(t.files || [])].filter(f => /\.dcm$/i.test(f.name) || !/\.[a-z0-9]{2,4}$/i.test(f.name)).slice(0, 800); S.error = null; paint(); }
+  if (t.id === 'ctc-folder' || t.id === 'ctc-files') {
+    const picked = [...(t.files || [])].filter(f => /\.dcm$/i.test(f.name) || !/\.[a-z0-9]{2,4}$/i.test(f.name));
+    Object.assign(S, {files: [], note: '', original: 0, error: null, scanning: true}); paint();
+    chooseFiles(picked).then(c => { Object.assign(S, {files: c.files, note: c.note, original: c.original, scanning: false}); paint(); });
+  }
   if (t.id === 'ctc-check-raw' || t.id === 'ctc-check-link') { const b = document.querySelector('[data-ctc-approve]'); if (b) b.disabled = !(document.querySelector('#ctc-check-raw')?.checked && document.querySelector('#ctc-check-link')?.checked); }
 });
 document.addEventListener('click', e => {
@@ -192,6 +273,14 @@ function imagingCard(id) {
 }
 
 window.candexI18n?.extend?.({
+  'Checking the files…': 'Tarkistetaan tiedostoja…', 'Sending': 'Lähetetään', 'of': '/', 'slices (every': 'leikettä (joka', 'th slice), to keep the upload small.': '. leike), jotta lähetys pysyy pienenä.',
+  'other files left out (other series or not CT).': 'muuta tiedostoa jätettiin pois (muu sarja tai ei TT).', 'No CT images were found in these files.': 'Näistä tiedostoista ei löytynyt TT-kuvia.',
+  'Upload received; starting…': 'Lähetys vastaanotettu; aloitetaan…', 'Reading the CT series…': 'Luetaan TT-sarjaa…', 'The AI is searching the scan for nodules…': 'Tekoäly etsii kuvauksesta pesäkkeitä…',
+  'The AI is reading the nodule on full-resolution slices…': 'Tekoäly lukee pesäkettä täysresoluutioisista leikkeistä…', 'Measuring the nodule from the pixels…': 'Mitataan pesäkettä pikseleistä…',
+  'Scoring the 25 public reference studies…': 'Pisteytetään 25 julkista vertailututkimusta…', 'Writing and safety-checking the summary…': 'Kirjoitetaan ja tarkistetaan yhteenvetoa…', 'Uploading the CT series…': 'Lähetetään TT-sarjaa…',
+  'Comparing… (1–2 minutes)': 'Verrataan… (1–2 minuuttia)', 'The comparison is taking too long. Try again later.': 'Vertailu kestää liian kauan. Yritä myöhemmin uudelleen.',
+  'The backend token was not accepted.': 'Palvelimen tunnistetta ei hyväksytty.',
+  'The backend did not answer properly': 'Palvelin ei vastannut oikein', 'Check that the backend is running and that you opened the site from http://127.0.0.1:8000, then try again.': 'Tarkista, että palvelin on käynnissä ja että avasit sivuston osoitteesta http://127.0.0.1:8000, ja yritä uudelleen.',
   'Results go to the Imaging review of': 'Tulokset siirtyvät kuvantamisen arvioon potilaalle', 'Change the patient in Imaging review. The image stays in this browser session only.': 'Vaihda potilas kuvantamisen arviossa. Kuva säilyy vain tässä selainistunnossa.', 'Back to Imaging review': 'Takaisin kuvantamisen arvioon',
   'CT and X-ray results for one patient, in one place.': 'Yhden potilaan TT- ja röntgentulokset yhdessä paikassa.',
   'Imaging review · Research prototype. AI output is unvalidated and never a diagnosis; reference studies are public LIDC-IDRI scans, not the patient’s own.': 'Kuvantamisen arvio · Tutkimusprototyyppi. Tekoälyn tulokset ovat validoimattomia eivätkä koskaan diagnoosi; vertailututkimukset ovat julkisia LIDC-IDRI-kuvia, eivät potilaan omia.',
@@ -262,8 +351,7 @@ window.candexI18n?.extend?.({
   'Reference study to link': 'Linkitettävä vertailututkimus', 'I have reviewed the raw data, the AI read and the images.': 'Olen tarkistanut raakatiedot, tekoälyn luennan ja kuvat.',
   'I agree that this reference study is a suitable comparison for this patient.': 'Hyväksyn, että tämä vertailututkimus sopii tämän potilaan vertailukohdaksi.', 'Approve and link to patient': 'Hyväksy ja linkitä potilaaseen',
   'Research prototype: unvalidated AI, not a diagnosis. The match compares nodule features only.': 'Tutkimusprototyyppi: validoimaton tekoäly, ei diagnoosi. Vastaavuus vertaa vain pesäkkeen ominaisuuksia.',
-  'Choose the CT files first.': 'Valitse ensin TT-tiedostot.', 'Confirm both checks first.': 'Vahvista ensin molemmat kohdat.', 'Paste the backend token first.': 'Liitä ensin palvelimen tunniste.',
-  'The backend token was not accepted. Paste the current token.': 'Palvelimen tunnistetta ei hyväksytty. Liitä voimassa oleva tunniste.', 'This browser could not save the result.': 'Selain ei voinut tallentaa tulosta.',
+  'Choose the CT files first.': 'Valitse ensin TT-tiedostot.', 'Confirm both checks first.': 'Vahvista ensin molemmat kohdat.', 'Paste the backend token first.': 'Liitä ensin palvelimen tunniste.', 'This browser could not save the result.': 'Selain ei voinut tallentaa tulosta.',
   'Comparison ready. Review it and approve it below.': 'Vertailu valmis. Tarkista ja hyväksy se alla.',
   'Approved. The reference study is linked, and the patient’s pathway shows the CT step as done.': 'Hyväksytty. Vertailututkimus on linkitetty, ja potilaan hoitopolussa TT-vaihe näkyy valmiina.', 'Approval withdrawn.': 'Hyväksyntä peruttu.',
   'Uploaded CT comparison': 'Ladatun TT:n vertailu', 'Linked': 'Linkitetty', 'Open the comparison': 'Avaa vertailu', 'Review and approve': 'Tarkista ja hyväksy',
@@ -277,5 +365,5 @@ window.candexI18n?.extend?.({
   [/^Uploaded CT · key slice \(z (.+) mm\)$/, (_, z) => `Ladattu TT · avainleike (z ${z} mm)`],
   [/^Similarity (\d+) % · uploaded (.+) · ([\d.,]+) s$/, (_, a, b, c) => `Samankaltaisuus ${a} % · ladattu ${b} · ${c} s`],
 ]);
-window.candexCtCompare = {view, forPatient, imagingCard, approval, _read: read, _write: write, KEY};
+window.candexCtCompare = {view, forPatient, imagingCard, approval, _read: read, _write: write, _dicomHeader: dicomHeader, _chooseFiles: chooseFiles, KEY};
 })();
