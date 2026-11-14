@@ -144,6 +144,11 @@ async def index():
     return FileResponse(ROOT / "index.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/data/finland-regions.geojson")
+async def regional_boundaries():
+    return FileResponse(ROOT / "data" / "finland-regions.geojson", media_type="application/geo+json", headers={"X-Content-Type-Options": "nosniff"})
+
+
 @app.get("/{asset}")
 async def frontend_asset(asset: str):
     candidate = (ROOT / asset).resolve()
