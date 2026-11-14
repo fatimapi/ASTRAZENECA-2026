@@ -221,7 +221,7 @@ document.addEventListener('click', e => {
 });
 
 window.candexI18n?.extend?.({
-  'Research prototype. The clinical agent uses Gemini through your local backend, on fictional patients and public research images; the Candex guide runs a small open-source model in your browser. Outputs are unvalidated and never set urgency or decisions.': 'Tutkimusprototyyppi. Kliininen agentti käyttää Geminiä paikallisen palvelimesi kautta kuvitteellisille potilaille ja julkisille tutkimuskuville; Candex-opas ajaa pientä avoimen lähdekoodin mallia selaimessasi. Tulokset ovat validoimattomia, eivätkä ne koskaan määritä kiireellisyyttä tai päätöksiä.',
+  'Research prototype. The agents use Gemini through your local backend, on fictional patients, synthetic statistics and public research images; the Candex guide runs a small open-source model in your browser. Outputs are unvalidated and never set urgency or decisions.': 'Tutkimusprototyyppi. Agentit käyttävät Geminiä paikallisen palvelimesi kautta kuvitteellisille potilaille, synteettisille tilastoille ja julkisille tutkimuskuville; Candex-opas ajaa pientä avoimen lähdekoodin mallia selaimessasi. Tulokset ovat validoimattomia, eivätkä ne koskaan määritä kiireellisyyttä tai päätöksiä.',
   'Clinical agent': 'Kliininen agentti', 'Research': 'Tutkimus', 'Backend token': 'Taustapalvelun tunniste',
   'Paste the token printed by python -m backend': 'Liitä python -m backend -komennon tulostama tunniste',
   'Kept in this page’s memory only. The Gemini key stays on the server.': 'Säilyy vain tämän sivun muistissa. Gemini-avain pysyy palvelimella.',
@@ -258,6 +258,6 @@ window.candexI18n?.extend?.({
 
 // One backend token for the whole page (clinical agent and DICOM page).
 const getToken = () => token;
-const setToken = v => { token = String(v ?? ''); for (const el of document.querySelectorAll('#agent-token, #med-token')) if (el.value !== token) el.value = token; };
+const setToken = v => { token = String(v ?? ''); for (const el of document.querySelectorAll('#agent-token, #q-token')) if (el.value !== token) el.value = token; };
 window.candexAgent = {view, record, refreshStatus, resetSession, plain, run, getToken, setToken, _convo: convo, _setStatus: v => { status = v; }};
 })();

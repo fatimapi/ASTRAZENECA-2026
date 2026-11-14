@@ -328,3 +328,168 @@ async def cxr_summary(body: CxrIn, authorization: str = Header(default="")):
         feedback = "\nA safety reviewer raised these issues with your previous draft; fix them:\n- " + "\n- ".join(review.issues)
     return {"summary": summ.summary, "key_points": summ.key_points, "review": review.model_dump(), "attempts": attempts,
             "model": CHAT_MODEL, "roles": ["summariser", "safety reviewer"]}
+
+
+# ---------- Quality & Equity agent (quality administrator) ----------
+# Grounded in a "data pack" the browser builds from the same functions that draw
+# the Quality & Equity page (KPI cards, CandexKpis.evaluate(), regional fixtures,
+# the simulated cohort's kpis(), the LIDC/X-ray research results). Every value
+# has an id and a provenance tag. Safeguards (agreed by three design reviews):
+# - chat: every number in the answer must exist in the pack (one redraft, then
+#   unverified numbers are flagged to the user);
+# - reports: the model writes {{value.id}} placeholders, never digits; the
+#   browser fills them from the pack; one independent safety review.
+QUALITY_MODEL = os.getenv("CANDEX_QUALITY_MODEL", "gemini-3.5-flash")  # pinned, so the PDF can name it
+MAX_PACK_CHARS = 80_000
+
+QUALITY_RULES = """Rules (research prototype for a Finnish quality administrator):
+- Use ONLY the DATA PACK. If a number or fact is not in it, say it is not in Candex data. Never invent numbers; only quote values from the pack, and use precomputed gaps/min/max instead of doing arithmetic.
+- Tag every number with its provenance from the pack: SYNTHETIC (all KPI values, regional figures, the n=50 cohort), SOURCED REFERENCE (Finnish references, NHS comparators), PUBLIC RESEARCH DATA (LIDC-IDRI). Never present a synthetic value as measured Finnish performance.
+- Keep each reference's meaning: the 3-week (21-day) STM limit is a NON-URGENT limit for starting assessment after referral receipt, not a cancer-treatment target; 2035 strategy goals are strategic goals; NHS figures are external comparators, not Finnish standards; local demo bands are local conventions. A grey 'Not assessed' status stays grey; never convert 3 or 6 months into 90/180-day targets.
+- Values marked 'static illustrative' are fixed example numbers that are not computed from the datasets; say so if asked about them.
+- Small numbers: always give n with a rate; flag low-n groups (n < 5) and do not compare them. LIDC AI second reader: 4/5 found (95% CI 28-99%), one model, one run. Chest X-ray classifier: n=8, uncalibrated, not a nodule detector.
+- The cohort's gaps were built into the simulation (oversampling and participation penalties), so they illustrate the method and are not findings about real groups.
+- Describe equity gaps as access barriers (travel time, language group: national languages vs other languages, care route, urban vs other counties). Never stigmatising wording such as 'foreigners', 'non-compliant' or 'hard-to-reach'.
+- Map regions are maakunta (19 regions); the cohort uses wellbeing services counties (hyvinvointialueet). Never merge or equate them.
+- No patient-level or clinical conclusions, no diagnosis, no triage, no re-identification. No 'best/worst real county' rankings: the data are synthetic. Using the AI reader for triage is not supported (unvalidated, not CE-marked).
+- If a question cannot be answered, say why briefly and suggest a question that can be answered from the pack.
+- Be concise (under about 180 words), plain Markdown, and end with a line 'Based on: ...' naming the pack sections and the KPI reference profile.
+- In Finnish, write the tags as SYNTEETTINEN / LÄHDEVIITE / JULKINEN TUTKIMUSAINEISTO, the statuses as Hallinnassa / Vaatii tarkistusta / Kiireellisiä toimia / Ei arvioitu, and the last line as 'Perusta: ...'. Tag only numbers, not statuses."""
+
+# Reports show provenance in their own table and sources section, so the chat-only
+# rules (inline tags, the closing "Based on" line) are replaced for reports.
+REPORT_RULES = "\n".join(l for l in QUALITY_RULES.splitlines()
+                          if not l.startswith(("- Tag every number", "- Be concise", "- In Finnish, write the tags"))) + (
+    "\n- Provenance is shown in the report's own table: say once that figures are synthetic examples where that applies; "
+    "no inline provenance tags and no 'Based on' line.")
+
+_NUM = re.compile(r"(?<![\w.])\d+(?:[.,]\d+)?")
+
+
+def _numbers(text: str, digits: int = 2) -> set:
+    out = set()
+    for tok in _NUM.findall(text or ""):
+        try:
+            out.add(round(float(tok.replace(",", ".")), digits))
+        except ValueError:
+            pass
+    return out
+
+
+def _allowed(pack_text: str) -> set:
+    allowed = set(range(0, 11))
+    for n in _numbers(pack_text, 6):  # also the same value with fewer decimals, or a 0-1 score as a percentage
+        allowed |= {round(n, 2), float(round(n)), round(n, 1), round(n * 100, 2), float(round(n * 100)), round(n * 100, 1)}
+    return allowed
+
+
+def unverified_numbers(text: str, pack_text: str) -> list:
+    allowed = _allowed(pack_text)
+    return sorted(n for n in _numbers(text) if n not in allowed)
+
+
+def pack_text(pack: dict) -> str:
+    text = json.dumps(pack, ensure_ascii=False)
+    if len(text) > MAX_PACK_CHARS:
+        raise HTTPException(413, "The data pack is too large.")
+    return text
+
+
+class QualityChatIn(BaseModel):
+    lang: Literal["en", "fi"] = "en"
+    pack: dict
+    packHash: str = Field(default="", max_length=80)
+    messages: List[Message] = Field(min_length=1, max_length=24)
+
+
+class QualityAnswer(BaseModel):
+    answer: str = Field(description="The answer in Markdown, following the rules")
+    sections: List[str] = Field(description="Data pack sections or value ids the answer is based on")
+
+
+@router.post("/quality-chat")
+async def quality_chat(body: QualityChatIn, authorization: str = Header(default="")):
+    require_token(authorization)
+    from google.genai import types
+    data = pack_text(body.pack)
+    system = (f"You are the Candex Quality & Equity assistant for a quality administrator. Answer in {LANG[body.lang]}"
+              f"{' (use decimal commas)' if body.lang == 'fi' else ''}.\n{QUALITY_RULES}\n\nDATA PACK (JSON):\n{data}")
+    contents = [types.Content(role=m.role, parts=[types.Part(text=m.text)]) for m in body.messages]
+    cfg = types.GenerateContentConfig(system_instruction=system, temperature=0.2, response_mime_type="application/json", response_schema=QualityAnswer)
+    attempts, bad = 0, []
+    while True:
+        attempts += 1
+        r = await generate(QUALITY_MODEL, contents, cfg)
+        out = r.parsed if isinstance(r.parsed, QualityAnswer) else QualityAnswer.model_validate_json(r.text)
+        bad = unverified_numbers(out.answer, data)
+        if not bad or attempts == 2:
+            break
+        contents = contents + [types.Content(role="model", parts=[types.Part(text=out.answer)]),
+                               types.Content(role="user", parts=[types.Part(text=f"These numbers are not in the data pack: {', '.join(str(b) for b in bad)}. Rewrite the answer using only values from the pack.")])]
+    return {"text": out.answer, "sections": out.sections[:20], "unverified": bad, "attempts": attempts, "model": QUALITY_MODEL, "packHash": body.packHash}
+
+
+REPORT_FOCUS = {
+    "kpi": "KPI status against Finnish references: which indicators are under control, need review, need urgent action or are not assessed, what reference sets each threshold, and the external NHS comparators.",
+    "equity": "Screening equity in the simulated cohort (n=50): up-to-date rates by group with n, the travel-time, language, urban/other and care-route gaps, low-n groups, days to GP, data completeness.",
+    "regional": "Regional access across the 19 maakunta regions (synthetic): spread (min, max, gap) of each measure, how many regions are in each status band, Åland without data. No rankings of real regions.",
+    "lung": "Lung pathway research data: the 25 public LIDC-IDRI CT studies, the AI second-reader agreement with confidence interval, size error and wrong-side finding, and the 8 chest X-ray classifier results (not a nodule detector).",
+    "standards": "Standards, definitions and data limitations: what each reference means, why measures are grey, which values are static illustrative, data completeness, and what real data would be needed.",
+}
+
+
+class Narrative(BaseModel):
+    summary_en: List[str] = Field(description="3-5 short summary sentences in English, numbers only as {{value.id}} placeholders")
+    summary_fi: List[str] = Field(description="The same summary in Finnish, same placeholders")
+    findings_en: List[str] = Field(description="3-6 key findings in English, numbers only as {{value.id}} placeholders")
+    findings_fi: List[str] = Field(description="The same findings in Finnish")
+    questions_en: List[str] = Field(description="2-4 questions for service review in English")
+    questions_fi: List[str] = Field(description="The same questions in Finnish")
+
+
+class ReportReview(BaseModel):
+    verdict: Literal["ready for clinician review", "needs changes"]
+    issues_en: List[str] = Field(description="Each issue in English, quoting the problem")
+    issues_fi: List[str] = Field(description="The same issues in Finnish")
+
+
+class QualityReportIn(BaseModel):
+    kind: Literal["kpi", "equity", "regional", "lung", "standards"]
+    pack: dict
+    packHash: str = Field(default="", max_length=80)
+
+
+_TOKEN = re.compile(r"\{\{\s*([A-Za-z0-9_.\-]+)\s*\}\}")
+
+
+@router.post("/quality-report")
+async def quality_report(body: QualityReportIn, authorization: str = Header(default="")):
+    require_token(authorization)
+    from google.genai import types
+    data = pack_text(body.pack)
+    vals = body.pack.get("values") or {}
+    ids = set(vals) | {f"{k}.{f}" for k, v in vals.items() if isinstance(v, dict) and v.get("region") for f in ("region", "regionFi")}
+    system = ("You write the narrative of a Candex quality report for a Finnish quality administrator, in English and in natural Finnish. "
+              "NEVER type a number: write every figure as a placeholder {{value.id}} using ids from DATA PACK 'values' (the page fills them in). "
+              "Words like 'nineteen' are also numbers: use placeholders. Placeholders already include their unit: never write a unit (mm, %, days) after one. "
+              "Do not repeat tables; interpret them. The report has its own provenance table and sources, so do NOT add provenance tags after numbers and do NOT add a 'Based on' line; "
+              "instead say once in the summary that the figures are synthetic examples where that applies. Describe cohort gaps as what the simulation illustrates "
+              "(e.g. 'in the simulation, people with longer travel are less often up to date'), never as real-world findings.\n"
+              f"REPORT FOCUS: {REPORT_FOCUS[body.kind]}\n{REPORT_RULES}\n\nDATA PACK (JSON):\n{data}")
+    r = await generate(QUALITY_MODEL, "Write the report narrative.", types.GenerateContentConfig(
+        system_instruction=system, temperature=0.2, response_mime_type="application/json", response_schema=Narrative))
+    nar = r.parsed if isinstance(r.parsed, Narrative) else Narrative.model_validate_json(r.text)
+    text = "\n".join(nar.summary_en + nar.findings_en + nar.questions_en + nar.summary_fi + nar.findings_fi + nar.questions_fi)
+    unknown = sorted({t for t in _TOKEN.findall(text) if t not in ids})
+    typed = unverified_numbers(_TOKEN.sub(" ", text), data)
+    reviewer = ("You are a safety reviewer. Check the REPORT NARRATIVE (placeholders {{id}} stand for pack values) against the DATA PACK and RULES. "
+                "List: synthetic data presented as measured performance, local bands presented as national standards, NHS comparators presented as Finnish, "
+                "the AI reader presented as validated, causal or stigmatising claims about groups, rankings of real regions, patient-level conclusions, "
+                "and missing small-n caveats. Return an empty list if there are none.\n"
+                f"RULES:\n{REPORT_RULES}\n\nDATA PACK:\n{data}\n\nREPORT NARRATIVE (English):\n" + "\n".join(nar.summary_en + nar.findings_en + nar.questions_en))
+    rv = await generate(QUALITY_MODEL, "Review.", types.GenerateContentConfig(system_instruction=reviewer, temperature=0,
+                        response_mime_type="application/json", response_schema=ReportReview))
+    review = rv.parsed if isinstance(rv.parsed, ReportReview) else ReportReview.model_validate_json(rv.text)
+    out_review = {"verdict": review.verdict, "issues": review.issues_en, "issues_en": review.issues_en, "issues_fi": review.issues_fi}
+    return {"narrative": nar.model_dump(), "review": out_review, "unknownTokens": unknown, "typedNumbers": typed,
+            "model": QUALITY_MODEL, "packHash": body.packHash}

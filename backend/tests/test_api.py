@@ -270,3 +270,20 @@ def test_cxr_summary_needs_token_and_valid_scores(client, monkeypatch):
     for bad in ({"findings": []}, {"findings": [{"label": "Nodule", "score": 1.5}]}, {"lang": "sv", "findings": ok["findings"]},
                 {"findings": [{"label": "x" * 500, "score": 0.1}]}, {"findings": [{"label": "a", "score": 0.1}] * 41}):
         assert client.post("/api/agent/cxr-summary", json=bad, headers=AUTH).status_code == 422
+
+
+def test_quality_agent_routes_need_token_validate_and_check_numbers(client, monkeypatch):
+    from backend.agent import unverified_numbers
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("CANDEX_GEMINI_KEY_FILE", raising=False)
+    chat = {"pack": {"values": {"kpi.a": {"value": 12}}}, "messages": [{"role": "user", "text": "hi"}]}
+    assert client.post("/api/agent/quality-chat", json=chat).status_code == 401
+    assert client.post("/api/agent/quality-chat", json=chat, headers=AUTH).status_code == 503  # no Gemini key
+    assert client.post("/api/agent/quality-report", json={"kind": "kpi", "pack": {}}, headers=AUTH).status_code == 503
+    assert client.post("/api/agent/quality-report", json={"kind": "anything", "pack": {}}, headers=AUTH).status_code == 422
+    big = {"pack": {"x": "y" * 90_000}, "messages": [{"role": "user", "text": "hi"}]}
+    monkeypatch.setenv("GEMINI_API_KEY", "AIzaTestKeyThatMustNeverLeak_123456")
+    assert client.post("/api/agent/quality-chat", json=big, headers=AUTH).status_code == 413
+    pack = '{"a": 12, "b": 0.4962, "c": "28–99 %", "d": 76.5, "e": 2035}'
+    assert unverified_numbers("12 d, 0,50, 49.6 %, 50 %, CI 28–99 %, 76,5 % by 2035", pack) == []
+    assert unverified_numbers("The gap is 13 days and 0.7", pack) == [0.7, 13.0]

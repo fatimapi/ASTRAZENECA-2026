@@ -267,5 +267,5 @@
   }
   window.CandexRegionalMap = { mount };
   // Pure helpers support non-browser checks without requiring a browser runner.
-  window.CandexRegionalMapTest = { validateData, projection, pathFor, evaluate, metrics: METRICS, fixtures: FIXTURES };
+  window.CandexRegionalMapTest = { validateData, projection, pathFor, evaluate, metrics: METRICS, fixtures: FIXTURES, names: FALLBACK_NAMES };
 })();

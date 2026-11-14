@@ -516,7 +516,35 @@ ${sec(n++, L.s9, kvHTML(rep.signoff))}
 }
 
 // ---------- PDF ----------
+// Candex wordmark with the ribbon-d (same drawing as candexWordmark() in app.js),
+// rasterised once so every PDF can carry it in the corner. PDFs never wait more
+// than a moment for it; without it they are still produced.
+const WORDMARK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 6 306 68" width="918" height="204" fill="none"><g stroke="#32283c" stroke-width="10"><path d="M30.61 39.39A15 15 0 1 0 30.61 60.61"/><circle cx="60.14" cy="50" r="15"/><path d="M97.14 50A15 15 0 0 1 127.14 50V70"/><path d="M207 50H237A15 15 0 1 0 233.49 59.64"/></g><g fill="#32283c"><path d="M70 30h10.14v40h-10.14z"/><path d="M92.14 30h10v40h-10z"/><path d="M246 30h11.94L284 70h-11.94Z"/><path d="M284 30h-11.94L246 70h11.94Z"/></g><g fill="#967BB6"><path d="M171.14 15L181.14 10V39.59L176.34 34.8A21.5 21.5 0 0 0 171.14 30.97ZM179.95 56.79A20 20 0 1 1 175.28 35.86L195.28 55.85V70L168.21 42.93A10 10 0 1 0 171.14 50V47.98Z"/><circle cx="296" cy="64" r="6"/></g></svg>';
+let wordmarkPNG = null, wordmarkReady = null;
+function loadWordmark() {
+  if (wordmarkReady) return wordmarkReady;
+  wordmarkReady = new Promise(resolve => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const cv = document.createElement('canvas'); cv.width = 918; cv.height = 204;
+          cv.getContext('2d').drawImage(img, 0, 0, 918, 204);
+          wordmarkPNG = cv.toDataURL('image/png');
+        } catch { wordmarkPNG = null; }
+        resolve(wordmarkPNG);
+      };
+      img.onerror = () => resolve(null);
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(WORDMARK_SVG);
+    } catch { resolve(null); }
+  });
+  return wordmarkReady;
+}
 function loadJsPDF() {
+  const logo = Promise.race([loadWordmark(), new Promise(r => setTimeout(r, 1500))]);
+  return logo.then(() => loadJsPDFLib());
+}
+function loadJsPDFLib() {
   if (window.jspdf?.jsPDF) return Promise.resolve(window.jspdf);
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
@@ -528,7 +556,7 @@ function loadJsPDF() {
 }
 // The built-in PDF fonts cover Latin-1 only (Finnish ä, ö, å included):
 // map typographic characters and replace anything else.
-const clean = s => String(s ?? '').replace(/[–—]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, '...').replace(/≥/g, '>=').replace(/≤/g, '<=').replace(/→/g, '->').replace(/[^\x00-\xFF]/g, '?');
+const clean = s => String(s ?? '').replace(/[–—]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/…/g, '...').replace(/≥/g, '>=').replace(/≤/g, '<=').replace(/→/g, '->').replace(/[−‐‑]/g, '-').replace(/[×]/g, 'x').replace(/[^\x00-\xFF]/g, '?');
 
 // Shared PDF layout helpers (A4, mm). Both the clinician referral and the
 // patient summary use them, so the two documents look like one family.
@@ -598,7 +626,10 @@ function makeKit(jsPDF, {base = 9.2} = {}) {
   };
   k.title = (title, line2, banner) => {
     doc.setFillColor(...PURPLE); doc.rect(0, 0, W, 30, 'F');
-    k.font(17, true, [255, 255, 255]); doc.text(clean(title), M, 14);
+    const room = wordmarkPNG ? CW - 44 : CW;  // keep the title clear of the logo
+    let ts = 17; k.font(ts, true, [255, 255, 255]);
+    while (ts > 11 && doc.getTextWidth(clean(title)) > room) { ts -= 0.5; k.font(ts, true, [255, 255, 255]); }
+    doc.text(clean(title), M, 14);
     k.font(9, false, [229, 214, 243]); doc.text(clean(line2), M, 21);
     k.font(8, true, [255, 222, 170]); doc.text(clean(banner), M, 26.5);
     k.y = 36;
@@ -607,7 +638,13 @@ function makeKit(jsPDF, {base = 9.2} = {}) {
     const pages = doc.getNumberOfPages();
     for (let i = 1; i <= pages; i++) {
       doc.setPage(i);
-      if (i > 1) { k.font(7.5, false, MUTED); doc.text(clean(header), M, 11); doc.setDrawColor(226, 223, 230); doc.line(M, 13, W - M, 13); }
+      if (wordmarkPNG) {
+        if (i === 1) {  // white panel in the top-right corner of the purple header band
+          doc.setFillColor(255, 255, 255); doc.roundedRect(W - M - 38, 6.5, 38, 12, 2, 2, 'F');
+          doc.addImage(wordmarkPNG, 'PNG', W - M - 34, 8.3, 30, 30 * 204 / 918);
+        } else doc.addImage(wordmarkPNG, 'PNG', W - M - 22, 5.4, 22, 22 * 204 / 918);
+      }
+      if (i > 1) { k.font(7.5, false, MUTED); doc.text(doc.splitTextToSize(clean(header), CW - (wordmarkPNG ? 28 : 0))[0], M, 11); doc.setDrawColor(226, 223, 230); doc.line(M, 13, W - M, 13); }
       k.font(7.5, false, MUTED);
       doc.text(doc.splitTextToSize(clean(footer), CW - 24), M, H - 8);
       doc.text(clean(`${pageWord} ${i} ${ofWord} ${pages}`), W - M, H - 8, {align: 'right'});
@@ -940,6 +977,7 @@ window.candexI18n?.extend?.({
 window.candexReport = {
   // Set the referring clinician's note (used by the clinical agent's "Add to referral note").
   setNote: v => { note = String(v ?? '').slice(0, 800); },
+  makeKit, loadJsPDF,
   build, buildPatient, previewHTML, approvalStatus, approveNow, withdrawApproval, markPreviewed, patientHTML, geometry, section, clean, pdfBlob,
   patientPdfDataUri: async (id, opts = {}) => { const lib = await loadJsPDF(); return writePatientPDF(lib.jsPDF, buildPatient(id, opts)).output('datauristring'); },
   // The finished PDF as a data URI (used by tests and for embedding).
