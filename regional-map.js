@@ -213,7 +213,7 @@
     }
     listen(regionSelect, 'change', () => select(regionSelect.value));
     listen(metricSelect, 'change', () => { metricIndex = Number(metricSelect.value); redraw(); });
-    listen(tableBody, 'click', event => { const button = event.target.closest?.('[data-region-code]'); if (button && tableBody.contains(button)) select(button.dataset.regionCode); });
+    listen(tableBody, 'click', event => { const button = event.target.closest?.('[data-region-code]'); if (button && tableBody.contains(button)) { const code = button.dataset.regionCode; select(code); tableBody.querySelector(`[data-region-code="${code}"]`)?.focus(); } });
     listen(zoomIn, 'click', () => { zoom = Math.min(4, zoom + .5); updateZoom(); });
     listen(zoomOut, 'click', () => { zoom = Math.max(1, zoom - .5); updateZoom(); });
     listen(reset, 'click', () => { zoom = 1; updateZoom(); });
