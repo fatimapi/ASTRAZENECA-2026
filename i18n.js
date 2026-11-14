@@ -1,0 +1,414 @@
+// Candex English → Finnish translation layer.
+// The app renders English markup; when Finnish is selected, visible text and
+// accessible attributes are translated in place as nodes enter the document.
+// Mark user-entered content with translate="no" to keep it untouched.
+(()=>{
+const FI={
+// Shell, navigation and shared UI
+'Skip to main content':'Siirry pääsisältöön',
+'Main navigation':'Päänavigaatio','Candex home':'Candexin etusivu','Close navigation':'Sulje navigaatio','Open navigation':'Avaa navigaatio','Choose interface':'Valitse näkymä','View notifications':'Näytä ilmoitukset','Language':'Kieli',
+'No patient left behind':'Ketään potilasta ei jätetä jälkeen','No patient left behind.':'Ketään potilasta ei jätetä jälkeen.','No patient':'Ketään potilasta','left behind.':'ei jätetä jälkeen.',
+'Your health, connected':'Terveytesi yhdessä paikassa','Clinical workspace':'Kliininen työtila',
+'My overview':'Oma yleiskatsaus','Health check':'Terveyskysely','My care pathway':'Oma hoitopolkuni','My records':'Omat tietoni','Messages':'Viestit',
+'Workspace':'Työtila','Patient worklist':'Potilastyölista','Imaging review':'Kuvantamisen arvio','Reports':'Raportit','AI workspace':'Tekoälytyötila','Quality & equity':'Laatu ja yhdenvertaisuus',
+'Overview':'Yleiskatsaus','Care pathway':'Hoitopolku','Records & preferences':'Tiedot ja asetukset','Care team messages':'Hoitotiimin viestit','Clinical reports':'Kliiniset raportit','The Candex approach':'Candexin lähestymistapa','DICOM AI analysis':'DICOM-tekoälyanalyysi',
+'Explore Candex':'Tutustu Candexiin','Care without barriers.':'Hoitoa ilman esteitä.','Support for every step, wherever you are.':'Tukea joka vaiheeseen, missä ikinä oletkin.','Find support':'Etsi tukea',
+'Patient · demo account':'Potilas · demotili','Clinician · demo account':'Ammattilainen · demotili','Quality · demo account':'Laatu · demotili','Quality administrator':'Laatuvastaava',
+'Dr. Emilia Koski':'Lääkäri Emilia Koski',
+'My health':'Oma terveys','Care team':'Hoitotiimi','Quality team':'Laatutiimi',
+'Patient':'Potilas','Doctor':'Lääkäri','Accessibility':'Saavutettavuus',
+'© 2026 Candex · No patient left behind.':'© 2026 Candex · Ketään potilasta ei jätetä jälkeen.','Concept environment · Fictional data':'Konseptiympäristö · Kuvitteellista dataa',
+'Interactive concept · This page uses fictional patient records and metrics. The separate DICOM AI workspace can connect to a research model backend.':'Interaktiivinen konsepti · Tällä sivulla käytetään kuvitteellisia potilastietoja ja mittareita. Erillinen DICOM-tekoälytyötila voi yhdistyä tutkimusmallin taustapalveluun.',
+'Close dialog':'Sulje ikkuna','Demo':'Demo','View':'Näytä','Open':'Avaa','Review':'Arvioi','Reviewed':'Arvioitu','View all':'Näytä kaikki','Yes':'Kyllä','No':'Ei',
+
+// Patient overview
+'Your care, at a glance':'Hoitosi yhdellä silmäyksellä','A clearer path. Together.':'Selkeämpi polku. Yhdessä.',
+'Welcome, Aino. Let’s take your next step with confidence.':'Tervetuloa, Aino. Otetaan seuraava askel luottavaisin mielin.',
+'Wednesday, 18 November · Sample day':'Keskiviikko 18. marraskuuta · Esimerkkipäivä',
+'Every person. Every cancer. Every step.':'Jokainen ihminen. Jokainen syöpä. Jokainen askel.',
+'Understand your health, connect with your care team, and see what comes next. All in one place.':'Ymmärrä terveyttäsi, pidä yhteyttä hoitotiimiisi ja näe, mitä seuraavaksi tapahtuu. Kaikki yhdessä paikassa.',
+'Start your health check':'Aloita terveyskysely','Review your health check':'Tarkastele terveyskyselyäsi',
+'A purple cancer awareness ribbon surrounded by a circle of care':'Violetti syöpätietoisuusnauha hoivan ympyrän keskellä','Built around you':'Sinun ympärillesi rakennettu',
+'Your care summary':'Hoitosi yhteenveto','Your health check':'Terveyskyselysi','A little about you':'Hieman sinusta','Ready for review':'Valmis arvioitavaksi',
+'About 3 minutes to complete':'Vie noin 3 minuuttia','Summary prepared in this session':'Yhteenveto laadittu tässä istunnossa',
+'Your care pathway':'Hoitopolkusi','Review in progress':'Arviointi käynnissä','Your team is here to guide you':'Tiimisi on tukenasi',
+'Next appointment':'Seuraava vastaanotto','18 Nov · 10:30':'18.11. · 10.30','Video consultation · Sample':'Videovastaanotto · Esimerkki',
+'Your next steps, made clear':'Seuraavat vaiheesi selkeästi','Step 2 of 4':'Vaihe 2/4',
+'Care pathway: step 2, clinical review':'Hoitopolku: vaihe 2, kliininen arvio',
+'Share your story':'Kerro tarinasi','Health information':'Terveystiedot','Clinical review':'Kliininen arvio','You are here':'Olet tässä','Next steps':'Seuraavat vaiheet','Tests, if needed':'Tutkimukset tarvittaessa','Ongoing support':'Jatkuva tuki','Follow-up & care':'Seuranta ja hoito',
+'Your care team reviews your information before recommending the right next step for you.':'Hoitotiimisi käy tietosi läpi ennen kuin suosittelee sinulle sopivaa seuraavaa vaihetta.',
+'You don’t have to navigate this alone.':'Sinun ei tarvitse selvitä tästä yksin.','View my pathway':'Näytä hoitopolkuni',
+'Your next appointment':'Seuraava vastaanottosi','Sample booking':'Esimerkkivaraus','Nov':'Marras','A conversation about your care':'Keskustelu hoidostasi',
+'Dr. Emilia Koski · Care team':'Lääkäri Emilia Koski · Hoitotiimi','10:30–11:00 · Finland time':'10.30–11.00 · Suomen aikaa','Video consultation':'Videovastaanotto',
+'Appointment details':'Vastaanoton tiedot','Set reminder':'Aseta muistutus','Reminder set':'Muistutus asetettu',
+'A little support goes a long way':'Pienikin tuki auttaa pitkälle','Everything you need, in one place':'Kaikki tarvitsemasi yhdessä paikassa',
+'Your information, understood':'Tietosi ymmärrettävästi','View example records and understand what your care team is reviewing.':'Katso esimerkkitietoja ja ymmärrä, mitä hoitotiimisi arvioi.','Explore my records':'Tutustu tietoihini',
+'A question is a good place to start':'Kysymys on hyvä alku','Prepare questions and see how a secure conversation with your team could work.':'Valmistele kysymyksiä ja katso, miten turvallinen keskustelu tiimisi kanssa voisi toimia.','Talk to my care team':'Keskustele hoitotiimini kanssa',
+'Better care, wherever home is.':'Parempaa hoitoa, missä koti onkin.','Connecting patients, clinicians and research across Finland.':'Yhdistää potilaat, ammattilaiset ja tutkimuksen koko Suomessa.','Explore the idea':'Tutustu ideaan',
+
+// Health check
+'Patient health check':'Potilaan terveyskysely','Your story matters.':'Tarinallasi on merkitystä.','A simple way to prepare for a conversation with your care team.':'Helppo tapa valmistautua keskusteluun hoitotiimisi kanssa.',
+'Try the health check with fictional information only. This demo does not calculate cancer risk or provide a diagnosis.':'Kokeile terveyskyselyä vain kuvitteellisilla tiedoilla. Tämä demo ei laske syöpäriskiä eikä anna diagnoosia.',
+'Tell us a little about your health':'Kerro hieman terveydestäsi','About 3 minutes':'Noin 3 minuuttia','Your health and history':'Terveytesi ja taustasi',
+'Age':'Ikä','e.g. 58':'esim. 58','Care area':'Hoitoalue','General concern':'Yleinen huoli','Lung':'Keuhkot','Breast':'Rinta','Colorectal':'Suolisto','Prostate':'Eturauhanen','Skin':'Iho','Other / unsure':'Muu / en ole varma',
+'What would you like to discuss?':'Mistä haluaisit keskustella?','A new or persistent symptom':'Uusi tai pitkittynyt oire','A screening invitation':'Seulontakutsu','Family history':'Sukuhistoria','An existing referral':'Olemassa oleva lähete','General information':'Yleistä tietoa',
+'How long has this been on your mind?':'Kuinka kauan tämä on ollut mielessäsi?','Less than 2 weeks':'Alle 2 viikkoa','2–3 weeks':'2–3 viikkoa','More than 3 weeks':'Yli 3 viikkoa','Not applicable':'Ei koske minua',
+'Smoking history':'Tupakointihistoria','Prefer not to say':'En halua kertoa','Never smoked':'En ole koskaan tupakoinut','Previously smoked':'Olen tupakoinut aiemmin','Currently smoke':'Tupakoin nykyään',
+'Family history of cancer':'Syöpää suvussa','Not sure / prefer not to say':'En ole varma / en halua kertoa','No known family history':'Ei tiedossa suvussa','Yes, a close relative':'Kyllä, lähisukulaisella',
+'Anything else you would like your team to know? (optional)':'Onko jotain muuta, mitä haluaisit tiimisi tietävän? (valinnainen)',
+'For example, a change you’ve noticed or a question you want to ask.':'Esimerkiksi huomaamasi muutos tai kysymys, jonka haluat esittää.',
+'Care that works for your life':'Hoitoa, joka sopii elämääsi','Region (optional)':'Alue (valinnainen)',
+'Lapland':'Lappi','North Savo':'Pohjois-Savo','Other Finnish region':'Muu alue Suomessa','Outside Finland':'Suomen ulkopuolella',
+'Preferred consultation':'Toivottu vastaanottotapa','Phone call':'Puhelu','In person':'Paikan päällä',
+'I would like help with travel, language, technology or the cost of accessing care.':'Haluaisin apua matkoihin, kieleen, teknologiaan tai hoidon kustannuksiin.',
+'Kept in this session only. Nothing is sent.':'Säilytetään vain tässä istunnossa. Mitään ei lähetetä.','Prepare my summary':'Laadi yhteenvetoni',
+'You’re in control':'Sinä päätät','Share only what feels comfortable. Access needs help the team plan support; they are not treated as signs of cancer.':'Kerro vain se, mikä tuntuu sopivalta. Hoitoon pääsyn tarpeet auttavat tiimiä suunnittelemaan tukea; niitä ei pidetä syövän merkkeinä.',
+'What happens next?':'Mitä seuraavaksi tapahtuu?','A structured summary brings your information together.':'Jäsennelty yhteenveto kokoaa tietosi yhteen.','In a connected service, a clinician would review it.':'Yhdistetyssä palvelussa terveydenhuollon ammattilainen kävisi sen läpi.','Your clinician decides whether tests or follow-up are needed.':'Lääkärisi päättää, tarvitaanko tutkimuksia tai seurantaa.',
+'If you need help now':'Jos tarvitset apua nyt',
+'Do not wait for an online review if you feel seriously unwell. In Finland, call':'Älä odota verkkoarviota, jos voit huonosti. Suomessa soita hätätilanteessa numeroon',
+'for an emergency or':'tai kiireellisessä hoidon tarpeessa numeroon','for urgent medical advice.':'(Päivystysapu).',
+
+// Pathway
+'Know what comes next.':'Tiedä, mitä on tulossa.','A shared view of your care, with a person responsible at every step.':'Yhteinen näkymä hoitoosi – jokaisella vaiheella on vastuuhenkilö.',
+'Your example pathway':'Esimerkkihoitopolkusi','Lung care example':'Keuhkosyövän hoidon esimerkki','12 November 2026 · Completed':'12.11.2026 · Valmis',
+'Your information is in one place':'Tietosi ovat yhdessä paikassa','Health history, symptoms and your preferences help prepare the review.':'Terveyshistoria, oireet ja toiveesi auttavat valmistelemaan arviota.',
+'Current step · Dr. Emilia Koski':'Nykyinen vaihe · Lääkäri Emilia Koski','A clinician reviews your information':'Ammattilainen arvioi tietosi',
+'Imaging and previous records are reviewed together. An AI suggestion would always need clinical review.':'Kuvantaminen ja aiemmat tiedot arvioidaan yhdessä. Tekoälyn ehdotus vaatisi aina kliinisen arvion.',
+'Decided together':'Päätetään yhdessä','The right next step for you':'Sinulle sopiva seuraava vaihe',
+'Options may include monitoring, further imaging, a specialist appointment or tests such as a biopsy. A finding does not automatically mean cancer.':'Vaihtoehtoja voivat olla seuranta, lisäkuvantaminen, erikoislääkärin vastaanotto tai tutkimukset, kuten koepala. Löydös ei automaattisesti tarkoita syöpää.',
+'Your care team stays with you':'Hoitotiimisi pysyy rinnallasi','Follow-up without falling through the gaps':'Seuranta, jossa kukaan ei putoa väliin',
+'Track agreed next steps, reminders and questions. The doctor’s workspace highlights overdue actions.':'Seuraa sovittuja vaiheita, muistutuksia ja kysymyksiä. Lääkärin työtila korostaa myöhässä olevat toimet.',
+'Ask your team a question':'Kysy tiimiltäsi','Your care coordinator':'Hoitokoordinaattorisi','Cancer care nurse · Example team':'Syöpähoitaja · Esimerkkitiimi',
+'A named point of contact to help you understand your pathway and find the support you need.':'Nimetty yhteyshenkilö, joka auttaa ymmärtämään hoitopolkuasi ja löytämään tarvitsemasi tuen.','Prepare a message':'Valmistele viesti',
+'Distance shouldn’t decide your care.':'Etäisyys ei saa ratkaista hoitoasi.','Video and phone appointments, travel support needs and clear follow-up reminders are built into the concept.':'Video- ja puhelinvastaanotot, matkatuen tarpeet ja selkeät seurantamuistutukset ovat osa konseptia.',
+'Explore access support':'Tutustu hoitoon pääsyn tukeen',
+
+// Records
+'Your information. Your choice.':'Sinun tietosi. Sinun valintasi.','Understand your records and choose how your information could support better care.':'Ymmärrä tietojasi ja valitse, miten tietosi voisivat tukea parempaa hoitoa.',
+'Example care records':'Esimerkkipotilastiedot','3 records':'3 asiakirjaa','Health check summary':'Terveyskyselyn yhteenveto','Prepared in this session':'Laadittu tässä istunnossa','Not completed yet':'Ei vielä täytetty',
+'Imaging review · lung pilot':'Kuvantamisen arvio · keuhkopilotti','14 Nov 2026 · Awaiting clinician review':'14.11.2026 · Odottaa ammattilaisen arviota',
+'Consultation preparation':'Vastaanottoon valmistautuminen','18 Nov 2026 · Questions for your team':'18.11.2026 · Kysymyksiä tiimillesi',
+'My Kanta and hospital imaging connections are proposed integrations. No records have been retrieved from Kanta or a hospital.':'OmaKanta- ja sairaalan kuvantamisyhteydet ovat ehdotettuja integraatioita. Tietoja ei ole haettu Kannasta eikä sairaalasta.',
+'Research, with your permission':'Tutkimus luvallasi','The idea: collect structured, appropriately governed data to study delays, care quality and inequalities.':'Ajatus: kerätä jäsenneltyä, asianmukaisesti hallinnoitua tietoa viiveiden, hoidon laadun ja eriarvoisuuden tutkimiseen.',
+'Try enabling optional research participation in this demo.':'Kokeile ottaa vapaaehtoinen tutkimukseen osallistuminen käyttöön tässä demossa.',
+'A real service would require a separate consent process, privacy information and appropriate legal permissions. Nothing is shared here.':'Oikea palvelu edellyttäisi erillistä suostumusprosessia, tietosuojatietoja ja asianmukaisia lupia. Täällä mitään ei jaeta.',
+'What would be collected?':'Mitä kerättäisiin?','Session privacy':'Istunnon yksityisyys',
+'Health-check answers, draft messages and preferences stay in this page session. Reloading clears them.':'Terveyskyselyn vastaukset, viestiluonnokset ja asetukset säilyvät vain tässä sivuistunnossa. Sivun uudelleenlataus tyhjentää ne.',
+'Clear my demo information':'Tyhjennä demotietoni',
+
+// Messages
+'Your care team':'Hoitotiimisi','A conversation starts here.':'Keskustelu alkaa tästä.','Prepare your questions in a space designed to feel approachable.':'Valmistele kysymyksesi tilassa, joka on suunniteltu helposti lähestyttäväksi.',
+'Messaging demonstration. Your drafts stay in this session and are not sent to a clinician.':'Viestinnän demo. Luonnoksesi säilyvät tässä istunnossa, eikä niitä lähetetä ammattilaiselle.',
+'Elina · Your care coordinator':'Elina · Hoitokoordinaattorisi','Example conversation':'Esimerkkikeskustelu',
+'Hello Aino. Before your consultation, it can help to write down anything you’ve noticed and the questions you’d like us to talk through. You can also tell us if a phone call would be easier than video.':'Hei Aino. Ennen vastaanottoa voi olla hyvä kirjoittaa ylös kaikki huomaamasi asiat ja kysymykset, joista haluaisit keskustella. Voit myös kertoa meille, jos puhelu olisi sinulle videota helpompi.',
+'Example care team message · 09:15':'Esimerkkiviesti hoitotiimiltä · 9.15','Your draft · Not sent':'Luonnoksesi · Ei lähetetty',
+'Your message':'Viestisi','What would you like to ask your care team?':'Mitä haluaisit kysyä hoitotiimiltäsi?','This is a draft, not a monitored clinical channel.':'Tämä on luonnos, ei valvottu hoitokanava.','Save demo draft':'Tallenna demoluonnos',
+
+// Clinician overview
+'Every pathway. A clear next step.':'Jokainen hoitopolku. Selkeä seuraava vaihe.','Welcome, Dr. Koski. Here’s where your team can make a difference today.':'Tervetuloa, lääkäri Koski. Tässä tiimisi voi vaikuttaa tänään.',
+'Open worklist':'Avaa työlista','Awaiting clinical review':'Odottaa kliinistä arviota','Sample worklist':'Esimerkkityölista','Priority cases':'Kiireelliset tapaukset','Clinician-defined demo priorities':'Ammattilaisen määrittämät demokiireellisyydet',
+'Follow-up completion':'Seurantojen toteutuminen','Illustrative cohort':'Havainnollistava kohortti','Median time to review':'Arvioon kuluva mediaaniaika',
+'Patients needing your attention':'Huomiotasi tarvitsevat potilaat',
+'Clinical urgency is not scored by socioeconomic status or geography. Access barriers are tracked separately to organise support.':'Kliinistä kiireellisyyttä ei pisteytetä sosioekonomisen aseman tai asuinpaikan perusteella. Hoitoon pääsyn esteitä seurataan erikseen tuen järjestämiseksi.',
+'Close the follow-up gap':'Sulje seurannan aukko','1 action due':'1 toimenpide erääntyy','Due':'Eräpv.',
+'Confirm specialist appointment and patient contact preference.':'Vahvista erikoislääkärin vastaanotto ja potilaan toivoma yhteydenottotapa.',
+'Uusimaa · Remote consultation preferred':'Uusimaa · Etävastaanotto toivottu','Example workflow alert':'Esimerkki työnkulun hälytyksestä','Manage follow-up':'Hallinnoi seurantaa',
+'Connected support for your clinical workflow':'Yhtenäistä tukea kliiniseen työnkulkuusi','Clinician-led by design':'Ammattilaisvetoinen lähtökohtaisesti',
+'Imaging, in context':'Kuvantaminen kontekstissaan','Explore annotations, quality checks and comparison in the lung pilot example.':'Tutustu merkintöihin, laatutarkistuksiin ja vertailuun keuhkopilotin esimerkissä.','Open imaging review':'Avaa kuvantamisen arvio',
+'Specialist agent workspace':'Erikoisagenttien työtila','See where MedRAX, mAIstro and multi-agent review fit into the workflow.':'Katso, miten MedRAX, mAIstro ja moniagenttiarvio sopivat työnkulkuun.','Explore agent tools':'Tutustu agenttityökaluihin',
+'Make inequalities visible':'Tee eriarvoisuus näkyväksi','Track delays, follow-up, data quality and differences across regions.':'Seuraa viiveitä, seurantaa, tiedon laatua ja alueiden välisiä eroja.','View quality & equity':'Näytä laatu ja yhdenvertaisuus',
+'AI supports the decision. The clinician makes it.':'Tekoäly tukee päätöstä. Ammattilainen tekee sen.','Every suggested finding, report and pathway requires professional review.':'Jokainen ehdotettu löydös, raportti ja hoitopolku vaatii ammattilaisen arvion.','Our approach':'Lähestymistapamme',
+
+// Worklist
+'A worklist with people at its heart.':'Työlista, jonka keskiössä ovat ihmiset.','See the clinical need, the next action and the access support behind every referral.':'Näe kliininen tarve, seuraava toimenpide ja hoitoon pääsyn tuki jokaisen lähetteen takana.',
+'Search patients, care areas or regions':'Hae potilaita, hoitoalueita tai alueita','Search name, care area or region':'Hae nimellä, hoitoalueella tai alueella','Filter by review priority':'Suodata arvion kiireellisyyden mukaan',
+'All priorities':'Kaikki kiireellisyydet','Priority review':'Kiireellinen arvio','Routine review':'Tavallinen arvio',
+'Fictional multi-cancer patient worklist':'Kuvitteellinen eri syöpätyyppien potilastyölista','Review priority & reason':'Arvion kiireellisyys ja syy','Status':'Tila','Action':'Toiminto',
+'Interval change on example imaging':'Muutos esimerkkikuvantamisessa edelliseen verrattuna','Awaiting review':'Odottaa arviota','Referral information ready':'Lähetetiedot valmiina','Referral received':'Lähete vastaanotettu',
+'Follow-up requires confirmation':'Seuranta vaatii vahvistuksen','Follow-up due':'Seuranta erääntyy','Specialist appointment requested':'Erikoislääkärin vastaanottoa pyydetty','Pathway review':'Hoitopolun arvio',
+'Follow-up prepared':'Seuranta valmisteltu','Reviewed in this session':'Arvioitu tässä istunnossa','No patients match this search.':'Haulla ei löytynyt potilaita.','Fictional patient':'Kuvitteellinen potilas',
+'Candex is designed for all cancer pathways. The PDF’s lung workflow is the imaging demonstration; breast, colorectal and prostate entries illustrate the shared care-coordination model.':'Candex on suunniteltu kaikille syöpien hoitopoluille. PDF:n keuhkotyönkulku on kuvantamisen demo; rinta-, suolisto- ja eturauhassyövän rivit havainnollistavat yhteistä hoidon koordinoinnin mallia.',
+
+// Imaging review
+'Clinical imaging':'Kliininen kuvantaminen','A second look. A fuller picture.':'Toinen katse. Kokonaisempi kuva.','Explore the lung pilot’s imaging review and clinician-led decision support.':'Tutustu keuhkopilotin kuvantamisen arvioon ja ammattilaisvetoiseen päätöksenteon tukeen.',
+'Analyze chest X-ray DICOM':'Analysoi keuhkoröntgenin DICOM-kuva',
+'Lung pilot · The illustration, measurements and findings below are prewritten examples. No imaging AI has run. MedRAX supports chest X-ray workflows, not this schematic CT example.':'Keuhkopilotti · Alla oleva kuva, mittaukset ja löydökset ovat valmiiksi kirjoitettuja esimerkkejä. Kuvantamisen tekoälyä ei ole ajettu. MedRAX tukee keuhkoröntgenin työnkulkuja, ei tätä kaavamaista TT-esimerkkiä.',
+'CX-1042 · Lung pilot sample':'CX-1042 · Keuhkopilotin esimerkki','Current · 14 Nov 2026':'Nykyinen · 14.11.2026','Prior · 14 Aug 2026':'Aiempi · 14.8.2026',
+'Schematic chest cross-section, not a medical image. Current example with illustrative nodule marker.':'Kaavamainen rintakehän poikkileikkaus, ei lääketieteellinen kuva. Nykyinen esimerkki ja havainnollistava kyhmymerkintä.',
+'Schematic chest cross-section, not a medical image. Prior example with illustrative nodule marker.':'Kaavamainen rintakehän poikkileikkaus, ei lääketieteellinen kuva. Aiempi esimerkki ja havainnollistava kyhmymerkintä.',
+'Example finding A':'Esimerkkilöydös A','SCHEMATIC · NOT FOR CLINICAL USE':'KAAVAKUVA · EI KLIINISEEN KÄYTTÖÖN','Illustrated chest cross-section · Example series 3':'Piirretty rintakehän poikkileikkaus · Esimerkkisarja 3',
+'Current example':'Nykyinen esimerkki','Prior example':'Aiempi esimerkki','Show annotation':'Näytä merkintä',
+'Quality & comparison':'Laatu ja vertailu','Sample assessment':'Esimerkkiarvio','Image quality':'Kuvan laatu','Acceptable · Example only':'Hyväksyttävä · Vain esimerkki',
+'Finding A · Current diameter':'Löydös A · Nykyinen halkaisija','8 mm · Illustrative':'8 mm · Havainnollistava','Prior example diameter':'Aiemman esimerkin halkaisija','6 mm · Illustrative':'6 mm · Havainnollistava','Interval':'Aikaväli','3 months':'3 kuukautta',
+'Real comparison requires compatible scans, acquisition checks, measurement uncertainty and specialist interpretation.':'Todellinen vertailu edellyttää yhteensopivia kuvia, kuvausteknisiä tarkistuksia, mittausepävarmuuden huomioimista ja erikoislääkärin tulkintaa.',
+'Review notes':'Arviomuistiinpanot','Needs clinician review':'Vaatii ammattilaisen arvion',
+'Illustrative focal change in the right lung. Confirm on the source study and compare with previous imaging.':'Havainnollistava paikallinen muutos oikeassa keuhkossa. Varmista alkuperäisestä tutkimuksesta ja vertaa aiempaan kuvantamiseen.',
+'Clinical context':'Kliininen tausta','58 years · Prior smoking history · Family history to confirm. Clinical information is fictional.':'58 vuotta · Aiempi tupakointi · Sukuhistoria vahvistettava. Kliiniset tiedot ovat kuvitteellisia.',
+'Clinician responsibility':'Ammattilaisen vastuu','AI cannot confirm cancer. Additional imaging, specialist assessment or pathology may be needed.':'Tekoäly ei voi varmistaa syöpää. Lisäkuvantamista, erikoislääkärin arviota tai patologista tutkimusta voidaan tarvita.',
+'Explore medical-agent integration':'Tutustu lääketieteellisten agenttien integraatioon','Structured decision support':'Jäsennelty päätöksenteon tuki',
+'What is the next clinical action?':'Mikä on seuraava kliininen toimenpide?','Select for this demonstration':'Valitse tätä demoa varten',
+'Surveillance / repeat imaging':'Seuranta / uusintakuvaus','Further imaging or specialist investigation':'Lisäkuvantaminen tai erikoislääkärin tutkimus','Biopsy / pathology assessment':'Koepala / patologinen arvio','Discuss at multidisciplinary team review':'Käsittely moniammatillisessa kokouksessa',
+'Record your reasoning. Use fictional details only.':'Kirjaa perustelusi. Käytä vain kuvitteellisia tietoja.','Prepare review draft':'Laadi arvioluonnos','Open structured report':'Avaa jäsennelty raportti',
+
+// Reports
+'Clinical reporting':'Kliininen raportointi','Less repetition. More clinical context.':'Vähemmän toistoa. Enemmän kliinistä kontekstia.','Bring findings, history and next steps into a report a clinician can review.':'Kokoa löydökset, taustatiedot ja seuraavat vaiheet raporttiin, jonka ammattilainen voi tarkistaa.',
+'Structured report demonstration. The draft uses sample text and your session notes; it is not generated by a medical AI.':'Jäsennellyn raportin demo. Luonnos käyttää esimerkkitekstiä ja istuntosi muistiinpanoja; sitä ei ole tuottanut lääketieteellinen tekoäly.',
+'Draft clinical report':'Kliinisen raportin luonnos','Unapproved draft':'Hyväksymätön luonnos','Patient reference':'Potilastunniste','CX-1042 · Fictional lung pilot':'CX-1042 · Kuvitteellinen keuhkopilotti','Other cancer pathway':'Muu syövän hoitopolku',
+'Findings for review':'Arvioitavat löydökset',
+'Sample imaging illustration shows finding A. Example measurements: current 8 mm; previous 6 mm. These are fictional values, not AI measurements.':'Esimerkkikuvassa näkyy löydös A. Esimerkkimittaukset: nykyinen 8 mm; aiempi 6 mm. Arvot ovat kuvitteellisia, eivät tekoälyn mittauksia.',
+'Proposed next step':'Ehdotettu seuraava vaihe',
+'Clinician to review source imaging, confirm relevant history and determine the appropriate follow-up. No diagnosis has been established.':'Ammattilainen tarkistaa alkuperäiset kuvat, varmistaa olennaiset taustatiedot ja päättää sopivasta seurannasta. Diagnoosia ei ole tehty.',
+'Illustrative finding A requires review on the original study.':'Havainnollistava löydös A on arvioitava alkuperäisestä tutkimuksesta.',
+'I understand this creates a demonstration draft, not a signed clinical report.':'Ymmärrän, että tämä luo demoluonnoksen, ei allekirjoitettua kliinistä raporttia.',
+'Agent-assisted workflow':'Agenttiavusteinen työnkulku','Preview & download':'Esikatsele ja lataa',
+'A consistent structure':'Yhtenäinen rakenne','Patient reference and clinical context':'Potilastunniste ja kliininen tausta','Image quality and comparison':'Kuvan laatu ja vertailu','Findings, uncertainty and limitations':'Löydökset, epävarmuus ja rajoitukset','Clinician-approved recommendations':'Ammattilaisen hyväksymät suositukset','Named owner and follow-up deadline':'Nimetty vastuuhenkilö ja seurannan määräaika',
+'Keep the person in the pathway':'Pidä ihminen mukana hoitopolulla','Reports should lead to an action, a responsible team member and a clear explanation for the patient.':'Raportin tulee johtaa toimenpiteeseen, vastuulliseen tiimin jäseneen ja selkeään selitykseen potilaalle.','See the patient pathway':'Katso potilaan hoitopolku',
+
+// Quality & equity
+'Measure the gaps. Improve the pathway.':'Mittaa puutteet. Paranna hoitopolkua.','A quality and equity view designed to help teams learn and act.':'Laatu- ja yhdenvertaisuusnäkymä, joka auttaa tiimejä oppimaan ja toimimaan.','Export sample data':'Vie esimerkkidata',
+'All metrics and regional values are invented examples, not evaluated Candex performance or Finnish healthcare statistics.':'Kaikki mittarit ja alueelliset arvot ovat keksittyjä esimerkkejä, eivät arvioitua Candexin suorituskykyä tai suomalaisia terveydenhuollon tilastoja.',
+'Time to first review':'Aika ensimmäiseen arvioon','Scan completion → radiologist review':'Kuvauksen valmistuminen → radiologin arvio','Time to diagnosis':'Aika diagnoosiin','Suspicious finding → confirmed diagnosis':'Epäilyttävä löydös → varmistettu diagnoosi',
+'Detection sensitivity':'Havaitsemisen herkkyys','Detected / confirmed cancers in a labelled test cohort':'Havaitut / varmistetut syövät merkityssä testikohortissa','False-positive rate':'Väärien positiivisten osuus','False-positive scans / all negative scans':'Väärät positiiviset kuvat / kaikki negatiiviset kuvat',
+'On-time completed / due follow-ups':'Ajallaan toteutuneet / erääntyneet seurannat','Regional waiting-time gap':'Alueellinen jonotusaikaero','Longest − shortest regional median':'Pisin − lyhin alueellinen mediaani',
+'Demographic sensitivity gap':'Väestöryhmien herkkyysero','Largest group sensitivity difference':'Suurin ryhmien välinen herkkyysero','Research completeness':'Tutkimusaineiston kattavuus','Complete / eligible structured records':'Täydelliset / soveltuvat jäsennellyt tietueet',
+'Metric':'Mittari','Illustrative value':'Havainnollistava arvo','Definition':'Määritelmä',
+'Time to diagnosis by region':'Aika diagnoosiin alueittain','Sample · median days':'Esimerkki · mediaani päivinä',
+'In a real analysis, report cohort size, case mix, missing data and uncertainty before comparing regions.':'Todellisessa analyysissa raportoi kohortin koko, potilasrakenne, puuttuvat tiedot ja epävarmuus ennen alueiden vertailua.',
+'Research-ready, responsibly':'Tutkimusvalmis, vastuullisesti','Structured records connect pathway events with outcomes and access needs, subject to consent and lawful permissions.':'Jäsennellyt tiedot yhdistävät hoitopolun tapahtumat hoitotuloksiin ja hoitoon pääsyn tarpeisiin suostumuksen ja lainmukaisten lupien puitteissa.',
+'Example research data completeness: 87 percent':'Esimerkkitutkimusaineiston kattavuus: 87 prosenttia',
+'Clinical / imaging fields':'Kliiniset / kuvantamiskentät','Follow-up outcomes':'Seurannan tulokset','Optional equity fields':'Valinnaiset yhdenvertaisuuskentät','Build a PDSA review':'Laadi PDSA-arvio','Patient consent view':'Potilaan suostumusnäkymä',
+'Performance for every patient group':'Suorituskyky jokaiselle potilasryhmälle',
+'Evaluate sensitivity and false-positive rates by appropriately defined groups. Small cohorts should be suppressed and differences assessed with uncertainty.':'Arvioi herkkyys ja väärien positiivisten osuus asianmukaisesti määritellyissä ryhmissä. Pienet kohortit tulee jättää raportoimatta ja erot arvioida epävarmuus huomioiden.',
+'Fictional demographic model evaluation':'Kuvitteellinen mallin arviointi väestöryhmittäin','Illustrative evaluation group':'Havainnollistava arviointiryhmä','Labelled cohort':'Merkitty kohortti','Sensitivity':'Herkkyys','Interpretation':'Tulkinta',
+'Age 50–64':'Ikä 50–64','Age 65–79':'Ikä 65–79','Example only':'Vain esimerkki','Investigate a sample 4 pp gap':'Selvitä esimerkin 4 %-yksikön ero','Small access-needs subgroup':'Pieni hoitoon pääsyn tarpeiden alaryhmä','Suppressed':'Piilotettu','Insufficient data':'Riittämättömät tiedot',
+
+// Quality overview
+'Quality administration':'Laadunhallinta','See the whole pathway.':'Näe koko hoitopolku.','Welcome to the national view of access, quality and equity across the care pathway.':'Tervetuloa kansalliseen näkymään hoitoon pääsystä, laadusta ja yhdenvertaisuudesta koko hoitopolulla.',
+'Open quality & equity':'Avaa laatu ja yhdenvertaisuus','Quality dashboard demonstration. All regional values, patient groups and statistics are fictional examples for this concept.':'Laatukojelaudan demo. Kaikki alueelliset arvot, potilasryhmät ja tilastot ovat tämän konseptin kuvitteellisia esimerkkejä.',
+'Care pathway across Finland':'Hoitopolku eri puolilla Suomea','Illustrative median time to diagnosis by region':'Havainnollistava mediaaniaika diagnoosiin alueittain','Sample data':'Esimerkkidata',
+'Stylised map of Finland with illustrative regional waiting times':'Tyylitelty Suomen kartta ja havainnollistavat alueelliset jonotusajat','Longer wait':'Pidempi odotus','Shorter wait':'Lyhyempi odotus',
+'Regional view':'Alueellinen näkymä','Time to diagnosis · illustrative median':'Aika diagnoosiin · havainnollistava mediaani',
+'Use cohort size, case mix, missing data and uncertainty before comparing regions. No real healthcare performance is represented.':'Huomioi kohortin koko, potilasrakenne, puuttuvat tiedot ja epävarmuus ennen alueiden vertailua. Todellista terveydenhuollon suorituskykyä ei esitetä.',
+'Signals to review this month':'Tämän kuun tarkasteltavat signaalit','3 areas':'3 aluetta','Research-ready completeness':'Tutkimusvalmiin aineiston kattavuus','Review with pathway owners before acting.':'Käy läpi hoitopolun vastuuhenkilöiden kanssa ennen toimia.','Explore all measures':'Tutustu kaikkiin mittareihin',
+
+// AI workspace
+'Agent workspace':'Agenttityötila','Candex intelligence':'Candex-äly','Purposeful AI. Human accountability.':'Tarkoituksellista tekoälyä. Ihmisen vastuu.','Open-source support for understanding the platform, research and clinical workflows.':'Avoimen lähdekoodin tukea alustan, tutkimuksen ja kliinisten työnkulkujen ymmärtämiseen.',
+'The browser-based Candex guide can run a real open-source language model for semantic search. Medical frameworks below require separate Python/model services and are not connected.':'Selaimessa toimiva Candex-opas voi käyttää oikeaa avoimen lähdekoodin kielimallia semanttiseen hakuun. Alla olevat lääketieteelliset kehykset vaativat erilliset Python- ja mallipalvelut, eikä niitä ole yhdistetty.',
+'Candex guide':'Candex-opas','Medical agents':'Lääketieteelliset agentit','Your Candex guide':'Candex-oppaasi','Open-source · Browser-local':'Avoin lähdekoodi · Toimii selaimessa',
+'Ask how to use a feature or find your next step in the platform. The guide matches your question to reviewed explanations; it does not assess symptoms or give medical advice.':'Kysy, miten jotain toimintoa käytetään, tai löydä seuraava askeleesi alustalla. Opas yhdistää kysymyksesi tarkistettuihin selityksiin; se ei arvioi oireita eikä anna lääketieteellisiä neuvoja.',
+'AI is off. Enable it to download a small embedding model (approximately 23 MB) from Hugging Face. Your questions are processed locally; the model host receives the download request.':'Tekoäly on pois päältä. Ota se käyttöön ladataksesi pienen upotusmallin (noin 23 Mt) Hugging Facesta. Kysymyksesi käsitellään paikallisesti; mallin palvelin näkee vain latauspyynnön.',
+'Enable local AI guide':'Ota paikallinen tekoälyopas käyttöön','AI is ready':'Tekoäly on valmis','Browse topics without AI':'Selaa aiheita ilman tekoälyä',
+'What can we help you find?':'Mitä voimme auttaa sinua löytämään?','e.g. How do I compare previous scans?':'esim. Miten vertaan aiempia kuvia?','Find guidance':'Hae ohjeita',
+'Private by design':'Yksityinen jo suunnittelultaan','This agent uses Transformers.js and the open-source all-MiniLM-L6-v2 model to find relevant, approved platform content.':'Tämä agentti käyttää Transformers.js-kirjastoa ja avoimen lähdekoodin all-MiniLM-L6-v2-mallia löytääkseen olennaista, hyväksyttyä alustan sisältöä.',
+'It selects a topic and suggests an action. It cannot diagnose, interpret images, contact a doctor or alter a care plan.':'Se valitsee aiheen ja ehdottaa toimintoa. Se ei voi diagnosoida, tulkita kuvia, ottaa yhteyttä lääkäriin eikä muuttaa hoitosuunnitelmaa.',
+'View inference library':'Näytä päättelykirjasto','View open-source model':'Näytä avoimen lähdekoodin malli','Try asking':'Kokeile kysyä',
+'How do I prepare for an appointment?':'Miten valmistaudun vastaanottoon?','Where can I see regional differences?':'Mistä näen alueelliset erot?','How is research consent managed?':'Miten tutkimussuostumusta hallitaan?',
+'TorchXRayVision · Working model connector':'TorchXRayVision · Toimiva malliyhteys',
+'Run the supplied Python backend to analyze supported chest X-ray DICOMs using pretrained DenseNet weights. The browser displays real outputs or a connection error. CT/MRI and tumour localisation are not supported by this classifier.':'Käynnistä mukana tuleva Python-taustapalvelu analysoidaksesi tuettuja keuhkoröntgenin DICOM-kuvia esikoulutetuilla DenseNet-painoilla. Selain näyttää oikeat tulokset tai yhteysvirheen. Tämä luokitin ei tue TT- tai MRI-kuvia eikä kasvaimen paikantamista.',
+'Open DICOM AI analysis':'Avaa DICOM-tekoälyanalyysi','Not connected':'Ei yhdistetty','Explore source':'Tutustu lähdekoodiin',
+'Chest X-ray research agent':'Keuhkoröntgenin tutkimusagentti','Tool-based chest X-ray review and multi-step reasoning. Relevant to the lung pilot; it is not an all-cancer or CT diagnostic engine.':'Työkalupohjainen keuhkoröntgenin arvio ja monivaiheinen päättely. Soveltuu keuhkopilottiin; se ei ole kaikkien syöpien eikä TT-kuvien diagnostiikkamoottori.',
+'Radiomics & research workflows':'Radiomiikka ja tutkimustyönkulut','Coordinate feature extraction, segmentation and research analysis through specialist tools in a separate Python environment.':'Koordinoi piirteiden irrotusta, segmentointia ja tutkimusanalyysia erikoistyökaluilla erillisessä Python-ympäristössä.',
+'Multi-role review & reporting':'Monirooliarvio ja raportointi','A source framework for sequential image review and report drafting. Requires engineering review and repair before use; no clinical validation is assumed.':'Lähdekoodikehys peräkkäiseen kuvien arviointiin ja raporttiluonnosten laatimiseen. Vaatii teknisen tarkastuksen ja korjauksia ennen käyttöä; kliinistä validointia ei oleteta.',
+'One coordinated review workflow':'Yksi koordinoitu arviointityönkulku','Illustrative orchestration':'Havainnollistava orkestrointi',
+'Patient context':'Potilaan tausta','Quality check':'Laatutarkistus','Specialist tools':'Erikoistyökalut','Compare & extract':'Vertaa ja poimi','Clinician review':'Ammattilaisen arvio','Report & follow-up':'Raportti ja seuranta',
+'Use the working structured tools now. In a live implementation, medical agents would supply attributed suggestions to the same review and reporting interfaces.':'Käytä toimivia jäsenneltyjä työkaluja jo nyt. Oikeassa toteutuksessa lääketieteelliset agentit toimittaisivat lähteellä merkittyjä ehdotuksia samoihin arviointi- ja raportointinäkymiin.',
+'Review lung example':'Arvioi keuhkoesimerkki','Prepare report':'Laadi raportti','Live service requirements':'Tuotantopalvelun vaatimukset',
+'External Python service, models and suitable compute':'Ulkoinen Python-palvelu, mallit ja riittävä laskentateho','Server-held model credentials and authenticated API':'Palvelimella säilytettävät mallin tunnukset ja tunnistautumista vaativa API','Approved data handling, consent and clinical governance':'Hyväksytty tietojenkäsittely, suostumus ja kliininen hallinto','Tool provenance, audit trail and clinician sign-off':'Työkalujen alkuperä, kirjausketju ja ammattilaisen hyväksyntä',
+'View integration contract':'Näytä integraatiosopimus',
+
+// Platform
+'Meet Candex':'Tutustu Candexiin','The idea, the features and the path from first concern to continuing care.':'Idea, toiminnot ja polku ensimmäisestä huolesta jatkuvaan hoitoon.',
+'Every cancer. Every community.':'Jokainen syöpä. Jokainen yhteisö.','Earlier understanding.':'Aikaisempi ymmärrys.','More connected care.':'Yhtenäisempi hoito.',
+'Candex brings patients, clinicians and research into one clearer care pathway. Designed for Finland, it combines accessible support, clinical decision tools and visibility into the gaps in care.':'Candex tuo potilaat, ammattilaiset ja tutkimuksen yhdelle selkeämmälle hoitopolulle. Suomea varten suunniteltu Candex yhdistää saavutettavan tuen, kliiniset päätöksenteon työkalut ja näkyvyyden hoidon aukkoihin.',
+'Patient experience':'Potilaan näkymä','Doctor experience':'Lääkärin näkymä',
+'Purple cancer awareness ribbon, representing support across cancer types':'Violetti syöpätietoisuusnauha, joka kuvaa tukea kaikille syöpätyypeille',
+'An all-cancer concept with a detailed lung-care pilot from the original proposal. Clinical AI, Kanta/PACS connections and outcome improvements require implementation and evaluation.':'Kaikkia syöpiä koskeva konsepti, jossa on alkuperäisen ehdotuksen yksityiskohtainen keuhkosyövän hoidon pilotti. Kliininen tekoäly, Kanta- ja PACS-yhteydet sekä hoitotulosten paraneminen edellyttävät toteutusta ja arviointia.',
+'Explore every part of the idea':'Tutustu idean jokaiseen osaan','From a person’s story to better systems':'Ihmisen tarinasta parempiin järjestelmiin','Try the feature':'Kokeile toimintoa',
+'A low-barrier first step':'Matalan kynnyksen ensiaskel','A guided health check captures concerns, history and access preferences without a difficult first conversation.':'Ohjattu terveyskysely kokoaa huolet, taustatiedot ja hoitoon pääsyn toiveet ilman vaikeaa ensimmäistä keskustelua.',
+'Imaging in context':'Kuvantaminen kontekstissaan','Illustrate quality checks, suspicious-region annotations and comparison with previous imaging.':'Havainnollistaa laatutarkistuksia, epäilyttävien alueiden merkintöjä ja vertailua aiempaan kuvantamiseen.',
+'Personalised clinical review':'Yksilöllinen kliininen arvio','Bring relevant clinical context together. A validated risk model would support, rather than replace, clinical judgement.':'Kokoaa olennaisen kliinisen taustan yhteen. Validoitu riskimalli tukisi kliinistä harkintaa, ei korvaisi sitä.',
+'Decision support & reports':'Päätöksenteon tuki ja raportit','Structure clinician reasoning and prepare editable drafts with a clear next action.':'Jäsentää ammattilaisen päättelyä ja laatii muokattavia luonnoksia, joissa on selkeä seuraava toimenpide.',
+'A pathway that stays connected':'Yhtenäisenä pysyvä hoitopolku','Show the patient what happens next while the team tracks responsibility and follow-up.':'Näyttää potilaalle, mitä seuraavaksi tapahtuu, kun tiimi seuraa vastuita ja jatkotoimia.',
+'Open-source agent support':'Avoimen lähdekoodin agenttituki','Run a local AI platform guide and explore the integration points for specialist medical frameworks.':'Käytä paikallista tekoälyopasta ja tutustu erikoistuneiden lääketieteellisten kehysten integraatiokohtiin.',
+'Quality & equity, visible':'Laatu ja yhdenvertaisuus näkyviksi','Eight proposed indicators cover delays, model performance, regional differences and follow-up.':'Kahdeksan ehdotettua mittaria kattaa viiveet, mallin suorituskyvyn, alueelliset erot ja seurannan.',
+'Responsible research data':'Vastuullinen tutkimusaineisto','Structured variables, data quality and optional participation support appropriately governed research.':'Jäsennellyt muuttujat, tiedon laatu ja vapaaehtoinen osallistuminen tukevat asianmukaisesti hallinnoitua tutkimusta.',
+'Access by design':'Saavutettavuus suunnittelun lähtökohtana','Readable text, keyboard-friendly controls, clear language, remote-care preferences and access support.':'Luettava teksti, näppäimistöllä käytettävät säätimet, selkeä kieli, etähoidon toiveet ja hoitoon pääsyn tuki.',
+'Designed to connect, thoughtfully':'Suunniteltu yhdistymään harkiten','Integration roadmap':'Integraatioiden tiekartta','Kanta / My Kanta':'Kanta / OmaKanta','Learn about the source':'Lue lisää lähteestä','Planned':'Suunniteltu',
+'Proposed record exchange with Finland’s national services, subject to eligibility, authentication and interoperability requirements. No connection exists in this demo.':'Ehdotettu tietojenvaihto Suomen kansallisten palvelujen kanssa kelpoisuus-, tunnistautumis- ja yhteentoimivuusvaatimusten mukaisesti. Tässä demossa yhteyttä ei ole.',
+'Hospital imaging and DICOMweb could support source-image retrieval and longitudinal review. Orthanc is an open-source DICOM server.':'Sairaalan kuvantaminen ja DICOMweb voisivat tukea alkuperäisten kuvien hakua ja pitkittäistä arviointia. Orthanc on avoimen lähdekoodin DICOM-palvelin.',
+'Research datasets & registries':'Tutkimusaineistot ja rekisterit',
+'Public datasets can support research; patient-level register reuse requires appropriate permissions. Finnish Cancer Registry statistics provide context, not access to private records.':'Julkiset aineistot voivat tukea tutkimusta; rekisteritietojen käyttö potilastasolla edellyttää asianmukaisia lupia. Suomen Syöpärekisterin tilastot antavat taustaa, eivät pääsyä yksityisiin tietoihin.',
+'Clear about what this is':'Selkeästi, mistä on kyse','Is Candex providing real clinical care?':'Tarjoaako Candex oikeaa hoitoa?',
+'No. This is an interactive concept with fictional data. The browser AI guide supports platform navigation only. Existing care records, schematic findings, priorities, appointments and metrics are examples. The separate DICOM AI workspace returns real research-model outputs only when a backend is running; these are not clinical diagnoses.':'Ei. Tämä on interaktiivinen konsepti kuvitteellisella datalla. Selaimen tekoälyopas tukee vain alustalla liikkumista. Esitetyt potilastiedot, kaavamaiset löydökset, kiireellisyydet, vastaanotot ja mittarit ovat esimerkkejä. Erillinen DICOM-tekoälytyötila palauttaa oikeita tutkimusmallin tuloksia vain, kun taustapalvelu on käynnissä; ne eivät ole kliinisiä diagnooseja.',
+'Does the platform cover all cancer types?':'Kattaako alusta kaikki syöpätyypit?',
+'The shared patient journey, care coordination, reports and analytics are designed for multiple cancer pathways. The detailed imaging example is a lung pilot. Each cancer-specific AI tool would need its own evidence, appropriate data and clinical validation.':'Yhteinen potilaspolku, hoidon koordinointi, raportit ja analytiikka on suunniteltu useille syöpien hoitopoluille. Yksityiskohtainen kuvantamisesimerkki on keuhkopilotti. Jokainen syöpäkohtainen tekoälytyökalu tarvitsisi omaa näyttöä, sopivaa dataa ja kliinisen validoinnin.',
+'How does Candex support rural and underserved patients?':'Miten Candex tukee haja-asutusalueiden ja heikommassa asemassa olevia potilaita?',
+'The concept captures remote-care preferences and access barriers, provides readable care updates and highlights regional delays. Travel, language and affordability support would be arranged by a connected care service.':'Konsepti kirjaa etähoidon toiveet ja hoitoon pääsyn esteet, tarjoaa luettavia hoitopäivityksiä ja tuo esiin alueelliset viiveet. Matka-, kieli- ja kustannustuen järjestäisi yhdistetty hoitopalvelu.',
+'What would make the medical AI live?':'Mitä lääketieteellisen tekoälyn käyttöönotto vaatisi?',
+'The repository now includes an authenticated Python backend for TorchXRayVision chest X-ray inference. Run it locally and open Doctor → DICOM AI analysis. CT, MRI and other medical-agent frameworks need separate implementations. Open-source code alone is not evidence of clinical safety or effectiveness.':'Repositorio sisältää nyt tunnistautumisella suojatun Python-taustapalvelun TorchXRayVision-keuhkoröntgenpäättelyyn. Käynnistä se paikallisesti ja avaa Lääkäri → DICOM-tekoälyanalyysi. TT, MRI ja muut lääketieteelliset agenttikehykset vaativat erilliset toteutukset. Avoin lähdekoodi ei yksinään ole näyttöä kliinisestä turvallisuudesta tai vaikuttavuudesta.',
+
+// Dialogs
+'Make Candex work for you':'Muokkaa Candex itsellesi sopivaksi','Adjust the display to your preference. These settings apply throughout the website.':'Säädä näkymää mieltymystesi mukaan. Asetukset koskevat koko verkkosivustoa.',
+'Larger text':'Suurempi teksti','Higher contrast':'Suurempi kontrasti','Reduce motion':'Vähennä liikettä',
+'Use Tab to move between controls, Enter to activate them and Escape to close this window. Your device’s reduced-motion preference is respected.':'Siirry säätimien välillä Tab-näppäimellä, aktivoi Enterillä ja sulje ikkuna Escillä. Laitteesi liikkeen vähentämisen asetusta noudatetaan.',
+'Your notifications':'Ilmoituksesi','Consultation coming up':'Vastaanotto tulossa','18 November · 10:30 · Fictional appointment':'18. marraskuuta · 10.30 · Kuvitteellinen vastaanotto',
+'Your next step is clinical review':'Seuraava vaiheesi on kliininen arvio','Your example pathway is ready to explore.':'Esimerkkihoitopolkusi on valmis tutustuttavaksi.','View pathway':'Näytä hoitopolku',
+'Support, wherever you are':'Tukea, missä ikinä oletkin','Candex is designed to make it easier to ask for help with travel, language, technology or financial barriers.':'Candex on suunniteltu helpottamaan avun pyytämistä matkoihin, kieleen, teknologiaan tai taloudellisiin esteisiin.',
+'In a connected service, your care coordinator would help arrange suitable support. This prototype does not contact a care service.':'Yhdistetyssä palvelussa hoitokoordinaattorisi auttaisi järjestämään sopivaa tukea. Tämä prototyyppi ei ota yhteyttä hoitopalveluun.',
+'Add access preferences':'Lisää hoitoon pääsyn toiveet','For cancer information and support in Finland, visit':'Syöpätietoa ja tukea Suomessa tarjoaa','Cancer Society of Finland':'Suomen Syöpäyhdistys',
+'Your example consultation':'Esimerkkivastaanottosi','18 November 2026 · 10:30–11:00':'18.11.2026 · 10.30–11.00','Finland time (EET) · Video consultation':'Suomen aikaa (EET) · Videovastaanotto','Dr. Emilia Koski · Fictional care team':'Lääkäri Emilia Koski · Kuvitteellinen hoitotiimi',
+'A little preparation can help':'Pieni valmistautuminen auttaa','Write down your questions, any changes you’ve noticed and your medicines. You can request a phone call if video is difficult.':'Kirjoita ylös kysymyksesi, huomaamasi muutokset ja lääkkeesi. Voit pyytää puhelua, jos video on hankala.',
+'This is an example appointment. There is no live call or booking.':'Tämä on esimerkkivastaanotto. Oikeaa puhelua tai varausta ei ole.','Download sample calendar event':'Lataa esimerkkikalenteritapahtuma',
+'SUMMARY:Candex DEMO consultation - not a real appointment':'SUMMARY:Candex DEMO-vastaanotto - ei oikea vastaanotto','DESCRIPTION:Fictional calendar example. No appointment is booked.':'DESCRIPTION:Kuvitteellinen kalenteriesimerkki. Vastaanottoa ei ole varattu.',
+'Your demo health summary':'Demoterveysyhteenvetosi','DEMONSTRATION SUMMARY — NOT SENT':'DEMOYHTEENVETO — EI LÄHETETTY','None added':'Ei lisätty',
+'No cancer risk score or diagnosis has been calculated.':'Syöpäriskipistemäärää tai diagnoosia ei ole laskettu.',
+'In a live service, a clinician would review this information. This summary remains in your session.':'Oikeassa palvelussa ammattilainen kävisi nämä tiedot läpi. Tämä yhteenveto säilyy vain istunnossasi.',
+'You haven’t completed a demo health check yet.':'Et ole vielä täyttänyt demoterveyskyselyä.','Start health check':'Aloita terveyskysely',
+'Your story, ready for review':'Tarinasi, valmiina arvioitavaksi','See my next steps':'Katso seuraavat vaiheeni',
+'Understanding the imaging example':'Kuvantamisesimerkin ymmärtäminen',
+'The lung pilot shows an illustrated chest cross-section with a prewritten example finding. It is not a medical scan or an actual AI result.':'Keuhkopilotissa näytetään piirretty rintakehän poikkileikkaus ja valmiiksi kirjoitettu esimerkkilöydös. Se ei ole lääketieteellinen kuva eikä oikea tekoälytulos.',
+'A real report would explain the finding, uncertainty and next steps after clinician review. A finding alone does not confirm cancer.':'Oikea raportti selittäisi löydöksen, epävarmuuden ja seuraavat vaiheet ammattilaisen arvion jälkeen. Löydös yksinään ei varmista syöpää.',
+'Explore the clinician example':'Tutustu ammattilaisen esimerkkiin',
+'Your consultation checklist':'Vastaanoton muistilista','Write down changes or symptoms you want to discuss.':'Kirjoita ylös muutokset tai oireet, joista haluat keskustella.','Prepare questions about tests and next steps.':'Valmistele kysymyksiä tutkimuksista ja seuraavista vaiheista.','Have a list of medicines available.':'Pidä lääkelista saatavilla.','Tell your team if phone or in-person care is easier.':'Kerro tiimillesi, jos puhelin- tai lähivastaanotto on helpompi.','This is a preparation checklist, not medical advice.':'Tämä on valmistautumisen muistilista, ei lääketieteellinen neuvo.',
+'Research data, explained':'Tutkimusaineisto selitettynä',
+'The proposed research record includes pathway dates, imaging findings approved by a clinician, follow-up, outcomes and optional access/equity variables.':'Ehdotettu tutkimustietue sisältää hoitopolun päivämäärät, ammattilaisen hyväksymät kuvantamislöydökset, seurannan, hoitotulokset sekä valinnaiset hoitoon pääsyyn ja yhdenvertaisuuteen liittyvät muuttujat.',
+'Access-related information should support equity analysis and practical help, rather than being treated as a biological cancer-risk factor.':'Hoitoon pääsyyn liittyvien tietojen tulee tukea yhdenvertaisuusanalyysia ja käytännön apua, eikä niitä tule käsitellä biologisena syövän riskitekijänä.',
+'Real research participation would need clear purposes, an appropriate legal basis, consent where required, access controls and withdrawal information. No research data is collected or shared by this demo.':'Oikea tutkimukseen osallistuminen edellyttäisi selkeitä käyttötarkoituksia, asianmukaista oikeusperustetta, tarvittaessa suostumusta, käyttöoikeuksien hallintaa ja tietoa suostumuksen perumisesta. Tämä demo ei kerää eikä jaa tutkimustietoja.',
+'Keep a person responsible for the next step':'Nimeä vastuuhenkilö seuraavalle vaiheelle','Responsible person':'Vastuuhenkilö','Next action':'Seuraava toimenpide','Confirm specialist appointment and contact patient':'Vahvista erikoislääkärin vastaanotto ja ota yhteyttä potilaaseen','Save demo follow-up':'Tallenna demoseuranta',
+'Prepare follow-up':'Valmistele seuranta','Next step':'Seuraava vaihe',
+'A quarterly PDSA review':'Neljännesvuosittainen PDSA-arvio','ILLUSTRATIVE QUALITY-IMPROVEMENT DRAFT':'HAVAINNOLLISTAVA LAADUNPARANNUSLUONNOS',
+'PLAN':'SUUNNITTELE','DO':'TOTEUTA','STUDY':'ARVIOI','ACT':'TOIMI',
+'Investigate the sample 11-day regional waiting-time gap.':'Selvitä esimerkin 11 päivän alueellinen jonotusaikaero.','Map referral handoffs and remote-care availability with the local teams.':'Kartoita lähetteiden siirtokohdat ja etähoidon saatavuus paikallisten tiimien kanssa.',
+'Compare time to review, follow-up completion and missing data, adjusting for case mix and small cohorts.':'Vertaa arvioon kuluvaa aikaa, seurantojen toteutumista ja puuttuvia tietoja huomioiden potilasrakenne ja pienet kohortit.',
+'Agree an owner, a change to test and a review date.':'Sopikaa vastuuhenkilö, testattava muutos ja arviointipäivä.','All figures in this prototype are invented examples.':'Kaikki tämän prototyypin luvut ovat keksittyjä esimerkkejä.','Download review template':'Lataa arviopohja',
+'CANDEX — PDSA REVIEW TEMPLATE':'CANDEX — PDSA-ARVIOPOHJA','Plan: What gap will you investigate?':'Suunnittele: Minkä aukon selvität?','Do: What change will you test, and who owns it?':'Toteuta: Minkä muutoksen testaat ja kuka siitä vastaa?','Study: What evidence, cohort size and uncertainty will you review?':'Arvioi: Mitä näyttöä, kohortin kokoa ja epävarmuutta tarkastelet?','Act: What will you adopt, adapt or stop?':'Toimi: Mitä otat käyttöön, mukautat tai lopetat?','Use approved data only. Demo metrics are fictional.':'Käytä vain hyväksyttyä dataa. Demon mittarit ovat kuvitteellisia.',
+'DICOM model service':'DICOM-mallipalvelu','The included Python backend runs TorchXRayVision on supported chest X-ray DICOMs. Start it with':'Mukana tuleva Python-taustapalvelu ajaa TorchXRayVision-mallia tuetuille keuhkoröntgenin DICOM-kuville. Käynnistä se komennolla','after installing requirements.':'riippuvuuksien asentamisen jälkeen.',
+'Authorization: Bearer [session API key]':'Authorization: Bearer [istunnon API-avain]','Returns: model provenance, image preview, pathology scores, limitations and an unsigned report draft.':'Palauttaa: mallin alkuperän, kuvan esikatselun, patologiapisteet, rajoitukset ja allekirjoittamattoman raporttiluonnoksen.',
+'MedRAX, mAIstro and Radiology Swarm remain separate integration options. No model output appears until a real backend request succeeds.':'MedRAX, mAIstro ja Radiology Swarm ovat edelleen erillisiä integraatiovaihtoehtoja. Mallin tuloksia ei näytetä ennen kuin oikea taustapalvelupyyntö onnistuu.','Open the connector':'Avaa yhteys',
+'Clinical review draft prepared':'Kliinisen arvion luonnos laadittu','Your example decision and notes have been added to the report draft for this session. This is not a clinical sign-off.':'Esimerkkipäätöksesi ja muistiinpanosi on lisätty tämän istunnon raporttiluonnokseen. Tämä ei ole kliininen hyväksyntä.','Review report draft':'Tarkastele raporttiluonnosta',
+'CANDEX — DEMONSTRATION REPORT':'CANDEX — DEMORAPORTTI','UNAPPROVED DRAFT · NOT FOR CLINICAL USE':'HYVÄKSYMÄTÖN LUONNOS · EI KLIINISEEN KÄYTTÖÖN','FINDINGS':'LÖYDÖKSET','PROPOSED NEXT STEP':'EHDOTETTU SEURAAVA VAIHE',
+'All imaging and findings are examples. No medical AI has run.':'Kaikki kuvat ja löydökset ovat esimerkkejä. Lääketieteellistä tekoälyä ei ole ajettu.','Clinician review and appropriate clinical evidence are required.':'Ammattilaisen arvio ja asianmukainen kliininen näyttö ovat välttämättömiä.',
+'Review your example report':'Tarkastele esimerkkiraporttiasi','Download text draft':'Lataa tekstiluonnos','No report prepared.':'Raporttia ei ole laadittu.',
+'The DICOM workspace could not load. Start Candex with python -m backend and open http://localhost:8000, then refresh.':'DICOM-työtilaa ei voitu ladata. Käynnistä Candex komennolla python -m backend, avaa http://localhost:8000 ja päivitä sivu.',
+
+// Toasts and status messages
+'Demo reminder enabled for this session. No notification will be sent.':'Demomuistutus otettu käyttöön tälle istunnolle. Ilmoitusta ei lähetetä.','Demo reminder removed.':'Demomuistutus poistettu.',
+'Your session’s demo information has been cleared.':'Istuntosi demotiedot on tyhjennetty.','Demo preference enabled. No data is shared.':'Demoasetus otettu käyttöön. Tietoja ei jaeta.','Demo research preference disabled.':'Demon tutkimusasetus poistettu käytöstä.',
+'Draft saved in this session. Nothing was sent.':'Luonnos tallennettu tähän istuntoon. Mitään ei lähetetty.','Choose a demonstration next step first.':'Valitse ensin demon seuraava vaihe.','Demo follow-up saved for this session. No clinical task was sent.':'Demoseuranta tallennettu tälle istunnolle. Kliinistä tehtävää ei lähetetty.',
+'Loading open-source library and model. The first load may take a minute.':'Ladataan avoimen lähdekoodin kirjastoa ja mallia. Ensimmäinen lataus voi kestää minuutin.',
+'Local AI guide ready. Questions stay in your browser; answers come from reviewed Candex content.':'Paikallinen tekoälyopas on valmis. Kysymykset pysyvät selaimessasi; vastaukset tulevat tarkistetusta Candex-sisällöstä.','AI guide ready':'Tekoälyopas valmis',
+'The model could not load on this device or network. You can still browse all guidance topics without AI.':'Mallia ei voitu ladata tällä laitteella tai verkossa. Voit silti selata kaikkia ohjeaiheita ilman tekoälyä.','Try loading again':'Yritä ladata uudelleen',
+
+// Candex guide (guide.js topics and responses)
+'Browse Candex topics':'Selaa Candexin aiheita','Open feature':'Avaa toiminto','Open this feature':'Avaa tämä toiminto','Finding the right guidance…':'Etsitään sopivia ohjeita…',
+'Matched by the local open-source embedding model. Platform guidance only.':'Paikallinen avoimen lähdekoodin upotusmalli löysi vastineen. Vain alustan käyttöohjeita.',
+'Topic matching without AI. Enable the local model for semantic matching. Platform guidance only.':'Aiheiden haku ilman tekoälyä. Ota paikallinen malli käyttöön semanttista hakua varten. Vain alustan käyttöohjeita.',
+'Guidance is temporarily unavailable. Use the navigation to explore each feature.':'Ohjeet eivät ole tilapäisesti saatavilla. Tutustu toimintoihin navigaation kautta.',
+'Analyze a chest X-ray DICOM':'Analysoi keuhkoröntgenin DICOM-kuva',
+'The Doctor DICOM AI workspace connects to the supplied Python backend. It accepts permitted single-frame CR/DX chest X-rays and returns actual pretrained model scores, not cancer probabilities. Start the backend, check its connection, enter its session API key, then choose your sample. CT/MRI are not supported.':'Lääkärin DICOM-tekoälytyötila yhdistyy mukana tulevaan Python-taustapalveluun. Se hyväksyy luvallisia yksikuvaisia CR/DX-keuhkoröntgenkuvia ja palauttaa esikoulutetun mallin todelliset pisteet, ei syövän todennäköisyyksiä. Käynnistä taustapalvelu, tarkista yhteys, syötä istunnon API-avain ja valitse sitten näytteesi. TT- ja MRI-kuvia ei tueta.',
+'Prepare for your appointment':'Valmistaudu vastaanottoon',
+'Write down your questions and any changes you want to discuss. The care pathway shows the example appointment and your coordinator. This prototype does not book appointments.':'Kirjoita ylös kysymyksesi ja muutokset, joista haluat keskustella. Hoitopolku näyttää esimerkkivastaanoton ja hoitokoordinaattorisi. Tämä prototyyppi ei varaa vastaanottoja.',
+'Compare previous imaging':'Vertaa aiempaan kuvantamiseen',
+'The doctor’s imaging workspace lets you switch between current and prior lung illustrations and turn annotations on or off. Measurements are examples, not AI results.':'Lääkärin kuvantamistyötilassa voit vaihtaa nykyisen ja aiemman keuhkokuvituksen välillä sekä näyttää tai piilottaa merkinnät. Mittaukset ovat esimerkkejä, eivät tekoälyn tuloksia.',
+'Understand research participation':'Ymmärrä tutkimukseen osallistuminen',
+'Research participation is optional in the concept. The records page demonstrates the preference and explains proposed data use. Nothing is shared by this website.':'Tutkimukseen osallistuminen on konseptissa vapaaehtoista. Tietosivu esittelee asetuksen ja selittää ehdotetun tietojen käytön. Tämä sivusto ei jaa mitään.',
+'Understand regional differences':'Ymmärrä alueelliset erot',
+'The quality and equity dashboard illustrates eight measures, including regional waiting times and demographic performance. All displayed figures are invented examples.':'Laatu- ja yhdenvertaisuuskojelauta havainnollistaa kahdeksaa mittaria, kuten alueellisia jonotusaikoja ja suorituskykyä väestöryhmittäin. Kaikki näytetyt luvut ovat keksittyjä esimerkkejä.',
+'Start a health check':'Aloita terveyskysely',
+'The health check organises concerns, health history and access preferences into a session-only summary. It does not calculate cancer risk or diagnose. A clinician would review the information in a connected service.':'Terveyskysely kokoaa huolet, terveyshistorian ja hoitoon pääsyn toiveet yhteenvedoksi, joka säilyy vain istunnossa. Se ei laske syöpäriskiä eikä diagnosoi. Yhdistetyssä palvelussa ammattilainen kävisi tiedot läpi.',
+'Get help with access to care':'Hae apua hoitoon pääsyyn',
+'Record your preferred contact method and ask for help with travel, language, technology or cost barriers in the health check. The accessibility menu offers larger text, higher contrast and reduced motion.':'Kirjaa toivomasi yhteydenottotapa ja pyydä terveyskyselyssä apua matkoihin, kieleen, teknologiaan tai kustannuksiin liittyvissä esteissä. Saavutettavuusvalikosta löytyvät suurempi teksti, suurempi kontrasti ja liikkeen vähentäminen.',
+'Prepare a clinical report':'Laadi kliininen raportti',
+'The report tool creates an editable, downloadable draft from your sample findings and proposed next step. It is template-based and requires clinician review. It is not a medical-agent result.':'Raporttityökalu luo muokattavan ja ladattavan luonnoksen esimerkkilöydöksistäsi ja ehdotetusta seuraavasta vaiheesta. Se perustuu pohjaan ja vaatii ammattilaisen tarkistuksen. Se ei ole lääketieteellisen agentin tulos.',
+'Learn about the specialist agents':'Tutustu erikoisagentteihin',
+'MedRAX supports chest X-ray research, mAIstro supports radiomics/research workflows, and Radiology Swarm provides a multi-role review framework. Those frameworks are not connected. The separate DICOM AI page connects to the included TorchXRayVision backend for chest X-rays. The Candex guide runs locally with Transformers.js.':'MedRAX tukee keuhkoröntgentutkimusta, mAIstro tukee radiomiikka- ja tutkimustyönkulkuja ja Radiology Swarm tarjoaa monirooliarvion kehyksen. Näitä kehyksiä ei ole yhdistetty. Erillinen DICOM-tekoälysivu yhdistyy mukana tulevaan TorchXRayVision-taustapalveluun keuhkoröntgenkuvia varten. Candex-opas toimii paikallisesti Transformers.js-kirjastolla.',
+'Follow your care pathway':'Seuraa hoitopolkuasi',
+'The pathway shows how information review, tests if needed and ongoing support fit together. A real clinician would decide the next action; this is a fictional example.':'Hoitopolku näyttää, miten tietojen arviointi, tarvittavat tutkimukset ja jatkuva tuki sopivat yhteen. Oikea ammattilainen päättäisi seuraavasta toimenpiteestä; tämä on kuvitteellinen esimerkki.',
+'Contact your care team':'Ota yhteyttä hoitotiimiisi',
+'Use the messages page to prepare a question. Drafts stay in this session and are not sent to a doctor. This website is not a monitored care channel.':'Valmistele kysymys viestisivulla. Luonnokset säilyvät tässä istunnossa, eikä niitä lähetetä lääkärille. Tämä sivusto ei ole valvottu hoitokanava.',
+'Candex covers the whole care journey':'Candex kattaa koko hoitopolun',
+'Candex is an all-cancer concept with a detailed lung pilot, combining accessible patient support, clinician tools, follow-up and quality/equity analytics. Cancer-specific AI would require separate validation.':'Candex on kaikkia syöpiä koskeva konsepti, jossa on yksityiskohtainen keuhkopilotti. Se yhdistää saavutettavan potilastuen, ammattilaisten työkalut, seurannan sekä laatu- ja yhdenvertaisuusanalytiikan. Syöpäkohtainen tekoäly vaatisi erillisen validoinnin.',
+'A clinician is the right person to ask':'Ammattilainen on oikea henkilö kysymykseesi',
+'This guide explains Candex features and cannot assess symptoms, interpret results or recommend care. Contact your healthcare professional for a medical question. In Finland, call 112 for an emergency or 116117 for urgent medical advice. Demo messages are not sent.':'Tämä opas selittää Candexin toimintoja eikä voi arvioida oireita, tulkita tuloksia tai suositella hoitoa. Ota lääketieteellisissä kysymyksissä yhteyttä terveydenhuollon ammattilaiseen. Suomessa soita hätätilanteessa numeroon 112 tai kiireellisessä hoidon tarpeessa Päivystysavun numeroon 116117. Demoviestejä ei lähetetä.',
+'I could not confidently match that question. You can browse the platform features or ask about appointments, imaging, records, reports or research consent.':'En löytänyt kysymykseesi varmaa vastinetta. Voit selata alustan toimintoja tai kysyä vastaanotoista, kuvantamisesta, tiedoista, raporteista tai tutkimussuostumuksesta.'
+};
+
+const PATHWAY={Lung:'Keuhkosyövän hoitopolku',Breast:'Rintasyövän hoitopolku',Colorectal:'Suolistosyövän hoitopolku',Prostate:'Eturauhassyövän hoitopolku'};
+const LABELS={Age:'Ikä','Care area':'Hoitoalue',Reason:'Syy',Duration:'Kesto',Smoking:'Tupakointi','Family history':'Sukuhistoria',Region:'Alue','Preferred contact':'Toivottu yhteydenottotapa','Access support requested':'Hoitoon pääsyn tukea pyydetty',Notes:'Lisätiedot',Patient:'Potilas',Pathway:'Hoitopolku'};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+// Patterns for text that contains interpolated values. Checked after exact matches.
+const PATTERNS=[
+ [/^(Lung|Breast|Colorectal|Prostate) pathway · (.+)$/,(m,t,r)=>`${PATHWAY[t]} · ${lookup(r)}`],
+ [/^(.+) · (Lung|Breast|Colorectal|Prostate) pathway$/,(m,n,t)=>`${n} · ${PATHWAY[t]}`],
+ [/^Fictional (lung|breast|colorectal|prostate) care pathway$/,(m,t)=>`Kuvitteellinen ${PATHWAY[cap(t)].toLowerCase()}`],
+ [/^(CX-\d+) · (\d+) years$/,(m,id,a)=>`${id} · ${a} vuotta`],
+ [/^(CX-\d+) · (\d+) years · (.+)$/,(m,id,a,r)=>`${id} · ${a} vuotta · ${lookup(r)}`],
+ [/^(.+)\. This example covers care coordination; no cancer-specific imaging model is running\.$/,(m,r)=>`${lookup(r)}. Tämä esimerkki kattaa hoidon koordinoinnin; syöpäkohtaista kuvantamismallia ei ole käytössä.`],
+ [/^(\d+) patients?$/,(m,n)=>n==='1'?'1 potilas':`${n} potilasta`],
+ [/^(\d+%) day gap to national target$/,(m,g)=>`${g} ero kansalliseen tavoitteeseen`],
+ [/^(\d+) d$/,(m,n)=>`${n} pv`],
+ [/^(\d+) days$/,(m,n)=>`${n} päivää`],
+ [/^(\d+) days · Sample$/,(m,n)=>`${n} päivää · Esimerkki`],
+ [/^(\d+%) · Sample$/,(m,p)=>`${p} · Esimerkki`],
+ [/^(\d+%) complete$/,(m,p)=>`${p} valmis`],
+ [/^(\d+) pp$/,(m,n)=>`${n} %-yks.`],
+ [/^(.+) · OPEN SOURCE$/,(m,l)=>`${l} · AVOIN LÄHDEKOODI`],
+ [/^(\d+) \/ THE CANDEX APPROACH$/,(m,n)=>`${n} / CANDEXIN LÄHESTYMISTAPA`],
+ [/^Downloading model assets · (\d+)% of current file$/,(m,p)=>`Ladataan mallitiedostoja · ${p} % nykyisestä tiedostosta`],
+ [/^(Age|Care area|Reason|Duration|Smoking|Family history|Region|Preferred contact|Access support requested|Notes|Patient|Pathway): (.*)$/,(m,l,v)=>`${LABELS[l]}: ${l==='Notes'&&v!=='None added'?v:lookup(v)}`]
+];
+const REVERSE=new Map(Object.entries(FI).map(([en,fi])=>[fi,en]));
+function lookup(core){
+ if(Object.hasOwn(FI,core))return FI[core];
+ for(const [re,fn] of PATTERNS){const m=core.match(re);if(m)return fn(...m);}
+ return core;
+}
+let lang='en';
+try{const saved=localStorage.getItem('candex-lang');if(saved==='fi'||saved==='en')lang=saved;}catch{}
+// Translate one line, keeping surrounding whitespace.
+function trLine(s){const m=/^(\s*)([\s\S]*?)(\s*)$/.exec(s);return m[2]?m[1]+lookup(m[2])+m[3]:s;}
+function tr(s){if(lang!=='fi'||s==null)return s;s=String(s);return s.includes('\n')?s.split('\n').map(trLine).join('\n'):trLine(s);}
+// Map a Finnish UI string back to English (used where English data is needed).
+function toEnglish(s){return REVERSE.get(String(s).trim())??s;}
+
+const ATTRS=['placeholder','aria-label','alt','title'];
+const SKIP='script,style,code,[translate="no"]';
+const origText=new WeakMap(),origAttr=new WeakMap();
+function skip(el){return !el||el.closest?.(SKIP);}
+function translateText(node){
+ if(skip(node.parentElement))return;
+ const v=node.nodeValue;if(!v.trim())return;
+ const t=tr(v);if(t!==v){if(!origText.has(node))origText.set(node,v);node.nodeValue=t;}
+}
+function translateAttrs(el){
+ if(skip(el))return;
+ const names=el.tagName==='INPUT'&&(!el.type||el.type==='text')?[...ATTRS,'value']:ATTRS;
+ for(const a of names){const v=el.getAttribute(a);if(!v)continue;const t=tr(v);if(t!==v){const o=origAttr.get(el)||{};if(!(a in o))o[a]=v;origAttr.set(el,o);el.setAttribute(a,t);}}
+}
+function translateTree(root){
+ if(lang!=='fi'||!root)return;
+ if(root.nodeType===3)return translateText(root);
+ if(root.nodeType!==1&&root.nodeType!==11)return;
+ if(root.nodeType===1)translateAttrs(root);
+ const w=document.createTreeWalker(root,5);let n;
+ while((n=w.nextNode()))n.nodeType===3?translateText(n):translateAttrs(n);
+}
+function restoreTree(root){
+ const w=document.createTreeWalker(root,5);let n;
+ while((n=w.nextNode())){
+  if(n.nodeType===3){if(origText.has(n)){n.nodeValue=origText.get(n);origText.delete(n);}}
+  else if(origAttr.has(n)){for(const [a,v] of Object.entries(origAttr.get(n)))n.setAttribute(a,v);origAttr.delete(n);}
+ }
+}
+function setLang(next){
+ if(next!=='fi'&&next!=='en'||next===lang)return;
+ lang=next;
+ try{localStorage.setItem('candex-lang',lang);}catch{}
+ document.documentElement.lang=lang;
+ lang==='fi'?translateTree(document.body):restoreTree(document.body);
+}
+document.documentElement.lang=lang;
+new MutationObserver(list=>{if(lang!=='fi')return;for(const m of list)for(const n of m.addedNodes)translateTree(n);}).observe(document.body,{childList:true,subtree:true});
+translateTree(document.body);
+window.candexI18n={tr,toEnglish,setLang,get lang(){return lang;}};
+})();
