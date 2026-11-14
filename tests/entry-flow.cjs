@@ -149,7 +149,7 @@ for (const role of ['patient', 'care', 'quality']) {
   equal(f.api.state.view, 'patient-records', 'Choosing the requested role resumes a permitted deep link');
   equal(f.mounts.records, 1, 'The lookup mounts once, only after Doctor selection');
 }
-for (const [role, view] of [['patient', 'patients'], ['patient', 'reports'], ['patient', 'agents'], ['quality', 'dicom'], ['quality', 'patient-records']]) {
+for (const [role, view] of [['patient', 'patients'], ['patient', 'reports'], ['patient', 'agents'], ['quality', 'dicom'], ['quality', 'patient-records'], ['quality', 'reports']]) {
   const f = fixture(); f.api.enterDemo(role); f.navigate(`#${role}/${view}`);
   equal(f.api.state.view, 'overview', `${role}/${view} falls back to the role overview`);
   equal(f.mounts.records, 0, `${role}/${view} does not mount doctor records`);

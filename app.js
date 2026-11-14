@@ -35,7 +35,7 @@ qualityAlerts.isResolved=alertResolved;
 const activeAlerts=()=>qualityAlerts.items.filter(a=>a.status==='open'&&!alertResolved(a)),openAlerts=activeAlerts;
 const patientNav = [['overview','home','My overview'],['health','heart','Health check'],['pathway','route','My care pathway'],['records','file','My records'],['referrals','route','Reports & appointments'],['messages','chat','Messages']];
 const careNav = [['overview','home','Workspace'],['patients','users','Patient worklist'],['patient-records','file','Patient records'],['scan','scan','Imaging review'],['reports','file','Reports'],['referrals','route','Referrals & follow-up'],['cohort','chart','Quality & equity'],['agents','sparkle','AI workspace']];
-const qualityNav = [['overview','home','Workspace'],['reports','file','Reports'],['analytics','chart','Quality & Equity'],['agents','sparkle','AI workspace']];
+const qualityNav = [['overview','home','Workspace'],['analytics','chart','Quality & Equity'],['agents','sparkle','AI workspace']];
 const viewTitles = {overview:'Overview',health:'Health check',pathway:'Care pathway',records:'Records & preferences',messages:'Care team messages',patients:'Patient worklist','patient-records':'Patient records',scan:'Imaging review',reports:'Clinical reports',referrals:'Reports, appointments & referrals',analytics:'Quality & Equity',cohort:'Quality & Equity',agents:'AI workspace',dicom:'DICOM AI analysis',platform:'About Candex'};
 const goButton = (view,text,primary=false,role=state.role) => `<button class="${primary?'button':'text-btn'}" data-go="${role}/${view}">${text}${icon('arrow')}</button>`;
 const badge = (text,cls='') => `<span class="badge ${cls}">${text}</span>`;

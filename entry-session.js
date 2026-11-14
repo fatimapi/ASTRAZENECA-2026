@@ -6,7 +6,7 @@
   const views = Object.freeze({
     patient: Object.freeze(['overview', 'health', 'pathway', 'records', 'messages', 'referrals', 'platform']),
     care: Object.freeze(['overview', 'patients', 'patient-records', 'scan', 'reports', 'referrals', 'cohort', 'analytics', 'agents', 'dicom', 'platform']),
-    quality: Object.freeze(['overview', 'reports', 'analytics', 'agents', 'platform'])
+    quality: Object.freeze(['overview', 'analytics', 'agents', 'platform'])
   });
   const validRole = role => typeof role === 'string' && Object.hasOwn(views, role);
   let active = null;
