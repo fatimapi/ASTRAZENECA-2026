@@ -101,7 +101,9 @@ This is a **browser-local, persistent demonstration**, synchronised across tabs 
 
 ## Detailed regional map and KPI traffic lights
 
-Quality administrator → Overview and Quality & equity now use actual Statistics Finland 2026 boundaries for all **19 maakunta administrative regions**, including Åland. These are not the 21 wellbeing services county boundaries. Region selection, metric selection, keyboard controls and map zoom are supported. Boundary data are bundled locally with attribution; no map API key or external tiles are needed. See [map sources](data/map-sources.md).
+Quality Administrator → Overview and Quality & Equity now use actual Statistics Finland 2026 boundaries for all **19 maakunta administrative regions**, including Åland. These are not the 21 wellbeing services county boundaries. Region selection, metric selection, keyboard controls and map zoom are supported. Boundary data are bundled locally with attribution; no map API key or external tiles are needed. See [map sources](data/map-sources.md).
+
+Selecting a region shows a short, indicator-specific next step and suggested owner only when its status is **Needs review** or **Urgent action**. Under-control and unassessed indicators do not produce recommendations. Prompts support service-level review; map values remain synthetic.
 
 Every performance figure is synthetic. Green/yellow/red identify the configured service-review band; grey means missing data or no applicable verified threshold. The default profile uses verified Finnish references; optional local demo operating bands are explicitly not national standards. Recognised NHS England comparators are shown separately as external references, never relabelled Finnish or universal international standards. Yellow warning bands are Candex conventions.
 
