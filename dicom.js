@@ -209,7 +209,7 @@ export function mountDicomPanel(container) {
   tokenInput.type = 'password';
   tokenInput.autocomplete = 'off';
   tokenInput.spellcheck = false;
-  tokenInput.value = sessionToken;
+  tokenInput.value = sessionToken || window.candexAgent?.getToken?.() || '';
   tokenInput.placeholder = 'Paste your backend API key';
   connectionCard.append(field('Backend URL', urlInput, 'Use your local backend or a trusted HTTPS deployment. A plain Python static server does not provide the analysis API.'));
   connectionCard.append(field('Backend API key', tokenInput, 'Enter the CANDEX_API_KEY set on your server. It stays in this page’s memory and is sent only to the backend you select.'));
@@ -344,7 +344,7 @@ export function mountDicomPanel(container) {
   }
 
   listen(urlInput, 'input', () => { sessionBackend = urlInput.value; disconnect(); });
-  listen(tokenInput, 'input', () => { sessionToken = tokenInput.value; syncControls(); });
+  listen(tokenInput, 'input', () => { sessionToken = tokenInput.value; window.candexAgent?.setToken?.(tokenInput.value); syncControls(); });
   listen(forgetButton, 'click', () => { sessionToken = ''; tokenInput.value = ''; resetResult(); setStatus(requestStatus, 'API key cleared from this page session.'); syncControls(); });
   listen(fileInput, 'change', () => {
     resetResult();

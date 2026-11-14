@@ -1,6 +1,6 @@
 # Candex DICOM research backend
 
-This is a **working local research pipeline**, not a clinically validated diagnostic service. It runs the open-source [TorchXRayVision](https://github.com/mlmed/torchxrayvision) DenseNet121 model (`densenet121-res224-all`) on a supported DICOM chest X-ray and returns actual model scores. It does not call MedRAX, mAIstro or Radiology Swarm.
+This is a **working local research pipeline**, not a clinically validated diagnostic service. It runs the open-source [TorchXRayVision](https://github.com/mlmed/torchxrayvision) DenseNet121 model (`densenet121-res224-all`) on a supported DICOM chest X-ray and returns actual model scores.
 
 ## What is supported
 

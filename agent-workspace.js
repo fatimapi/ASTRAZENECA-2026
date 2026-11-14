@@ -118,10 +118,10 @@ function view() {
 <h3 class="agent-h3">What the agent can see</h3><ul class="agent-sees">${SECTIONS.map(s => `<li class="${rec[s] ? '' : 'is-off'}">${icon(rec[s] ? 'check' : 'close')}${T(s)}</li>`).join('')}</ul>
 <p class="field-note">${c ? `${T('CT study')}: <span translate="no">${esc(c.id)}</span>` : T('No CT study linked. Link one in Imaging review to enable the CT read.')}</p></section>
 <section class="card agent-design"><h3 class="agent-h3">How it works</h3><ul class="agent-how">
-<li><strong>Tools, like MedRAX:</strong> one agent calls specialist tools: the patient record and a Gemini CT read of the linked study.</li>
-<li><strong>Review roles, like Radiology Swarm and mAIstro:</strong> each draft is written by a drafter, then checked against the record by a separate safety reviewer.</li>
+<li><strong>Tools:</strong> one agent calls specialist tools: the patient record and a Gemini CT read of the linked study.</li>
+<li><strong>Review roles:</strong> each draft is written by a drafter, then checked against the record by a separate safety reviewer.</li>
 <li><strong>Grounded:</strong> answers use only this record, cite sections, and say “not recorded” instead of guessing. Urgency is never changed.</li></ul>
-${goButton('agents', 'Open-source agents behind these ideas', false, 'care').replace('data-go="care/agents"', 'data-agent="medical"')}</section></aside>
+</section></aside>
 <section class="card agent-chat" aria-labelledby="agent-title"><div class="card-head"><div><h2 id="agent-title" translate="no">${esc(p.name)} · ${esc(p.id)}</h2><p class="subhead">${esc(T(p.type))} · ${esc(T(p.reason))}</p></div><button type="button" class="text-btn" data-agent-clear>${T('Clear conversation')}</button></div>
 <div class="agent-log" id="agent-log" aria-live="polite"></div>
 <div class="agent-prompts">${prompts.map(q => `<button type="button" class="agent-chip" data-agent-ask="${esc(q)}">${T(q)}</button>`).join('')}</div>
@@ -195,10 +195,14 @@ document.addEventListener('click', e => {
 });
 
 window.candexI18n?.extend?.({
+  'Research prototype. The clinical agent uses Gemini through your local backend, on fictional patients and public research images; the Candex guide runs a small open-source model in your browser. Outputs are unvalidated and never set urgency or decisions.': 'Tutkimusprototyyppi. Kliininen agentti käyttää Geminiä paikallisen palvelimesi kautta kuvitteellisille potilaille ja julkisille tutkimuskuville; Candex-opas ajaa pientä avoimen lähdekoodin mallia selaimessasi. Tulokset ovat validoimattomia, eivätkä ne koskaan määritä kiireellisyyttä tai päätöksiä.',
   'Clinical agent': 'Kliininen agentti', 'Research': 'Tutkimus', 'Backend token': 'Taustapalvelun tunniste',
   'Paste the token printed by python -m backend': 'Liitä python -m backend -komennon tulostama tunniste',
   'Kept in this page’s memory only. The Gemini key stays on the server.': 'Säilyy vain tämän sivun muistissa. Gemini-avain pysyy palvelimella.',
   'What the agent can see': 'Mitä agentti näkee', 'How it works': 'Miten se toimii',
+  'Tools:': 'Työkalut:', 'one agent calls specialist tools: the patient record and a Gemini CT read of the linked study.': 'yksi agentti käyttää erikoistyökaluja: potilastietoja ja linkitetyn TT-kuvan Gemini-luentaa.',
+  'Review roles:': 'Tarkistusroolit:', 'each draft is written by a drafter, then checked against the record by a separate safety reviewer.': 'kirjoittaja laatii jokaisen luonnoksen, ja erillinen turvallisuustarkastaja tarkistaa sen potilastietoja vasten.',
+  'Grounded:': 'Perusteltu:', 'answers use only this record, cite sections, and say “not recorded” instead of guessing. Urgency is never changed.': 'vastaukset perustuvat vain näihin potilastietoihin, viittaavat osioihin ja kertovat ”ei kirjattu” arvaamisen sijaan. Kiireellisyyttä ei koskaan muuteta.',
   'Checking live AI…': 'Tarkistetaan tekoälyyhteyttä…', 'Live AI unavailable': 'Tekoäly ei käytettävissä', 'Live AI off': 'Tekoäly pois päältä', 'Live AI on': 'Tekoäly käytössä',
   'The backend is not reachable. Answers come from the record only.': 'Taustapalveluun ei saada yhteyttä. Vastaukset koostetaan vain potilastiedoista.',
   'The server has no Gemini key. Answers come from the record only.': 'Palvelimella ei ole Gemini-avainta. Vastaukset koostetaan vain potilastiedoista.',
@@ -226,5 +230,8 @@ window.candexI18n?.extend?.({
   'Open-source agents behind these ideas': 'Ideoiden taustalla olevat avoimen lähdekoodin agentit',
 });
 
-window.candexAgent = {view, record, refreshStatus, plain, run, _convo: convo, _setStatus: v => { status = v; }};
+// One backend token for the whole page (clinical agent and DICOM page).
+const getToken = () => token;
+const setToken = v => { token = String(v ?? ''); for (const el of document.querySelectorAll('#agent-token, #med-token')) if (el.value !== token) el.value = token; };
+window.candexAgent = {view, record, refreshStatus, plain, run, getToken, setToken, _convo: convo, _setStatus: v => { status = v; }};
 })();

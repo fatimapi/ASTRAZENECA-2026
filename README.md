@@ -57,7 +57,7 @@ The role switch is a prototype interface choice, not professional identity verif
   - Draft a referral note, a patient message or an MDT summary. Each draft goes through a drafter, then a separate safety reviewer, and can be added to the referral note.
   - Run a Gemini CT read of the linked study.
   - Live Gemini calls go through the backend: the key stays on the server, and the doctor pastes the backend token into the page. Without live AI, every tool falls back to record-only answers labelled "without AI".
-  - Design follows MedRAX (tools) and Radiology Swarm / mAIstro (review roles).
+  - One agent calls specialist tools (patient record, CT read), with a separate safety reviewer for every draft.
 - **AI second reader (research):** a precomputed Gemini read of each CT study, shown next to the radiologists on the Imaging review page and in PDF section 6, with agreement badges and caveats. It is never used for urgency or recommendations. Method, results and limits: [docs/ai-second-reader.md](docs/ai-second-reader.md); pipeline: `tools/ai-second-reader/`
 - Doctor → Reports: **Approve report**. The doctor previews the report, confirms two checks and approves it, optionally releasing it to the patient's referral journey. The PDF then shows the approval; any later change to the content needs re-approval
 - Doctor → Reports: a patient summary & oncology referral as an on-page preview and a PDF, in English or Finnish. It covers patient reference, care pathway, health-check date, family history and symptoms, the CT key image with the radiologists' outlines and findings, Lung-RADS, a planned AI comparison and a plain-language summary. The structure is explained in [docs/oncology-referral-framework.md](docs/oncology-referral-framework.md)
@@ -71,7 +71,7 @@ The role switch is a prototype interface choice, not professional identity verif
 
 ## Other open-source agent frameworks
 
-The AI workspace describes [MedRAX](https://github.com/bowang-lab/MedRAX), [mAIstro](https://github.com/eltzanis/mAIstro) and [Radiology Swarm](https://github.com/The-Swarm-Corporation/radiology-swarm). They remain separate integration options and are not executed by this connector. Kanta/PACS and research registries are not connected.
+Kanta/PACS and research registries are not connected.
 
 ## Checks
 
