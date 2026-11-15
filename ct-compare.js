@@ -167,7 +167,7 @@ function body() {
   const totalMb = S.files.reduce((a, f) => a + f.size, 0) / 1e6;
   return `<div class="ctc-layout"><aside class="card ctc-controls"><h2>${T('Upload a chest CT')}</h2>
 <div class="field"><label for="ctc-patient">${icon('users')}${T('Patient')}</label><select id="ctc-patient">${patients.map(x => `<option value="${esc(x.id)}" ${x.id === id ? 'selected' : ''}>${esc(x.name)} · ${esc(x.id)}</option>`).join('')}</select></div>
-<div class="field"><span class="ctc-label">${T('CT series (DICOM files)')}</span><div class="button-row"><label class="button secondary ctc-file">${icon('upload')}${T('Choose folder')}<input type="file" id="ctc-folder" webkitdirectory multiple hidden></label><label class="button secondary ctc-file">${T('Choose files')}<input type="file" id="ctc-files" accept=".dcm,application/dicom" multiple hidden></label></div>
+<div class="field"><span class="ctc-label">${T('CT series (DICOM files)')}</span><div class="button-row"><label class="button secondary ctc-file">${icon('upload')}${T('Choose folder')}<input type="file" id="ctc-folder" webkitdirectory multiple hidden></label></div>
 <small>${S.scanning ? T('Checking the files…') : S.files.length ? `${S.files.length} ${T('files')} · ${num(totalMb)} MB${S.note ? ` · ${esc(S.note)}` : ''}` : S.note ? esc(S.note) : T('Choose the folder of one CT series (all its .dcm files). Up to 800 files, 400 MB.')}</small></div>
 <label class="check-row"><input type="checkbox" id="ctc-chest"><span>${T('This is one axial chest CT series.')}</span></label>
 <label class="check-row"><input type="checkbox" id="ctc-permit"><span>${T('I have permission to process this de-identified research or test image.')}</span></label>
@@ -237,7 +237,7 @@ function withdraw() { const all = read(); if (all[pid()]) { all[pid()].approval 
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.id === 'ctc-patient') { S.pid = t.value; S.error = null; paint(); }
-  if (t.id === 'ctc-folder' || t.id === 'ctc-files') {
+  if (t.id === 'ctc-folder') {
     const picked = [...(t.files || [])].filter(f => /\.dcm$/i.test(f.name) || !/\.[a-z0-9]{2,4}$/i.test(f.name));
     Object.assign(S, {files: [], note: '', original: 0, error: null, scanning: true}); paint();
     chooseFiles(picked).then(c => { Object.assign(S, {files: c.files, note: c.note, original: c.original, scanning: false}); paint(); });
@@ -325,7 +325,7 @@ window.candexI18n?.extend?.({
   'Upload a chest CT, find the closest public reference study, review the AI comparison and approve it.': 'Lataa rintakehän TT-kuvaus, etsi lähin julkinen vertailututkimus, tarkista tekoälyn vertailu ja hyväksy se.',
   'Back to Imaging review': 'Takaisin kuvantamisen arvioon', 'Upload CT and compare': 'Lataa TT ja vertaa',
   'Research prototype: the AI read and the match are unvalidated. Reference studies are public LIDC-IDRI scans, not the patient’s own images.': 'Tutkimusprototyyppi: tekoälyluenta ja vastaavuus ovat validoimattomia. Vertailututkimukset ovat julkisia LIDC-IDRI-kuvauksia, eivät potilaan omia kuvia.',
-  'Upload a chest CT': 'Lataa rintakehän TT', 'Patient': 'Potilas', 'CT series (DICOM files)': 'TT-sarja (DICOM-tiedostot)', 'Choose folder': 'Valitse kansio', 'Choose files': 'Valitse tiedostot', 'files': 'tiedostoa',
+  'Upload a chest CT': 'Lataa rintakehän TT', 'Patient': 'Potilas', 'CT series (DICOM files)': 'TT-sarja (DICOM-tiedostot)', 'Choose folder': 'Valitse kansio', 'files': 'tiedostoa',
   'Choose the folder of one CT series (all its .dcm files). Up to 800 files, 400 MB.': 'Valitse yhden TT-sarjan kansio (kaikki sen .dcm-tiedostot). Enintään 800 tiedostoa, 400 Mt.',
   'This is one axial chest CT series.': 'Tämä on yksi rintakehän aksiaalinen TT-sarja.', 'I have permission to process this de-identified research or test image.': 'Minulla on lupa käsitellä tämä tunnisteeton tutkimus- tai testikuva.',
   'Upload and compare': 'Lataa ja vertaa', 'Comparing… (about 1 minute)': 'Verrataan… (noin minuutti)',
