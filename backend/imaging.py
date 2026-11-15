@@ -130,12 +130,30 @@ def _prepare_dicom(content: bytes, confirmed_chest: bool) -> PreparedImage:
             raise ImageRejected("DICOM pixels could not be decoded. Export a valid uncompressed research image.") from None
         if pixels.shape != (rows, cols):
             raise ImageRejected("The decoded image shape does not match its DICOM header.")
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            pixels = np.asarray(apply_modality_lut(pixels, ds), dtype=np.float64)
-            windowed = "VOILUTSequence" in ds or ("WindowCenter" in ds and "WindowWidth" in ds)
+        windowed = "VOILUTSequence" in ds or ("WindowCenter" in ds and "WindowWidth" in ds)
+        linear = str(ds.get("VOILUTFunction", "LINEAR") or "LINEAR").upper() == "LINEAR"
+        if "ModalityLUTSequence" not in ds and "VOILUTSequence" not in ds and linear:
+            # Common case, in float32 and in place (a large radiograph used ~200 MB in float64): rescale slope/
+            # intercept, then the DICOM linear window as a clip. The window's own linear output scaling is not
+            # applied because the min-max normalisation below removes it; the result equals pydicom's up to
+            # float32 rounding.
+            pixels = pixels.astype(np.float32)
+            slope, intercept = float(ds.get("RescaleSlope", 1) or 1), float(ds.get("RescaleIntercept", 0) or 0)
+            if slope != 1:
+                pixels *= np.float32(slope)
+            if intercept:
+                pixels += np.float32(intercept)
             if windowed:
-                pixels = np.asarray(apply_voi_lut(pixels, ds, index=0), dtype=np.float64)
+                first = lambda v: float(v[0] if isinstance(v, (list, tuple)) or type(v).__name__ == "MultiValue" else v)
+                centre, width = first(ds.WindowCenter), first(ds.WindowWidth)
+                if width >= 1:
+                    np.clip(pixels, centre - 0.5 - (width - 1) / 2, centre - 0.5 + (width - 1) / 2, out=pixels)
+        else:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                pixels = np.asarray(apply_modality_lut(pixels, ds), dtype=np.float64)
+                if windowed:
+                    pixels = np.asarray(apply_voi_lut(pixels, ds, index=0), dtype=np.float64)
         if not np.isfinite(pixels).all():
             raise ImageRejected("The image contains non-finite pixel values.")
         low, high = float(pixels.min()), float(pixels.max())
@@ -147,10 +165,17 @@ def _prepare_dicom(content: bytes, confirmed_chest: bool) -> PreparedImage:
             clipped = float(np.mean((pixels <= low) | (pixels >= high)))
             if clipped > 0.5:
                 raise ImageRejected(f"The DICOM display window clips {clipped:.0%} of the image to black or white, so it cannot be analysed reliably. Check WindowCenter and WindowWidth.")
-        scaled = np.clip((pixels - low) / (high - low), 0.0, 1.0)
+        # Same arithmetic as before, in place (float64), so the full-size image is not copied several times.
+        if not pixels.flags.writeable or not pixels.flags.owndata:
+            pixels = pixels.copy()
+        pixels -= low
+        pixels /= (high - low)
+        np.clip(pixels, 0.0, 1.0, out=pixels)
         if str(ds.PhotometricInterpretation) == "MONOCHROME1":
-            scaled = 1.0 - scaled
-        scaled = (scaled * 255.0).astype(np.float32)
+            np.subtract(1.0, pixels, out=pixels)
+        pixels *= 255.0
+        scaled = pixels.astype(np.float32)
+        del pixels
         preview = Image.fromarray(np.rint(scaled).astype(np.uint8), mode="L")
         preview.thumbnail((1024, 1024))
         buf = io.BytesIO()

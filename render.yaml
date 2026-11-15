@@ -14,10 +14,9 @@ services:
     runtime: python
     plan: free            # 0.1 CPU, 512 MB: the backend is tuned to fit (see backend/README.md)
     region: frankfurt
-    # CPU-only PyTorch first (the default Linux wheel also pulls ~2 GB of GPU libraries), then the rest.
-    buildCommand: >-
-      pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 --index-url https://download.pytorch.org/whl/cpu &&
-      pip install --no-cache-dir -r requirements.txt
+    # Installs the backend (with uv) and converts the X-ray model to ONNX, checked against PyTorch;
+    # the running server uses ONNX Runtime and never imports PyTorch (see scripts/render-build.sh).
+    buildCommand: bash scripts/render-build.sh
     # Render routes traffic to $PORT on 0.0.0.0. (python -m backend is for laptops: it binds 127.0.0.1:8000.)
     startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT --no-access-log
     healthCheckPath: /api/health
@@ -32,10 +31,15 @@ services:
       # Live AI (Gemini). Entered in the dashboard; never commit it.
       - key: GEMINI_API_KEY
         sync: false
-      # Run the chest X-ray model in a short-lived worker so PyTorch is not kept in the 512 MB.
+      # Run each X-ray in a short-lived worker (ONNX Runtime) so its memory is returned after every analysis.
       - key: CANDEX_XRAY_SUBPROCESS
         value: "1"
       - key: CANDEX_CPU_THREADS
+        value: "1"
+      # Fewer glibc malloc arenas and one OpenMP thread: less memory held on Linux.
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+      - key: OMP_NUM_THREADS
         value: "1"
       # At most 200 CT slices are processed per upload (the browser sends at most 200 as well).
       - key: CANDEX_CT_MAX_VOLUME_SLICES

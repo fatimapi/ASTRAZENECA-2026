@@ -43,7 +43,7 @@ MAX_SLICES, MIN_SLICES = 800, 20
 MAX_SLICE_BYTES = 4 * 1024 * 1024
 BANDS = ["2", "3", "4A", "4B", "4X-like"]
 WEIGHTS = {"size": 0.5, "band": 0.25, "side": 0.15, "composition": 0.10}
-_slot = asyncio.Semaphore(1)  # one CT comparison at a time (memory on a laptop)
+from .jobs import HEAVY  # one heavy job (CT or X-ray) at a time: memory on Render's free plan
 # Size is measured from the pixels (backend/ct_measure.py); the module is swappable for validation.
 MEASURE = importlib.import_module(os.getenv("CANDEX_CT_MEASURE", "backend.ct_measure"))
 
@@ -320,7 +320,7 @@ def _prune_jobs():
 
 async def _pipeline(job, paths, workdir, original):
     t0 = job["started"]
-    async with _slot:
+    async with HEAVY:
         job["stage"] = "reading"
         vol, zs, meta = await asyncio.to_thread(load_series, paths, workdir)
         if original:
