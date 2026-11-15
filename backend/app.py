@@ -19,6 +19,12 @@ from .imaging import MAX_FILE_BYTES, ImageRejected, prepare_dicom
 from .model import ChestXrayEngine, LIMITATIONS, ModelUnavailable, make_engine
 from .agent import router as agent_router
 from .ct_compare import router as ct_router
+from .jobs import HEAVY, XRAY_WAIT_S
+
+# Multipart parts above 64 KB go to a temporary file instead of memory (Starlette's default keeps parts up to
+# 1 MB in RAM, so a CT series of ~0.5 MB slices was held entirely in memory). Not 0: that means never spool.
+import starlette.formparsers as _formparsers
+_formparsers.MultiPartParser.spool_max_size = 64 * 1024
 
 # pydicom may include raw tag values in both warnings and logging records.
 # Configure once at service startup, rather than toggling logging per request.
@@ -108,6 +114,7 @@ class InferenceRequestGuard:
                 if not message.get("more_body", False):
                     break
             body = b"".join(chunks)
+            del chunks
             delivered = False
 
             async def replay():
@@ -155,12 +162,27 @@ async def analyze(file: UploadFile = File(...), confirmed_chest: bool = Form(Fal
             content = await file.read(MAX_FILE_BYTES + 1)
             if len(content) > MAX_FILE_BYTES:
                 raise HTTPException(413, "The DICOM file limit is 20 MiB.")
-            prepared = await run_in_threadpool(prepare_dicom, content, confirmed_chest)
-            findings = await run_in_threadpool(engine.predict, prepared.pixels_255)
+            try:
+                await asyncio.wait_for(HEAVY.acquire(), XRAY_WAIT_S)
+            except asyncio.TimeoutError:
+                raise HTTPException(503, "A CT comparison is running. Try the X-ray again in a minute.") from None
+            try:
+                if hasattr(engine, "analyze_dicom"):  # worker process: it prepares the image itself
+                    info, findings = await run_in_threadpool(engine.analyze_dicom, content, confirmed_chest)
+                    del content
+                    image = {"width": info["width"], "height": info["height"], "modality": info["modality"], "preview_png_base64": info["preview_png_base64"]}
+                else:
+                    prepared = await run_in_threadpool(prepare_dicom, content, confirmed_chest)
+                    del content
+                    findings = await run_in_threadpool(engine.predict, prepared.pixels_255)
+                    image = {"width": prepared.width, "height": prepared.height, "modality": prepared.modality, "preview_png_base64": prepared.preview_png_base64}
+                    del prepared
+            finally:
+                HEAVY.release()
             metadata = engine.metadata()
             # No identity, original filename, study UID or source metadata is returned.
             report = "CANDEX — UNAPPROVED RESEARCH MODEL OUTPUT\n\n" + metadata["name"] + " / " + metadata["weights"] + "\nFrontal chest X-ray classification\n\n" + "\n".join(f"{item['label']}: {item['score']:.4f} (uncalibrated model score)" for item in findings) + "\n\nNo clinical threshold, localisation or cancer diagnosis is provided. A qualified clinician must review the original study and all model limitations."
-            return {"analysis_id": str(uuid.uuid4()), "status": "completed", "model": metadata, "image": {"width": prepared.width, "height": prepared.height, "modality": prepared.modality, "preview_png_base64": prepared.preview_png_base64}, "findings": findings, "limitations": LIMITATIONS, "report_draft": report, "requires_clinician_review": True}
+            return {"analysis_id": str(uuid.uuid4()), "status": "completed", "model": metadata, "image": image, "findings": findings, "limitations": LIMITATIONS, "report_draft": report, "requires_clinician_review": True}
         except ImageRejected as exc:
             raise HTTPException(415, str(exc)) from None
         except ModelUnavailable as exc:

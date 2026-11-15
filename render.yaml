@@ -1,0 +1,46 @@
+# Render Blueprint for the published Candex site (https://render.com/docs/blueprint-spec).
+# One web service: the FastAPI backend, which also serves the static site.
+#
+# Applying it (Render dashboard → New → Blueprint → this repo):
+# - "name" must match the existing service exactly, so Render updates that service instead of
+#   creating a new one (Render: "attempts to apply the Blueprint's configuration to that existing service").
+# - "region" cannot be changed after a service is created: it must match the existing service's
+#   region (Render → the service → Settings). Frankfurt keeps processing in the EU.
+# - Secrets are never written here. CANDEX_API_KEY is generated once by Render and then kept;
+#   GEMINI_API_KEY is asked for when the Blueprint is first applied (or kept if already set).
+services:
+  - type: web
+    name: ASTRAZENECA-2026   # must match the existing Render service name exactly (case included)
+    runtime: python
+    plan: free            # 0.1 CPU, 512 MB: the backend is tuned to fit (see backend/README.md)
+    region: frankfurt
+    # Installs the backend (with uv) and converts the X-ray model to ONNX, checked against PyTorch;
+    # the running server uses ONNX Runtime and never imports PyTorch (see scripts/render-build.sh).
+    buildCommand: bash scripts/render-build.sh
+    # Render routes traffic to $PORT on 0.0.0.0. (python -m backend is for laptops: it binds 127.0.0.1:8000.)
+    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT --no-access-log
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.12   # the version the service already runs
+      # Backend access token: generated once by Render (random, 256-bit) and kept across restarts and deploys.
+      # Read it in Render → the service → Environment, and paste it into the site's "Backend token" box.
+      - key: CANDEX_API_KEY
+        generateValue: true
+      # Live AI (Gemini). Entered in the dashboard; never commit it.
+      - key: GEMINI_API_KEY
+        sync: false
+      # Run each X-ray in a short-lived worker (ONNX Runtime) so its memory is returned after every analysis.
+      - key: CANDEX_XRAY_SUBPROCESS
+        value: "1"
+      - key: CANDEX_CPU_THREADS
+        value: "1"
+      # Fewer glibc malloc arenas and one OpenMP thread: less memory held on Linux.
+      - key: MALLOC_ARENA_MAX
+        value: "2"
+      - key: OMP_NUM_THREADS
+        value: "1"
+      # At most 200 CT slices are processed per upload (the browser sends at most 200 as well).
+      - key: CANDEX_CT_MAX_VOLUME_SLICES
+        value: "200"

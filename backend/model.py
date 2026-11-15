@@ -85,46 +85,66 @@ class ChestXrayEngine:
 
 
 class SubprocessXrayEngine:
-    """Same interface as ChestXrayEngine, but each prediction runs in a short-lived worker process
-    (python -m backend.xray_worker) that exits afterwards, so PyTorch and the model (~300 MB) are
-    not kept in the server's memory. Used on small hosted instances (Render free: 512 MB), where a
-    resident model plus a CT comparison would exceed the limit. Costs a few seconds per X-ray."""
+    """Runs each X-ray analysis in a short-lived worker process (python -m backend.xray_worker) that exits
+    afterwards, so the model's memory is returned at once. The worker gets the raw DICOM and does the image
+    preparation itself, so the server process never holds the full-size image. Used on small hosted
+    instances (Render free: 512 MB)."""
 
     TIMEOUT_S = 240
+    loaded = False
 
     def __init__(self):
         self._lock = threading.Lock()
 
-    loaded = False
-
     def metadata(self):
-        return ChestXrayEngine.metadata(self)
+        return _inner_engine_class()().metadata()
 
-    def predict(self, pixels_255: np.ndarray):
-        import io
+    def _run(self, payload: bytes, args):
         import json
         import subprocess
         import sys
-        buf = io.BytesIO()
-        np.save(buf, np.ascontiguousarray(pixels_255, dtype=np.float32), allow_pickle=False)
         with self._lock:
             try:
-                done = subprocess.run([sys.executable, "-m", "backend.xray_worker"], input=buf.getvalue(), capture_output=True,
+                done = subprocess.run([sys.executable, "-m", "backend.xray_worker", *args], input=payload, capture_output=True,
                                       timeout=self.TIMEOUT_S, cwd=str(Path(__file__).resolve().parents[1]), env=os.environ.copy())
             except subprocess.TimeoutExpired:
-                raise ModelUnavailable("The imaging model took too long. Try again; the first run downloads the model weights.") from None
+                raise ModelUnavailable("The imaging model took too long. Try again.") from None
         try:
             out = json.loads(done.stdout.decode() or "{}")
         except ValueError:
             out = {}
+        if out.get("rejected"):
+            from .imaging import ImageRejected
+            raise ImageRejected(out["rejected"])
         if done.returncode != 0 or "findings" not in out:
-            # The worker reports a safe, fixed message; a crash (e.g. out of memory) has none.
+            # The worker reports a fixed, safe message; a crash (e.g. out of memory) has none.
             raise ModelUnavailable(out.get("error") or "The imaging model could not run (the worker process stopped). Check the backend's available memory.")
-        return out["findings"]
+        return out
+
+    def analyze_dicom(self, content: bytes, confirmed_chest: bool):
+        """Prepare and score one DICOM in the worker. Returns (image_info, findings)."""
+        out = self._run(content, ["--dicom"] + (["--confirmed"] if confirmed_chest else []))
+        return out["image"], out["findings"]
+
+    def predict(self, pixels_255: np.ndarray):
+        import io
+        buf = io.BytesIO()
+        np.save(buf, np.ascontiguousarray(pixels_255, dtype=np.float32), allow_pickle=False)
+        return self._run(buf.getvalue(), [])["findings"]
+
+
+def _inner_engine_class():
+    """ONNX Runtime when the exported model is present (and not switched off), else PyTorch."""
+    choice = os.getenv("CANDEX_XRAY_ENGINE", "auto").lower()
+    if choice != "torch":
+        from . import xray_onnx
+        if choice == "onnx" or xray_onnx.available():
+            return xray_onnx.OnnxXrayEngine
+    return ChestXrayEngine
 
 
 def make_engine():
-    """In-process model on a laptop (fast after the first load); worker process on hosted/small instances."""
+    """In-process engine on a laptop (fast after the first load); worker process on hosted/small instances."""
     flag = os.getenv("CANDEX_XRAY_SUBPROCESS")
     use_worker = flag == "1" if flag is not None else bool(os.getenv("RENDER"))
-    return SubprocessXrayEngine() if use_worker else ChestXrayEngine()
+    return SubprocessXrayEngine() if use_worker else _inner_engine_class()()

@@ -39,12 +39,17 @@ Open **http://127.0.0.1:8000/#care/dicom** and keep the terminal open. Press Ctr
 
 ### Published site (Render)
 
+The service is described in [`render.yaml`](../render.yaml) (a Render Blueprint): build and start commands, the free plan, the health check and the environment variables. To link it: Render dashboard → **New → Blueprint** → choose this repository. The `name` in the file matches the existing service, so Render updates that service rather than creating a new one; the `region` must match the existing service's region. After that, changes to `render.yaml` on `main` are applied on the next sync.
+
+
 - **Set a fixed token.** In Render → the service → Environment, add `CANDEX_API_KEY` (24+ random characters, e.g. from `python -c "import secrets; print(secrets.token_urlsafe(32))"`). Without it the token changes on every restart, and free Render services restart after about 15 minutes idle, so a token that worked earlier is rejected later. Share the value with the team privately; never commit it.
 - **Gemini key.** Set `GEMINI_API_KEY` in the same place for the live AI features.
-- **Memory (free plan, 512 MB).** Measured on a backend set up like Render: an X-ray analysis followed by a 133-slice CT comparison peaks at about 260 MB.
-  - The chest X-ray model runs in a short-lived worker process (`backend/xray_worker.py`) that exits after each X-ray, so PyTorch (~300 MB) is not kept in memory. This is automatic on Render (`RENDER` is set); force it elsewhere with `CANDEX_XRAY_SUBPROCESS=1`, or turn it off with `CANDEX_XRAY_SUBPROCESS=0`.
-  - CT uploads are saved to a temporary folder and decoded slice by slice into a disk-backed volume; only the slices a step needs are read. The folder is deleted when the job ends.
-  - The browser sends only one CT series (the largest), at most 200 evenly spaced slices; the server keeps the same cap (`CANDEX_CT_MAX_VOLUME_SLICES`).
+- **Memory (free plan, 512 MB).** Measured with the server started as on Render: an X-ray on the largest demo image peaks at about 360–380 MB (server plus worker); a full CT comparison at about 155 MB; idle about 100 MB.
+  - **X-ray model on ONNX Runtime.** The build (`scripts/render-build.sh`) converts the official TorchXRayVision weights to ONNX (`backend/export_xray_onnx.py`) and fails if any score differs from PyTorch by more than 1e-4; the running server uses `backend/xray_onnx.py` and never imports PyTorch (about 200 MB less than the PyTorch model). Scores equal PyTorch's to within 2e-7 on the 8 demo X-rays, with the same label order. The converted file is generated, never committed (the weights were trained on datasets with research-use terms). Without it, the PyTorch engine is used as before; `CANDEX_XRAY_ENGINE=torch|onnx` forces one.
+  - Each X-ray runs in a short-lived worker (`backend/xray_worker.py`, on Render or with `CANDEX_XRAY_SUBPROCESS=1`) that reads the DICOM, prepares the image and scores it, so the server never holds the full-size image.
+  - Image preparation works in float32 and in place for the usual linear-window radiographs (pixel values equal to the previous float64 path within 2e-5 on a 0–255 scale); other DICOMs keep pydicom's own LUT handling.
+  - One heavy job at a time (`backend/jobs.py`): an X-ray waits up to 45 s for a running CT comparison, then asks to try again.
+  - Uploads larger than 64 KB per file are written to a temporary file instead of memory; CT slices are read from disk one at a time; the browser sends one CT series of at most 200 slices.
 - **Time limits.** `POST /api/ct/compare` saves the upload and answers at once (202) with a job id; the page polls `GET /api/ct/jobs/{id}` every 3 s and shows the current step. This keeps each request short, whatever the CPU speed. Jobs are kept for 30 minutes and are lost if the server restarts.
 - **Before a demo,** open `/api/health` a minute early: free services sleep after 15 minutes idle and take 30–60 s to wake.
 
