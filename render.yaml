@@ -10,7 +10,7 @@
 #   GEMINI_API_KEY is asked for when the Blueprint is first applied (or kept if already set).
 services:
   - type: web
-    name: astrazeneca-2026
+    name: ASTRAZENECA-2026   # must match the existing Render service name exactly (case included)
     runtime: python
     plan: free            # 0.1 CPU, 512 MB: the backend is tuned to fit (see backend/README.md)
     region: frankfurt
