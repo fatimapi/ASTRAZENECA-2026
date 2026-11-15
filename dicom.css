@@ -6,3 +6,8 @@
 .dicom-ai-head h2{margin:0}
 .dicom-ai-text{font-weight:600;line-height:1.5;margin:12px 0 6px}
 .dicom-ai-summary ul{margin:6px 0 10px;padding-left:20px;line-height:1.5}
+/* Drop-downs: all scores and model details; limitations & clinical review */
+.dicom-drop{margin-top:8px}
+.dicom-limitations.agent-drop{padding:15px 23px;border:1px solid #dfd0ea;border-radius:10px;margin-top:0}
+.dicom-limitations>summary{font-size:.89rem;font-weight:600;color:#57376b;padding:0}
+.dicom-limitations[open]>summary{margin-bottom:4px}
