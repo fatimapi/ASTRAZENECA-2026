@@ -24,7 +24,7 @@ services:
     autoDeployTrigger: commit
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: 3.12.12   # the version the service already runs
       # Backend access token: generated once by Render (random, 256-bit) and kept across restarts and deploys.
       # Read it in Render → the service → Environment, and paste it into the site's "Backend token" box.
       - key: CANDEX_API_KEY
