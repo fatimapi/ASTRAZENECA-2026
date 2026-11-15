@@ -31,7 +31,8 @@ const token = () => (window.candexAgent?.getToken?.() || '').trim();
 // (the page and report show the caveats once). Results saved before the backend rounded
 // the pixel measurement contain values like 10.899999618530273.
 const fmt1 = (v, L) => { const x = Number(v).toFixed(1); return L === 'fi' ? x.replace('.', ',') : x; };
-const r1 = (s, L = lang()) => String(s || '').replace(/(?<![\d.,])(\d+)[.,](\d{2,})(?![.,]?\d)/g, (m, a, b) => fmt1(`${a}.${b}`, L));
+const r1 = (s, L = lang()) => String(s || '').replace(/(?<![\d.,])(\d+)[.,](\d{2,})(?![.,]?\d)/g, (m, a, b) => fmt1(`${a}.${b}`, L))
+  .replace(/(?<![\d.,])(\d+)\.(\d)(?![.,]?\d)/g, (m, a, b) => (L === 'fi' ? `${a},${b}` : m));
 const tidy = (s, L) => r1(String(s || '').replace(/\s*\([^()]*\)/g, '').replace(/\s+([,.;:])/g, '$1').replace(/\s{2,}/g, ' ').trim(), L);
 const CAVEAT = /research prototype|tutkimusprototyyp|please note|huomaa,? että|unvalidated research|vahvistamaton tutkimus/i;
 const tidyList = (xs, L) => (xs || []).filter(x => !CAVEAT.test(x)).map(x => tidy(x, L)).filter(Boolean);

@@ -107,6 +107,11 @@ check(/<h4>AI summary of the raw data<\/h4><ul>/.test(xprev), 'Report: AI summar
 const xfi = R.previewHTML(R.build(pid, {lang: 'fi'}));
 check(/Yhtäläisyydet ja erot/.test(xfi) && /<td>Koko<\/td>/.test(xfi) && /Samankaltainen/.test(xfi) && /Ladattu keuhkoröntgenkuva/.test(xfi) && /0,61/.test(xfi) && /kirjoitettu englanniksi/.test(xfi), 'Finnish report: table and uploaded X-ray');
 delete win.candexXray;
+// Finnish AI phrases with a decimal point get a decimal comma.
+const fx = JSON.parse(JSON.stringify(result)); fx.comparison.similarities_fi = ['Samankokoiset: 10.9 x 10.1 mm ja 9.4 mm', 'Molemmat oikeassa keuhkossa'];
+C._write({[pid]: {at: new Date().toISOString(), result: fx, approval: C.approval(pid)}});
+check(C.forPatient(pid, 'fi').similarities[0] === 'Samankokoiset: 10,9 x 10,1 mm ja 9,4 mm' && C.forPatient(pid, 'en').similarities.length > 0, 'Finnish decimal commas in AI phrases');
+C._write({[pid]: {at: new Date().toISOString(), result, approval: C.approval(pid)}});
 
 // Withdrawing approval: report shows it is not approved.
 click('[data-ctc-withdraw]');
