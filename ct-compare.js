@@ -30,23 +30,24 @@ const token = () => (window.candexAgent?.getToken?.() || '').trim();
 // AI text: numbers to 1 decimal place, asides in brackets and disclaimer items dropped
 // (the page and report show the caveats once). Results saved before the backend rounded
 // the pixel measurement contain values like 10.899999618530273.
-const fmt1 = (v, L) => { const x = Number(v).toFixed(1); return L === 'fi' ? x.replace('.', ',') : x; };
+// 1 decimal place; 2 when 1 would turn a non-zero value into 0.0 (e.g. a match score of 0.08).
+const fmt1 = (v, L) => { const n = Number(v), x = n !== 0 && Math.abs(n) < 0.05 ? n.toFixed(2) : n.toFixed(1); return L === 'fi' ? x.replace('.', ',') : x; };
 const r1 = (s, L = lang()) => String(s || '').replace(/(?<![\d.,])(\d+)[.,](\d{2,})(?![.,]?\d)/g, (m, a, b) => fmt1(`${a}.${b}`, L))
   .replace(/(?<![\d.,])(\d+)\.(\d)(?![.,]?\d)/g, (m, a, b) => (L === 'fi' ? `${a},${b}` : m));
 const tidy = (s, L) => r1(String(s || '').replace(/\s*\([^()]*\)/g, '').replace(/\s+([,.;:])/g, '$1').replace(/\s{2,}/g, ' ').trim(), L);
-const CAVEAT = /research prototype|tutkimusprototyyp|please note|huomaa,? että|unvalidated research|vahvistamaton tutkimus/i;
+const CAVEAT = /prototype|prototyyp|please note|huomaa,? että|unvalidated research|vahvistamaton tutkimus|non-diagnostic|treatment decisions|hoitopäätö|ei ole diagnoosi|päättää jatkohoido/i;
 const tidyList = (xs, L) => (xs || []).filter(x => !CAVEAT.test(x)).map(x => tidy(x, L)).filter(Boolean);
 const radsBySize = mm => (mm == null ? null : mm < 6 ? '2' : mm < 8 ? '3' : mm < 15 ? '4A' : '4B');
 const verdict = c => (c === 0 ? ['Same', ''] : c <= 0.25 ? ['Similar', ''] : ['Different', 'amber']);
 const FI = {Size: 'Koko', Side: 'Puoli', Composition: 'Rakenne', Same: 'Sama', Similar: 'Samankaltainen', Different: 'Eroaa', Feature: 'Ominaisuus', 'Uploaded CT': 'Ladattu TT', Result: 'Tulos', Right: 'Oikea', Left: 'Vasen', 'Not seen': 'Ei nähty',
-  solid: 'kiinteä', 'part-solid': 'osittain kiinteä', 'ground-glass': 'mattalasimainen', calcified: 'kalkkeutunut', 'not applicable': 'ei sovellu', 'AI estimate': 'tekoälyn arvio', 'AI observation on the key slices': 'Tekoälyn havainto avainleikkeistä'};
+  solid: 'kiinteä', 'part-solid': 'osittain kiinteä', 'ground-glass': 'mattalasimainen', calcified: 'kalkkeutunut', 'not applicable': 'ei sovellu', 'AI estimate': 'tekoälyn arvio', 'AI observation on the key slices': 'Tekoälyn havainto avainleikkeistä', 'by measured size': 'mitatun koon mukaan', AI: 'tekoäly'};
 const tl = (x, L) => (L === 'fi' ? FI[x] || x : x);
 // Similarities and differences as table rows, in either language (page and report).
 function compareRows(res, L) {
   const rd = res.raw.read, m = rd.measured, best = res.matches[0], c = best.components || {};
   const n = v => fmt1(v, L), side = x => tl(x === 'right' ? 'Right' : x === 'left' ? 'Left' : 'Not seen', L);
   const up = m ? `${n(m.long_mm)} × ${n(m.short_mm)} mm` : rd.long_axis_mm != null ? `${n(rd.long_axis_mm)} mm (${tl('AI estimate', L)})` : '—';
-  const feats = [['Size', up, `${n(best.diameter)} mm`, c.size], ['Lung-RADS', (m ? radsBySize(m.mean_mm ?? (m.long_mm + m.short_mm) / 2) : rd.lung_rads) || '—', best.band, c.band],
+  const feats = [['Size', up, `${n(best.diameter)} mm`, c.size], ['Lung-RADS', m ? `${radsBySize(m.mean_mm ?? (m.long_mm + m.short_mm) / 2)} (${tl('by measured size', L)})` : `${rd.lung_rads || '—'} (${tl('AI', L)})`, best.band, c.band],
     ['Side', side(rd.location?.side), side(best.side), c.side], ['Composition', tl(rd.composition || '—', L), tl(best.composition || '—', L), c.composition]];
   return {
     head: [tl('Feature', L), tl('Uploaded CT', L), best.caseId, tl('Result', L)], refId: best.caseId,
@@ -203,7 +204,7 @@ window.candexI18n?.extend?.({
   'public reference': 'julkinen vertailu', 'Nodule size': 'Pesäkkeen koko', 'measured': 'mitattu', 'Closest public study': 'Lähin julkinen tutkimus',
   'Open CT analysis': 'Avaa TT-analyysi', 'Review and approve': 'Tarkasta ja hyväksy',
   'Upload a chest X-ray DICOM to screen it with the classifier.': 'Lataa keuhkoröntgenin DICOM-kuva luokittelijan seulottavaksi.',
-  'Uploaded X-ray': 'Ladattu röntgenkuva', 'public study X-ray (precomputed)': 'julkisen tutkimuksen röntgenkuva (valmiiksi laskettu)', 'Screened chest X-ray': 'Seulottu keuhkoröntgenkuva', 'Screened image': 'Seulottu kuva',
+  'Uploaded X-ray': 'Ladattu röntgenkuva', 'The AI summary is in English: the X-ray was analysed in English.': 'Tekoälyn yhteenveto on englanniksi, koska röntgenkuva analysoitiin englanninkielisenä.', 'The AI summary is in Finnish: the X-ray was analysed in Finnish.': 'Tekoälyn yhteenveto on suomeksi, koska röntgenkuva analysoitiin suomenkielisenä.', 'public study X-ray (precomputed)': 'julkisen tutkimuksen röntgenkuva (valmiiksi laskettu)', 'Screened chest X-ray': 'Seulottu keuhkoröntgenkuva', 'Screened image': 'Seulottu kuva',
   'Highest scores (0–1, uncalibrated)': 'Korkeimmat pisteet (0–1, kalibroimattomat)', 'Nodule · Mass': 'Pesäke · Massa',
   'The AI summary is still being written on the X-ray page.': 'Tekoälyn yhteenvetoa kirjoitetaan vielä röntgensivulla.',
   'Not a nodule detector: a low Nodule or Mass score does not rule out a nodule.': 'Ei pesäketunnistin: matala Pesäke- tai Massa-pistemäärä ei sulje pesäkettä pois.',

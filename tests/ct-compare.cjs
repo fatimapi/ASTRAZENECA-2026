@@ -105,7 +105,7 @@ check(xrep.cxr?.uploaded && /Uploaded chest X-ray as screened/.test(xprev) && /E
 check(/<h4>Similarities and differences<\/h4><div class="table-wrap"><table>/.test(xprev) && /<td>Size<\/td><td>10\.9 × 10\.1 mm<\/td><td>9\.4 mm<\/td><td>Similar<\/td>/.test(xprev) && !/<h4>Similarities<\/h4>/.test(xprev), 'Report: similarities and differences as a table');
 check(/<h4>AI summary of the raw data<\/h4><ul>/.test(xprev), 'Report: AI summary as bullet points');
 const xfi = R.previewHTML(R.build(pid, {lang: 'fi'}));
-check(/Yhtäläisyydet ja erot/.test(xfi) && /<td>Koko<\/td>/.test(xfi) && /Samankaltainen/.test(xfi) && /Ladattu keuhkoröntgenkuva/.test(xfi) && /0,61/.test(xfi) && /kirjoitettu englanniksi/.test(xfi), 'Finnish report: table and uploaded X-ray');
+check(/Yhtäläisyydet ja erot/.test(xfi) && /<td>Koko<\/td>/.test(xfi) && /Samankaltainen/.test(xfi) && /Ladattu keuhkoröntgenkuva/.test(xfi) && /0,61/.test(xfi) && /Yhteenveto on kirjoitettu englanniksi/.test(xfi) && /<h4>Tekoälyn yhteenveto luokittelijan raakapisteistä<\/h4><ul>/.test(xfi), 'Finnish report: table and uploaded X-ray');
 delete win.candexXray;
 // Finnish AI phrases with a decimal point get a decimal comma.
 const fx = JSON.parse(JSON.stringify(result)); fx.comparison.similarities_fi = ['Samankokoiset: 10.9 x 10.1 mm ja 9.4 mm', 'Molemmat oikeassa keuhkossa'];

@@ -217,7 +217,7 @@ RULES = """Rules: research prototype; the uploaded scan is a de-identified resea
 Use ONLY the raw data given; quote numbers exactly as given; never invent findings or numbers. The AI read is unvalidated research output
 (no diagnosis; it may miss or invent nodules and misstate size). The match score is a simple weighted similarity of nodule features
 (size, approximate Lung-RADS band, side, composition), not image-level or clinical similarity, and the closest study is a reference
-example, not the patient's scan. No treatment advice; the clinician decides. Name the closest study and its score.
+example, not the patient's scan. No treatment advice; the clinician decides. Name the closest study and its similarity percentage (not the raw score).
 Size: when read.measured exists, use that pixel measurement (long x short axis, mm) as the nodule size and say it was measured from the
 image; mention the AI's own estimate (long_axis_mm) only as a comparison."""
 

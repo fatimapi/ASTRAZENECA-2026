@@ -126,7 +126,7 @@ function xrayResultCard(p, c) {
 <div class="xray-stage ir-xray"><img src="${esc(img)}" alt="${esc(T('Screened chest X-ray'))}"></div><p class="scan-caption">${T('Screened image')} · ${src}</p>
 <div class="data-line"><span>${T('Highest scores (0–1, uncalibrated)')}</span><strong translate="no">${top.map(s => `${esc(s.label)} ${n2(s.score)}`).join(' · ')}</strong></div>
 ${nod.length ? `<div class="data-line"><span>${T('Nodule · Mass')}</span><strong translate="no">${nod.map(s => n2(s.score)).join(' · ')}</strong></div>` : ''}
-${points.length ? `<ul class="ir-points" translate="no">${points.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : `<p class="field-note">${T('The AI summary is still being written on the X-ray page.')}</p>`}
+${points.length ? `<ul class="ir-points" translate="no">${points.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${up && up.lang && up.lang !== L ? `<p class="field-note">${T(up.lang === 'fi' ? 'The AI summary is in Finnish: the X-ray was analysed in Finnish.' : 'The AI summary is in English: the X-ray was analysed in English.')}</p>` : ''}` : `<p class="field-note">${T('The AI summary is still being written on the X-ray page.')}</p>`}
 <p class="field-note">${T('Not a nodule detector: a low Nodule or Mass score does not rule out a nodule.')}</p></section>`;
 }
 function scanView() {

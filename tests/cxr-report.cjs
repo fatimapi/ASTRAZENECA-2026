@@ -54,7 +54,7 @@ ctx.window.candexImaging.links['CX-1042'] = 'LIDC-IDRI-0799';
 check(R.build('CX-1042').cxr === null, 'A CT study without an X-ray has no X-ray section');
 // PDF writer handles the section.
 const src = read('referral-report.js');
-check(/if \(rep\.cxr\) \{\s*k\.section\(n\+\+, L\.sx\)/.test(src) && /cxrImage\(rep\)/.test(src), 'PDF writer draws the X-ray section and loads the image');
+check(/if \(rep\.cxr\) \{[\s\S]{0,300}?k\.section\(n\+\+, L\.sx\)/.test(src) && /cxrImage\(rep\)/.test(src), 'PDF writer draws the X-ray section and loads the image');
 check(/r\.cxr \? \[r\.cxr\.summary, r\.cxr\.rows\]/.test(src), 'Approval fingerprint covers the X-ray summary');
 check(/cxr\\\.jpg/.test(read('backend/app.py')), 'Backend serves cxr.jpg');
 check(read('index.html').includes('data/lidc/cxr-reads.js'), 'index.html loads cxr-reads.js');
