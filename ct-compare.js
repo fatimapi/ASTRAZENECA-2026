@@ -27,39 +27,72 @@ const pid = () => (S.pid && patients.some(p => p.id === S.pid) ? S.pid : (state.
 const token = () => (window.candexAgent?.getToken?.() || '').trim();
 
 // ---------- Rendering ----------
+// AI text: numbers to 1 decimal place, asides in brackets and disclaimer items dropped
+// (the page and report show the caveats once). Results saved before the backend rounded
+// the pixel measurement contain values like 10.899999618530273.
+const fmt1 = (v, L) => { const x = Number(v).toFixed(1); return L === 'fi' ? x.replace('.', ',') : x; };
+const r1 = (s, L = lang()) => String(s || '').replace(/(?<![\d.,])(\d+)[.,](\d{2,})(?![.,]?\d)/g, (m, a, b) => fmt1(`${a}.${b}`, L));
+const tidy = (s, L) => r1(String(s || '').replace(/\s*\([^()]*\)/g, '').replace(/\s+([,.;:])/g, '$1').replace(/\s{2,}/g, ' ').trim(), L);
+const CAVEAT = /research prototype|tutkimusprototyyp|please note|huomaa,? että|unvalidated research|vahvistamaton tutkimus/i;
+const tidyList = (xs, L) => (xs || []).filter(x => !CAVEAT.test(x)).map(x => tidy(x, L)).filter(Boolean);
+const radsBySize = mm => (mm == null ? null : mm < 6 ? '2' : mm < 8 ? '3' : mm < 15 ? '4A' : '4B');
+const verdict = c => (c === 0 ? ['Same', ''] : c <= 0.25 ? ['Similar', ''] : ['Different', 'amber']);
+const FI = {Size: 'Koko', Side: 'Puoli', Composition: 'Rakenne', Same: 'Sama', Similar: 'Samankaltainen', Different: 'Eroaa', Feature: 'Ominaisuus', 'Uploaded CT': 'Ladattu TT', Result: 'Tulos', Right: 'Oikea', Left: 'Vasen', 'Not seen': 'Ei nähty',
+  solid: 'kiinteä', 'part-solid': 'osittain kiinteä', 'ground-glass': 'mattalasimainen', calcified: 'kalkkeutunut', 'not applicable': 'ei sovellu', 'AI estimate': 'tekoälyn arvio', 'AI observation on the key slices': 'Tekoälyn havainto avainleikkeistä'};
+const tl = (x, L) => (L === 'fi' ? FI[x] || x : x);
+// Similarities and differences as table rows, in either language (page and report).
+function compareRows(res, L) {
+  const rd = res.raw.read, m = rd.measured, best = res.matches[0], c = best.components || {};
+  const n = v => fmt1(v, L), side = x => tl(x === 'right' ? 'Right' : x === 'left' ? 'Left' : 'Not seen', L);
+  const up = m ? `${n(m.long_mm)} × ${n(m.short_mm)} mm` : rd.long_axis_mm != null ? `${n(rd.long_axis_mm)} mm (${tl('AI estimate', L)})` : '—';
+  const feats = [['Size', up, `${n(best.diameter)} mm`, c.size], ['Lung-RADS', (m ? radsBySize(m.mean_mm ?? (m.long_mm + m.short_mm) / 2) : rd.lung_rads) || '—', best.band, c.band],
+    ['Side', side(rd.location?.side), side(best.side), c.side], ['Composition', tl(rd.composition || '—', L), tl(best.composition || '—', L), c.composition]];
+  return {
+    head: [tl('Feature', L), tl('Uploaded CT', L), best.caseId, tl('Result', L)], refId: best.caseId,
+    features: feats.map(([k, a, b, comp]) => { const [v, tone] = verdict(comp ?? 1); return {cells: [tl(k, L), String(a), String(b), tl(v, L)], tone}; }),
+    obsHead: [tl('Result', L), tl('AI observation on the key slices', L)],
+    observations: [...tidyList(res.comparison[`similarities_${L}`], L).map(x => ({cells: [tl('Similar', L), x], tone: ''})), ...tidyList(res.comparison[`differences_${L}`], L).map(x => ({cells: [tl('Different', L), x], tone: 'amber'}))],
+  };
+}
+function featureTable(res) {
+  const t = compareRows(res, lang());
+  return `<section class="ctc-compare"><h3>${T('Similarities and differences')}</h3>
+<div class="table-wrap"><table class="ctc-table ctc-feat"><thead><tr>${t.head.map((h, i) => `<th${i === 2 ? ' translate="no"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.features.map(r => `<tr><th scope="row">${esc(r.cells[0])}</th><td translate="no">${esc(r.cells[1])}</td><td translate="no">${esc(r.cells[2])}</td><td>${badge(esc(r.cells[3]), r.tone)}</td></tr>`).join('')}</tbody></table></div>
+${t.observations.length ? `<div class="table-wrap"><table class="ctc-table ctc-obs"><thead><tr>${t.obsHead.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.observations.map(r => `<tr><td>${badge(esc(r.cells[0]), r.tone)}</td><td translate="no">${esc(r.cells[1])}</td></tr>`).join('')}</tbody></table></div>` : ''}
+<p class="field-note">${T('The feature rows are calculated from the raw data; the observations are the AI’s comparison of the two key slices.')}</p></section>`;
+}
 function rawHTML(res) {
   const r = res.raw, rd = r.read, cases = window.candexImaging?.CASES || {};
-  const series = [['Slices', r.series.slices], ['Slice spacing', `${num(r.series.sliceSpacingMm)} mm`], ['Pixel size', `${num(r.series.pixelMm, 3)} mm`], ['Matrix', r.series.matrix], ['Scan length (z)', `${num(r.series.zRangeMm)} mm`]];
-  const read = [['Nodule found', T(rd.nodule_present ? 'Yes' : 'No')], ['Side · lobe', `${sideT(rd.location?.side)} · ${T(rd.location?.lobe || '—')}`], ['Measured size (from the pixels)', rd.measured ? `${num(rd.measured.long_mm)} × ${num(rd.measured.short_mm)} mm · ${num(rd.measured.volume_mm3, 0)} mm³` : (rd.measureNote ? `— (${rd.measureNote})` : '—')], ['AI size estimate (long × short axis)', rd.long_axis_mm != null ? `${num(rd.long_axis_mm)}${rd.short_axis_mm != null ? ` × ${num(rd.short_axis_mm)}` : ''} mm` : '—'], ['Composition', T(rd.composition)], ['Margin', T(rd.margin)], ['Lung-RADS (AI)', rd.lung_rads], ['Model confidence (not calibrated)', num(rd.confidence, 2)], ['Key slice position (z)', `${num(rd.keySliceZ)} mm`], ['Other findings', (rd.other_findings || []).join('; ') || '—']];
+  const series = [['Slices', r.series.slices], ['Slice spacing', `${num(r.series.sliceSpacingMm)} mm`], ['Pixel size', `${num(r.series.pixelMm)} mm`], ['Matrix', r.series.matrix], ['Scan length (z)', `${num(r.series.zRangeMm)} mm`]];
+  const read = [['Nodule found', T(rd.nodule_present ? 'Yes' : 'No')], ['Side · lobe', `${sideT(rd.location?.side)} · ${T(rd.location?.lobe || '—')}`], ['Measured size (from the pixels)', rd.measured ? `${num(rd.measured.long_mm)} × ${num(rd.measured.short_mm)} mm · ${num(rd.measured.volume_mm3)} mm³` : (rd.measureNote ? `— (${rd.measureNote})` : '—')], ['AI size estimate (long × short axis)', rd.long_axis_mm != null ? `${num(rd.long_axis_mm)}${rd.short_axis_mm != null ? ` × ${num(rd.short_axis_mm)}` : ''} mm` : '—'], ['Composition', T(rd.composition)], ['Margin', T(rd.margin)], ['Lung-RADS (AI)', rd.lung_rads], ['Model confidence (not calibrated)', num(rd.confidence)], ['Key slice position (z)', `${num(rd.keySliceZ)} mm`], ['Other findings', (rd.other_findings || []).join('; ') || '—']];
   const kv = rows => `<dl class="ctc-kv">${rows.map(([k, v]) => `<dt>${T(k)}</dt><dd translate="no">${esc(String(v))}</dd>`).join('')}</dl>`;
-  return `<details class="agent-drop ctc-raw" open><summary>${T('Raw data')}</summary>
+  return `<section class="ctc-raw"><h3>${T('Raw data')}</h3>
 <h4>${T('Uploaded series')}</h4>${kv(series)}
 <h4>${T('AI search')} <small translate="no">· ${esc(res.models.vision)}</small></h4><p class="field-note">${T('The AI looked at 24 slab views and chose these candidate views (numbers on the images):')} <span translate="no">${esc((r.find.candidates || []).join(', ') || '—')}</span>. ${T('Read in detail')}: <span translate="no">${esc((r.find.readTiles || []).filter(Boolean).join(', ') || '—')}</span>.</p>
 <div class="ctc-montage">${(res.images.montage || []).map((m, i) => `<img alt="${esc(T('Slab views of the uploaded CT'))} ${i + 1}" src="data:image/jpeg;base64,${m}">`).join('')}</div>
-<h4>${T('AI read of the uploaded CT (raw output)')}</h4>${kv(read)}<p class="ctc-quote" translate="no">${esc(rd.short_report || '')}</p><p class="field-note">${T('Raw AI output is shown in the model’s original wording (English). The AI summary above is in your language.')}</p>
-<h4>${T('Match scores against all public reference studies')}</h4><p class="field-note">${T('Score = 0.5 × size difference + 0.25 × Lung-RADS band difference + 0.15 × side + 0.10 × composition (each 0 to 1). Similarity = 100 × (1 − score). Lower score = closer.')}</p>
-<div class="table-wrap"><table class="ctc-table"><thead><tr><th>#</th><th>${T('Study')}</th><th>${T('Similarity')}</th><th>${T('Nodule')}</th><th>Lung-RADS</th><th>${T('Side')}</th><th>${T('Composition')}</th><th>${T('Size · band · side · comp.')}</th></tr></thead><tbody>${res.matches.map((m, i) => `<tr class="${i < 3 ? 'is-top' : ''}"><td>${i + 1}</td><td translate="no">${esc(m.caseId)}</td><td>${m.similarity} %</td><td>${num(m.diameter)} mm</td><td translate="no">${esc(m.band)}</td><td>${sideT(m.side)}</td><td>${T(m.composition)}</td><td translate="no">${num(m.components.size, 2)} · ${num(m.components.band, 2)} · ${num(m.components.side, 0)} · ${num(m.components.composition, 0)}</td></tr>`).join('')}</tbody></table></div></details>`;
+<details class="agent-drop ctc-sub"><summary>${T('AI read of the uploaded CT (raw output)')}</summary>${kv(read)}<p class="ctc-quote" translate="no">${esc(rd.short_report || '')}</p><p class="field-note">${T('Raw AI output is shown in the model’s original wording (English). The AI summary above is in your language.')}</p></details>
+<details class="agent-drop ctc-sub"><summary>${T('Match scores against all public reference studies')}</summary><p class="field-note">${T('Score = 0.5 × size difference + 0.25 × Lung-RADS band difference + 0.15 × side + 0.10 × composition (each 0 to 1). Similarity = 100 × (1 − score). Lower score = closer.')}</p>
+<div class="table-wrap"><table class="ctc-table"><thead><tr><th>#</th><th>${T('Study')}</th><th>${T('Similarity')}</th><th>${T('Nodule')}</th><th>Lung-RADS</th><th>${T('Side')}</th><th>${T('Composition')}</th><th>${T('Size · band · side · comp.')}</th></tr></thead><tbody>${res.matches.map((m, i) => `<tr class="${i < 3 ? 'is-top' : ''}"><td>${i + 1}</td><td translate="no">${esc(m.caseId)}</td><td>${num(m.similarity)} %</td><td>${num(m.diameter)} mm</td><td translate="no">${esc(m.band)}</td><td>${sideT(m.side)}</td><td>${T(m.composition)}</td><td translate="no">${num(m.components.size)} · ${num(m.components.band)} · ${num(m.components.side)} · ${num(m.components.composition)}</td></tr>`).join('')}</tbody></table></div></details></section>`;
 }
 function resultHTML(id, rec) {
   const res = rec.result, L = lang(), ap = approval(id), cases = window.candexImaging?.CASES || {};
   const best = res.matches[0], ref = cases[best.caseId];
   const refImg = ref ? ref.frames[ref.centre].src : '';
-  const sumText = L === 'fi' ? res.summary.fi : res.summary.en, points = L === 'fi' ? res.summary.keyPointsFi : res.summary.keyPointsEn;
-  const sims = res.comparison[`similarities_${L}`] || [], diffs = res.comparison[`differences_${L}`] || [];
+  const points = tidyList(L === 'fi' ? res.summary.keyPointsFi : res.summary.keyPointsEn, L);
   const rv = res.review, ok = rv.verdict === 'consistent with the raw data' && !(rv.unverifiedNumbers || []).length;
   const top = res.matches.slice(0, 3);
   const chosen = ap.caseId || best.caseId;
-  return `<section class="card ctc-result"><div class="card-head"><div><h2>${T('Closest public reference study')}: <span translate="no">${esc(best.caseId)}</span></h2><p class="subhead">${T('Similarity')} ${best.similarity} % · ${T('uploaded')} ${esc(dt(rec.at))} · ${res.seconds} s</p></div>${ap.state === 'approved' ? badge(T('Approved by clinician')) : ap.state === 'changed' ? badge(T('Changed since approval'), 'amber') : badge(T('Awaiting clinician approval'), 'amber')}</div>
+  return `<section class="card ctc-result"><div class="card-head"><div><h2>${T('Closest public reference study')}: <span translate="no">${esc(best.caseId)}</span></h2><p class="subhead">${T('Similarity')} ${num(best.similarity)} % · ${T('uploaded')} ${esc(dt(rec.at))} · ${num(res.seconds)} s</p></div>${ap.state === 'approved' ? badge(T('Approved by clinician')) : ap.state === 'changed' ? badge(T('Changed since approval'), 'amber') : badge(T('Awaiting clinician approval'), 'amber')}</div>
 <div class="ctc-pair"><figure><img alt="${esc(T('Key slice of the uploaded CT'))}" src="data:image/jpeg;base64,${res.images.key}"><figcaption>${T('Uploaded CT · key slice')} (z ${num(res.raw.read.keySliceZ)} mm)</figcaption></figure><figure>${refImg ? `<img alt="${esc(T('Key slice of the reference study'))}" src="${esc(refImg)}">` : ''}<figcaption translate="no">${esc(best.caseId)} · ${num(best.diameter)} mm · Lung-RADS ${esc(best.band)}</figcaption></figure></div>
-<div class="rr-bottom ${ok ? '' : 'rr-ai-warn'}"><small>${T('AI summary of the raw data')} · ${T(ok ? 'Safety review: consistent with the raw data' : 'Safety review: needs changes')}</small><p translate="no">${esc(sumText)}</p></div>
+<details class="agent-drop ctc-sum ${ok ? '' : 'is-warn'}"><summary>${T('AI summary of the raw data')} ${badge(T(ok ? 'Safety review: consistent with the raw data' : 'Safety review: needs changes'), ok ? '' : 'amber')}</summary>
 <ul class="ctc-points" translate="no">${points.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-${ok ? '' : `<ul class="agent-issues" translate="no">${[...(rv[`issues_${L}`] || []), ...(rv.unverifiedNumbers || []).map(n => `${T('Number not in the raw data')}: ${n}`)].map(x => `<li>${esc(x)}</li>`).join('')}</ul>`}
-<div class="ctc-cols"><div><h4>${T('Similarities')}</h4><ul translate="no">${sims.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><h4>${T('Differences')}</h4><ul translate="no">${diffs.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>
+${ok ? '' : `<ul class="agent-issues" translate="no">${[...tidyList(rv[`issues_${L}`], L), ...(rv.unverifiedNumbers || []).map(n => `${T('Number not in the raw data')}: ${r1(n, L)}`)].map(x => `<li>${esc(x)}</li>`).join('')}</ul>`}</details>
+${featureTable(res)}
 ${rawHTML(res)}
 <section class="ctc-approve"><h3>${T('Clinician approval')}</h3>
 ${ap.state === 'approved' ? `<p>${T('Approved by')} <strong translate="no">${esc(ap.by)}</strong> · <span translate="no">${esc(dt(ap.at))}</span>. ${T('Linked reference study')}: <strong translate="no">${esc(ap.caseId)}</strong>.</p><button type="button" class="text-btn" data-ctc-withdraw>${T('Withdraw approval')}</button>`
   : `<p class="field-note">${T('Check the raw data and the images. Approving links the chosen public reference study to this patient for Imaging review, the referral report, the clinical agent and the patient’s pathway. It is a reference example, not the patient’s own scan.')}</p>
-<div class="field"><label for="ctc-choice">${T('Reference study to link')}</label><select id="ctc-choice" translate="no">${top.map(m => `<option value="${esc(m.caseId)}" ${m.caseId === chosen ? 'selected' : ''}>${esc(m.caseId)} · ${m.similarity} % · ${num(m.diameter)} mm · Lung-RADS ${esc(m.band)}</option>`).join('')}</select></div>
+<div class="field"><label for="ctc-choice">${T('Reference study to link')}</label><select id="ctc-choice" translate="no">${top.map(m => `<option value="${esc(m.caseId)}" ${m.caseId === chosen ? 'selected' : ''}>${esc(m.caseId)} · ${num(m.similarity)} % · ${num(m.diameter)} mm · Lung-RADS ${esc(m.band)}</option>`).join('')}</select></div>
 <label class="check-row"><input type="checkbox" id="ctc-check-raw"><span>${T('I have reviewed the raw data, the AI read and the images.')}</span></label>
 <label class="check-row"><input type="checkbox" id="ctc-check-link"><span>${T('I agree that this reference study is a suitable comparison for this patient.')}</span></label>
 <button type="button" class="button" data-ctc-approve disabled>${icon('check')}${T('Approve and link to patient')}</button>`}
@@ -145,18 +178,39 @@ function forPatient(id, L = 'en') {
   return {
     at: rec.at, approval: ap, approved: ap.state === 'approved', linked: ap.caseId || null, closest: best.caseId, similarity: best.similarity,
     read: res.raw.read, series: res.raw.series, top: res.matches.slice(0, 3), keyImage: `data:image/jpeg;base64,${res.images.key}`,
-    summary: L === 'fi' ? res.summary.fi : res.summary.en, points: L === 'fi' ? res.summary.keyPointsFi : res.summary.keyPointsEn,
-    similarities: res.comparison[`similarities_${L}`] || [], differences: res.comparison[`differences_${L}`] || [],
+    summary: r1(L === 'fi' ? res.summary.fi : res.summary.en, L), points: tidyList(L === 'fi' ? res.summary.keyPointsFi : res.summary.keyPointsEn, L),
+    similarities: tidyList(res.comparison[`similarities_${L}`], L), differences: tidyList(res.comparison[`differences_${L}`], L), compare: compareRows(res, L),
     review: res.review, models: res.models, fingerprint: fp(rec, ap.caseId || best.caseId),
   };
 }
 function imagingCard(id) {
   const c = forPatient(id, lang()); if (!c) return '';
   return `<section class="card ctc-mini"><div class="card-head"><h2>${T('Uploaded CT comparison')}</h2>${c.approved ? badge(T('Approved by clinician')) : badge(T('Awaiting clinician approval'), 'amber')}</div>
-<p>${T('Closest public reference study')}: <strong translate="no">${esc(c.closest)}</strong> (${c.similarity} %). ${c.approved ? `${T('Linked')}: <strong translate="no">${esc(c.linked)}</strong>.` : ''}</p><p class="field-note" translate="no">${esc(c.summary)}</p>${goButton('ct-compare', c.approved ? 'Open the comparison' : 'Review and approve')}</section>`;
+<p>${T('Closest public reference study')}: <strong translate="no">${esc(c.closest)}</strong> (${num(c.similarity)} %). ${c.approved ? `${T('Linked')}: <strong translate="no">${esc(c.linked)}</strong>.` : ''}</p><p class="field-note" translate="no">${esc(c.summary)}</p>${goButton('ct-compare', c.approved ? 'Open the comparison' : 'Review and approve')}</section>`;
 }
 
 window.candexI18n?.extend?.({
+  'Results go to the Imaging review of': 'Tulokset siirtyvät kuvantamisen arvioon potilaalle', 'Change the patient in Imaging review. The image stays in this browser session only.': 'Vaihda potilas kuvantamisen arviossa. Kuva säilyy vain tässä selainistunnossa.', 'Back to Imaging review': 'Takaisin kuvantamisen arvioon',
+  'CT and X-ray results for one patient, in one place.': 'Yhden potilaan TT- ja röntgentulokset yhdessä paikassa.',
+  'Imaging review · Research prototype. AI output is unvalidated and never a diagnosis; reference studies are public LIDC-IDRI scans, not the patient’s own.': 'Kuvantamisen arvio · Tutkimusprototyyppi. Tekoälyn tulokset ovat validoimattomia eivätkä koskaan diagnoosi; vertailututkimukset ovat julkisia LIDC-IDRI-kuvia, eivät potilaan omia.',
+  'What you can do here': 'Mitä täällä voi tehdä', 'CT analysis': 'TT-analyysi', 'X-ray analysis': 'Röntgenanalyysi',
+  'upload a chest CT; the AI finds and measures the nodule and matches it to the closest public study. You approve the match.': 'lataa rintakehän TT; tekoäly etsii ja mittaa pesäkkeen ja valitsee lähimmän julkisen tutkimuksen. Sinä hyväksyt vertailun.',
+  'upload a chest X-ray DICOM; a classifier scores it and the AI summarises the scores.': 'lataa keuhkoröntgenin DICOM-kuva; luokittelija pisteyttää sen ja tekoäly tiivistää pisteet.',
+  'Results for the selected patient appear below. Mark the analysis complete when you have reviewed them.': 'Valitun potilaan tulokset näkyvät alla. Merkitse analyysi valmiiksi, kun olet tarkastanut ne.',
+  'Go to CT analysis': 'Siirry TT-analyysiin', 'Go to X-ray analysis': 'Siirry röntgenanalyysiin', 'Not analysed yet': 'Ei vielä analysoitu',
+  'Upload a chest CT to compare it with the public reference studies.': 'Lataa rintakehän TT verrataksesi sitä julkisiin vertailututkimuksiin.',
+  'public reference': 'julkinen vertailu', 'Nodule size': 'Pesäkkeen koko', 'measured': 'mitattu', 'Closest public study': 'Lähin julkinen tutkimus',
+  'Open CT analysis': 'Avaa TT-analyysi', 'Review and approve': 'Tarkasta ja hyväksy',
+  'Upload a chest X-ray DICOM to screen it with the classifier.': 'Lataa keuhkoröntgenin DICOM-kuva luokittelijan seulottavaksi.',
+  'Uploaded X-ray': 'Ladattu röntgenkuva', 'public study X-ray (precomputed)': 'julkisen tutkimuksen röntgenkuva (valmiiksi laskettu)', 'Screened chest X-ray': 'Seulottu keuhkoröntgenkuva', 'Screened image': 'Seulottu kuva',
+  'Highest scores (0–1, uncalibrated)': 'Korkeimmat pisteet (0–1, kalibroimattomat)', 'Nodule · Mass': 'Pesäke · Massa',
+  'The AI summary is still being written on the X-ray page.': 'Tekoälyn yhteenvetoa kirjoitetaan vielä röntgensivulla.',
+  'Not a nodule detector: a low Nodule or Mass score does not rule out a nodule.': 'Ei pesäketunnistin: matala Pesäke- tai Massa-pistemäärä ei sulje pesäkettä pois.',
+  'Public reference study viewer (radiologists’ outlines)': 'Julkisten vertailututkimusten katselin (radiologien rajaukset)',
+  'Similarities and differences': 'Yhtäläisyydet ja erot', 'Feature': 'Ominaisuus', 'Uploaded CT': 'Ladattu TT', 'Result': 'Tulos', 'Size': 'Koko',
+  'Same': 'Sama', 'Similar': 'Samankaltainen', 'Different': 'Eroaa', 'AI estimate': 'tekoälyn arvio', 'AI observation on the key slices': 'Tekoälyn havainto avainleikkeistä',
+  'The feature rows are calculated from the raw data; the observations are the AI’s comparison of the two key slices.': 'Ominaisuusrivit on laskettu raakatiedoista; havainnot ovat tekoälyn vertailu kahdesta avainleikkeestä.',
+  'Review CT studies with the radiologists’ outlines, upload a CT to compare, or analyse a chest X-ray.': 'Tarkastele TT-tutkimuksia radiologien rajauksineen, lataa TT vertailtavaksi tai analysoi keuhkoröntgenkuva.',
   "Analysis": "Analyysi",
   "CT analysis": "TT-analyysi",
   "X-ray analysis": "Röntgenanalyysi",

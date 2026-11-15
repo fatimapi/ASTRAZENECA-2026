@@ -334,7 +334,7 @@ function build(id, opts = {}) {
         : cc.approval.state === 'changed' ? t('Changed since approval: re-approve before use', 'Muuttunut hyväksynnän jälkeen: hyväksy uudelleen ennen käyttöä')
         : t('Awaiting clinician approval: not used for decisions', 'Odottaa lääkärin hyväksyntää: ei käytetä päätöksiin'),
       keyImage: cc.keyImage, refImage: ref ? ref.frames[ref.centre].src : null, refId,
-      summary: cc.summary, points: cc.points || [], similarities: cc.similarities, differences: cc.differences,
+      summary: cc.summary, points: cc.points || [], similarities: cc.similarities, differences: cc.differences, compare: cc.compare,
       read: [
         [t('Nodule found', 'Pesäke löytyi'), rd.nodule_present ? t('Yes', 'Kyllä') : t('No', 'Ei')],
         [t('Side', 'Puoli'), sideT(rd.location?.side)],
@@ -345,7 +345,7 @@ function build(id, opts = {}) {
         [t('Model confidence (not calibrated)', 'Mallin varmuus (ei kalibroitu)'), num(rd.confidence)],
         [t('Uploaded series', 'Ladattu sarja'), t(`${cc.series.slices} slices · ${num(cc.series.sliceSpacingMm)} mm spacing`, `${cc.series.slices} leikettä · ${num(cc.series.sliceSpacingMm)} mm:n väli`)],
       ],
-      rows: cc.top.map((m, i) => [String(i + 1), m.caseId, `${m.similarity} %`, `${num(m.diameter)} mm`, m.band, sideT(m.side), compT(m.composition)]),
+      rows: cc.top.map((m, i) => [String(i + 1), m.caseId, `${num(Number(m.similarity).toFixed(1))} %`, `${num(m.diameter)} mm`, m.band, sideT(m.side), compT(m.composition)]),
       note: t(`Research comparison: the AI read (${cc.models.vision}) is unvalidated and may miss nodules or misstate size. The match compares nodule features only (size, Lung-RADS band, side, composition); the reference study is a public LIDC-IDRI scan, not the patient's own. Summary by ${cc.models.text}, checked against the raw data. Not used for urgency or recommendations.`,
         `Tutkimusvertailu: tekoälyn luenta (${cc.models.vision}) on validoimaton ja voi ohittaa pesäkkeitä tai arvioida koon väärin. Vastaavuus vertaa vain pesäkkeen ominaisuuksia (koko, Lung-RADS-luokka, puoli, rakenne); vertailututkimus on julkinen LIDC-IDRI-kuvaus, ei potilaan oma. Yhteenvedon laati ${cc.models.text}, ja se tarkistettiin raakatietoja vasten. Ei käytetty kiireellisyyteen eikä suosituksiin.`),
       fp: cc.fingerprint,
@@ -363,8 +363,23 @@ function build(id, opts = {}) {
     : /^Stored display window/.test(x) ? 'Tallennettu näyttöikkuna leikkasi suurimman osan pikseleistä valkoisiksi; se poistettiin testikopiosta.'
     : /^(View not confirmed|headers still)/.test(x) ? '' : x).filter(Boolean).join(' ');
   const xr = c ? window.candexCxrReads?.cases?.[c.id] : null, xp = window.candexCxrReads?.provenance;
+  const xu = window.candexXray?.byPatient?.[p.id];
   let cxr = null;
-  if (xr) {
+  if (xu) {
+    const two = v => (lang === 'fi' ? Number(v).toFixed(2).replace('.', ',') : Number(v).toFixed(2));
+    const rows = [...xu.top, ...(xu.nodule || []).filter(x => !xu.top.some(y => y.label === x.label))];
+    const sameLang = (xu.lang || 'en') === lang;
+    cxr = {
+      uploaded: true, image: xu.image,
+      summary: xu.summary ? `${xu.summary}${sameLang ? '' : t(' (written in Finnish)', ' (kirjoitettu englanniksi)')}` : t(`Highest scores: ${xu.top.map(x => `${x.label} ${two(x.score)}`).join(', ')}.`, `Korkeimmat pisteet: ${xu.top.map(x => `${x.label} ${two(x.score)}`).join(', ')}.`),
+      points: (xu.points || []).slice(0, 3),
+      rows: rows.map((x, i) => [x.label, two(x.score), ['Nodule', 'Mass'].includes(x.label) ? t('nodule-related label', 'pesäkkeeseen liittyvä nimike') : i === 0 ? t('highest score', 'korkein pistemäärä') : '']),
+      view: t('Uploaded frontal chest X-ray DICOM (frontal chest view confirmed by the clinician on upload)', 'Ladattu keuhkoröntgenin DICOM-kuva edestä (lääkäri vahvisti kuvaussuunnan latauksessa)'),
+      review: xu.live ? t('AI summary written and safety-reviewed on the X-ray page; check it against the raw scores.', 'Tekoälyn yhteenveto kirjoitettiin ja tarkistettiin röntgensivulla; vertaa sitä raakapisteisiin.') : t('Summary built from the scores without AI.', 'Yhteenveto muodostettu pisteistä ilman tekoälyä.'),
+      note: t(`Classifier: ${xu.model || 'TorchXRayVision'}. Scores are uncalibrated (0–1, not probabilities) and have no threshold. This classifier is not a nodule detector: a low Nodule or Mass score does not rule out a nodule. The image stays in this browser session only. Not used for urgency or recommendations.`,
+        `Luokittelija: ${xu.model || 'TorchXRayVision'}. Pisteet ovat kalibroimattomia (0–1, eivät todennäköisyyksiä), eikä niillä ole raja-arvoa. Luokittelija ei tunnista pesäkkeitä: matala Pesäke- tai Massa-pistemäärä ei sulje pesäkettä pois. Kuva säilyy vain tässä selainistunnossa. Ei käytetty kiireellisyyteen eikä suosituksiin.`),
+    };
+  } else if (xr) {
     const two = v => (lang === 'fi' ? v.toFixed(2).replace('.', ',') : v.toFixed(2));
     const top = [...xr.scores].sort((a, b) => b.score - a.score).slice(0, 5);
     const keep = [...top, ...xr.scores.filter(x => ['Nodule', 'Mass'].includes(x.label) && !top.includes(x))];
@@ -467,7 +482,7 @@ function build(id, opts = {}) {
       zoom: t('Main nodule, zoomed x4.', 'Pääpesäke, suurennettu 4x.'),
       s6: t('AI second reader: research comparison', 'Tekoäly toisena lukijana: tutkimusvertailu'),
       aiFinding: t('AI finding (from imaging review)', 'Tekoälyn löydös (kuvantamisen arviosta)'), aiReport: t('AI report text (verbatim, unedited)', 'Tekoälyn raporttiteksti (sellaisenaan, muokkaamaton)'), aiMarker: t('Amber dashed circle: AI marker.', 'Oranssi katkoviivaympyrä: tekoälyn merkintä.'), aiHead: [t('Measure', 'Mittari'), t('Radiologists (LIDC)', 'Radiologit (LIDC)'), t('AI model', 'Tekoälymalli'), t('Agreement', 'Yhtäpitävyys')],
-      sc: t('Uploaded CT: comparison with public reference studies', 'Ladattu TT: vertailu julkisiin vertailututkimuksiin'), scUp: t('Uploaded CT · key slice', 'Ladattu TT · avainleike'), scSum: t('AI summary of the raw data', 'Tekoälyn yhteenveto raakatiedoista'), scRead: t('AI read of the uploaded CT', 'Tekoälyn luenta ladatusta TT:stä'), scTop: t('Closest public reference studies', 'Lähimmät julkiset vertailututkimukset'), scHead: ['#', t('Study', 'Tutkimus'), t('Similarity', 'Samankaltaisuus'), t('Nodule', 'Pesäke'), 'Lung-RADS', t('Side', 'Puoli'), t('Composition', 'Rakenne')], scSim: t('Similarities', 'Yhtäläisyydet'), scDiff: t('Differences', 'Erot'),
+      sc: t('Uploaded CT: comparison with public reference studies', 'Ladattu TT: vertailu julkisiin vertailututkimuksiin'), scUp: t('Uploaded CT · key slice', 'Ladattu TT · avainleike'), scSum: t('AI summary of the raw data', 'Tekoälyn yhteenveto raakatiedoista'), scRead: t('AI read of the uploaded CT', 'Tekoälyn luenta ladatusta TT:stä'), scTop: t('Closest public reference studies', 'Lähimmät julkiset vertailututkimukset'), scHead: ['#', t('Study', 'Tutkimus'), t('Similarity', 'Samankaltaisuus'), t('Nodule', 'Pesäke'), 'Lung-RADS', t('Side', 'Puoli'), t('Composition', 'Rakenne')], scSim: t('Similarities', 'Yhtäläisyydet'), scDiff: t('Differences', 'Erot'), scCmp: t('Similarities and differences', 'Yhtäläisyydet ja erot'), sxUp: t('Uploaded chest X-ray as screened by the classifier.', 'Ladattu keuhkoröntgenkuva, sellaisena kuin luokittelija sen seuloi.'),
       sx: t('Chest X-ray AI summary: research', 'Keuhkoröntgenkuvan tekoälyyhteenveto: tutkimus'), cxrFinding: t('AI summary of the raw classifier scores', 'Tekoälyn yhteenveto luokittelijan raakapisteistä'), cxrPoints: t('Key points', 'Keskeiset kohdat'), cxrImg: t('Frontal chest X-ray as given to the classifier.', 'Keuhkoröntgenkuva edestä, sellaisena kuin luokittelija sen sai.'), cxrHead: [t('Label (model output)', 'Nimike (mallin tulos)'), t('Score', 'Pisteet'), t('Note', 'Huomio')], cxrView: t('View', 'Kuvaussuunta'),
       s7: t('Impression', 'Johtopäätökset'), keyFindings: t('Key findings, in order of importance', 'Keskeiset löydökset tärkeysjärjestyksessä'), negatives: t('Pertinent negatives', 'Merkitykselliset negatiiviset löydökset'), recs: t('Recommendations', 'Suositukset'),
       s8: t('For the patient: plain-language summary', 'Potilaalle: selkokielinen yhteenveto'), terms: t('Terms used', 'Käytetyt termit'), s9: t('Sign-off', 'Hyväksyntä'),
@@ -549,8 +564,8 @@ ${sec(n++, L.s3, kvHTML(rep.context))}
 ${rep.technique ? sec(n++, L.s4, kvHTML(rep.technique)) : sec(n++, L.s4none, `<p>${esc(L.noImgHint)}</p>`)}
 ${f ? sec(n++, L.s5, `<div class="rr-img"><figure><img id="rr-full" alt="${esc(L.keyImg)}"><figcaption>${esc(L.keyImg)}</figcaption></figure><figure><img id="rr-zoom" alt="${esc(L.zoom)}"><figcaption>${esc(L.zoom)}</figcaption></figure></div><h4>${esc(L.primary)}</h4>${kvHTML(f.primary)}<h4>${esc(L.others)}</h4><ul>${f.others.map(x => `<li>${esc(x)}</li>`).join('')}</ul><h4>${esc(L.nodal)}</h4><p>${esc(f.nodal)}</p><h4>${esc(L.distant)}</h4><p>${esc(f.distant)}</p><h4>${esc(L.category)}</h4><p>${esc(f.category)}</p><h4>${esc(L.treatment)}</h4><p>${esc(f.treatment)}</p>`) : ''}
 ${rep.ai ? sec(n++, L.s6, `${rep.ai.summary ? `<div class="rr-bottom rr-ai ${rep.ai.verdict === 'agrees' ? '' : 'rr-ai-warn'}"><small>${esc(L.aiFinding)} · ${esc(rep.ai.verdictText)}</small><p>${esc(rep.ai.summary)}</p></div>` : ''}${rep.ai.miss ? `<p class="rr-ai-miss">${esc(rep.ai.miss)}</p>` : ''}<div class="table-wrap"><table><thead><tr>${L.aiHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.ai.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${rep.ai.report ? `<h4>${esc(L.aiReport)}</h4><blockquote class="rr-quote">${esc(rep.ai.report)}</blockquote>` : ''}<p class="rr-note">${esc(rep.ai.note)}</p>`) : ''}
-${rep.ctc ? sec(n++, L.sc, `<p class="rr-note"><strong>${esc(rep.ctc.status)}</strong></p><div class="rr-cxr ctc-pair"><figure><img src="${esc(rep.ctc.keyImage)}" alt="${esc(L.scUp)}"><figcaption>${esc(L.scUp)}</figcaption></figure>${rep.ctc.refImage ? `<figure><img src="${esc(rep.ctc.refImage)}" alt="${esc(rep.ctc.refId)}"><figcaption>${esc(rep.ctc.refId)}</figcaption></figure>` : ''}</div><div class="rr-bottom rr-ai"><small>${esc(L.scSum)}</small><p>${esc(rep.ctc.summary)}</p></div><ul>${rep.ctc.points.map(x => `<li>${esc(x)}</li>`).join('')}</ul><h4>${esc(L.scRead)}</h4>${kvHTML(rep.ctc.read)}<h4>${esc(L.scTop)}</h4><div class="table-wrap"><table><thead><tr>${L.scHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.ctc.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><h4>${esc(L.scSim)}</h4><ul>${rep.ctc.similarities.map(x => `<li>${esc(x)}</li>`).join('')}</ul><h4>${esc(L.scDiff)}</h4><ul>${rep.ctc.differences.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="rr-note">${esc(rep.ctc.note)}</p>`) : ''}
-${rep.cxr ? sec(n++, L.sx, `<div class="rr-cxr"><figure><img src="${esc(rep.cxr.image)}" alt="${esc(L.cxrImg)}"><figcaption>${esc(L.cxrImg)}</figcaption></figure><div><div class="rr-bottom rr-ai"><small>${esc(L.cxrFinding)}</small><p>${esc(rep.cxr.summary)}</p></div><h4>${esc(L.cxrPoints)}</h4><ul>${rep.cxr.points.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>${kvHTML([[L.cxrView, rep.cxr.view]])}<div class="table-wrap"><table><thead><tr>${L.cxrHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.cxr.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="rr-note">${esc(rep.cxr.review)} ${esc(rep.cxr.note)}</p>`) : ''}
+${rep.ctc ? sec(n++, L.sc, `<p class="rr-note"><strong>${esc(rep.ctc.status)}</strong></p><div class="rr-cxr ctc-pair"><figure><img src="${esc(rep.ctc.keyImage)}" alt="${esc(L.scUp)}"><figcaption>${esc(L.scUp)}</figcaption></figure>${rep.ctc.refImage ? `<figure><img src="${esc(rep.ctc.refImage)}" alt="${esc(rep.ctc.refId)}"><figcaption>${esc(rep.ctc.refId)}</figcaption></figure>` : ''}</div><h4>${esc(L.scSum)}</h4><ul>${rep.ctc.points.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${rep.ctc.compare ? `<h4>${esc(L.scCmp)}</h4><div class="table-wrap"><table><thead><tr>${rep.ctc.compare.head.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.ctc.compare.features.map(r => `<tr>${r.cells.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${rep.ctc.compare.observations.length ? `<div class="table-wrap"><table><thead><tr>${rep.ctc.compare.obsHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.ctc.compare.observations.map(r => `<tr>${r.cells.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : ''}` : ''}<h4>${esc(L.scRead)}</h4>${kvHTML(rep.ctc.read)}<h4>${esc(L.scTop)}</h4><div class="table-wrap"><table><thead><tr>${L.scHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.ctc.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="rr-note">${esc(rep.ctc.note)}</p>`) : ''}
+${rep.cxr ? sec(n++, L.sx, `<div class="rr-cxr"><figure><img src="${esc(rep.cxr.image)}" alt="${esc(rep.cxr.uploaded ? L.sxUp : L.cxrImg)}"><figcaption>${esc(rep.cxr.uploaded ? L.sxUp : L.cxrImg)}</figcaption></figure><div><div class="rr-bottom rr-ai"><small>${esc(L.cxrFinding)}</small><p>${esc(rep.cxr.summary)}</p></div><h4>${esc(L.cxrPoints)}</h4><ul>${rep.cxr.points.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>${kvHTML([[L.cxrView, rep.cxr.view]])}<div class="table-wrap"><table><thead><tr>${L.cxrHead.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rep.cxr.rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="rr-note">${esc(rep.cxr.review)} ${esc(rep.cxr.note)}</p>`) : ''}
 ${sec(n++, L.s7, `<p class="rr-bl">${esc(rep.impression.bottomLine)}</p><h4>${esc(L.keyFindings)}</h4><ol>${rep.impression.bullets.map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rep.impression.negatives.length ? `<h4>${esc(L.negatives)}</h4><ul>${rep.impression.negatives.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="rr-note">${esc(rep.impression.notEvaluated)}</p><h4>${esc(L.recs)}</h4><ol>${rep.impression.recs.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`)}
 ${sec(n++, L.s8, `<p>${esc(rep.plain)}</p><h4>${esc(L.terms)}</h4>${kvHTML(rep.glossary)}`)}
 ${sec(n++, L.s9, kvHTML(rep.signoff))}
@@ -745,12 +760,13 @@ function writePDF(jsPDF, rep, images) {
     if (images?.ctcRef) doc.addImage(images.ctcRef, 'JPEG', k.M + w + 8, y0, w, w);
     k.font(7.8, false, k.MUTED); doc.text(clean(L.scUp), k.M, y0 + w + 4); if (images?.ctcRef) doc.text(clean(rep.ctc.refId), k.M + w + 8, y0 + w + 4);
     k.y = y0 + w + 10;
-    k.callout(L.scSum, rep.ctc.summary, rep.ctc.approved ? {} : {fill: [252, 240, 223], bar: [154, 90, 41]});
-    if (rep.ctc.points.length) k.list(rep.ctc.points);
+    k.sub(L.scSum); if (rep.ctc.points.length) k.list(rep.ctc.points);
+    if (rep.ctc.compare) {
+      k.sub(L.scCmp); k.table(rep.ctc.compare.head, rep.ctc.compare.features.map(r => r.cells), [30, 46, 46, k.CW - 122]);
+      if (rep.ctc.compare.observations.length) k.table(rep.ctc.compare.obsHead, rep.ctc.compare.observations.map(r => r.cells), [30, k.CW - 30]);
+    }
     k.sub(L.scRead); k.kv(rep.ctc.read);
     k.sub(L.scTop); k.table(L.scHead, rep.ctc.rows, [8, 38, 26, 22, 22, 24, k.CW - 140]);
-    k.sub(L.scSim); k.list(rep.ctc.similarities);
-    k.sub(L.scDiff); k.list(rep.ctc.differences);
     k.para(rep.ctc.note, {size: 8.4, color: k.MUTED});
   }
   if (rep.cxr) {
@@ -758,11 +774,11 @@ function writePDF(jsPDF, rep, images) {
     if (images?.cxr) {
       const w = 52, h = Math.round(w * (images.cxrH / images.cxrW || 1)); k.ensure(h + 10);
       doc.addImage(images.cxr, 'JPEG', k.M, k.y, w, h);
-      k.font(7.8, false, k.MUTED); doc.text(doc.splitTextToSize(clean(L.cxrImg), w), k.M, k.y + h + 4);
+      k.font(7.8, false, k.MUTED); doc.text(doc.splitTextToSize(clean(rep.cxr.uploaded ? L.sxUp : L.cxrImg), w), k.M, k.y + h + 4);
       k.y += h + 10;
     }
     k.callout(L.cxrFinding, rep.cxr.summary);
-    k.sub(L.cxrPoints); k.list(rep.cxr.points);
+    if (rep.cxr.points.length) { k.sub(L.cxrPoints); k.list(rep.cxr.points); }
     k.kv([[L.cxrView, rep.cxr.view]]);
     k.table(L.cxrHead, rep.cxr.rows, [60, 30, k.CW - 90]);
     k.para(`${rep.cxr.review} ${rep.cxr.note}`, {size: 8.4, color: k.MUTED});

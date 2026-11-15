@@ -190,17 +190,20 @@ class Box(BaseModel):
     box_2d: List[int] = Field(description="[ymin, xmin, ymax, xmax] of the nodule, normalised 0-1000; empty if no nodule is visible")
 
 
+SHORT = "2-4 short phrases, at most 10 words each; no caveats or disclaimers (the page shows them)"
+
+
 class Comparison(BaseModel):
-    similarities_en: List[str]
-    similarities_fi: List[str]
-    differences_en: List[str]
-    differences_fi: List[str]
+    similarities_en: List[str] = Field(description=SHORT)
+    similarities_fi: List[str] = Field(description="The same in natural Finnish")
+    differences_en: List[str] = Field(description=SHORT)
+    differences_fi: List[str] = Field(description="The same in natural Finnish")
 
 
 class Summary(BaseModel):
     summary_en: str = Field(description="3-4 sentences in English for a clinician")
     summary_fi: str = Field(description="The same in natural Finnish")
-    key_points_en: List[str] = Field(description="2-4 bullet points in English")
+    key_points_en: List[str] = Field(description="3-5 concise bullet points in English, at most 15 words each")
     key_points_fi: List[str] = Field(description="The same in Finnish")
 
 
@@ -315,7 +318,7 @@ async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = F
                       f"closest public reference study {best['caseId']} (LIDC-IDRI), where the radiologists' main nodule is {best['diameter']} mm, "
                       f"{best['composition']}, approx. Lung-RADS {best['band']}, {best['side'] or 'side unknown'} lung. "
                       f"The AI read of the uploaded scan: {json.dumps({k: read[k] for k in ('nodule_present', 'location', 'long_axis_mm', 'composition', 'margin', 'lung_rads')})}. "
-                      "List the visible similarities and differences between the two (nodule appearance, size, location, surrounding lung). "
+                      "List the visible similarities and differences between the two (nodule appearance, size, location, surrounding lung), each as a short phrase of at most 10 words. "
                       "In English and natural Finnish. No diagnosis. " + RULES)
         r = await generate(VISION_MODEL, [types.Part.from_bytes(data=png(window(vol[key]), 512), mime_type="image/png"),
                                           types.Part.from_bytes(data=ref_img, mime_type="image/jpeg"), cmp_prompt],

@@ -35,6 +35,16 @@ check(/0\.5 × size difference/.test(html), 'The match formula is shown');
 check(/Measured size \(from the pixels\)/.test(html) && /AI size estimate/.test(html) && html.includes('10.9 × 10.1 mm'), 'Page shows the measured size next to the AI estimate');
 check(/data-ctc-approve disabled/.test(html) && /Awaiting clinician approval/.test(html), 'Approval disabled until both checks; status awaiting');
 check(!/undefined|NaN/.test(html), 'No undefined or NaN on the page');
+// Layout: AI summary is a drop-down of bullet points; similarities/differences in a table;
+// raw data is a plain section with the AI read and the match scores as drop-downs.
+check(/<details class="agent-drop ctc-sum[^"]*"><summary>AI summary of the raw data/.test(html) && /<details class="agent-drop ctc-sum[\s\S]*?<ul class="ctc-points"[\s\S]*?<\/details>/.test(html), 'AI summary is a drop-down of bullet points');
+check(/<section class="ctc-compare"><h3>Similarities and differences/.test(html) && /ctc-feat/.test(html) && /<th scope="row">Size<\/th><td translate="no">10\.9 × 10\.1 mm<\/td><td translate="no">9\.4 mm<\/td>/.test(html) && /ctc-obs/.test(html), 'Similarities and differences shown in a table');
+check(!/ctc-cols/.test(html) && !/\(a reference example, not the patient/.test(html) && !/Please note this is a research prototype/.test(html), 'Comparison wording made concise (no asides or disclaimer rows)');
+check(/<section class="ctc-raw"><h3>Raw data<\/h3>/.test(html) && !/<details[^>]*ctc-raw/.test(html), 'Raw data is not a drop-down');
+check(/<details class="agent-drop ctc-sub"><summary>AI read of the uploaded CT \(raw output\)<\/summary>/.test(html) && /<details class="agent-drop ctc-sub"><summary>Match scores against all public reference studies<\/summary>/.test(html), 'AI read and match scores are drop-downs');
+check(html.indexOf('Uploaded series') < html.indexOf('ctc-sub') && html.indexOf('ctc-montage') < html.indexOf('ctc-sub'), 'Series and AI search shown before the drop-downs');
+const text = html.replace(/<p class="field-note">Score = [^<]*<\/p>/, '').replace(/<[^>]+>/g, ' ').replace(/data:image[^"\s]+/g, ''); // the formula weights stay exact
+check(!/\d[.,]\d{2,}/.test(text) && /92\.0 %/.test(text) && /0\.7 mm/.test(text), 'All numbers on the page have 1 decimal place');
 
 // Later workflows before approval: report says awaiting; Imaging review card.
 let rep = R.build(pid, {lang: 'en'});
@@ -62,12 +72,13 @@ check(/Uploaded CT comparison/.test(JSON.stringify(A.record(pid))) && /Approved 
 const fi = R.build(pid, {lang: 'fi'});
 const fiPrev = R.previewHTML(fi);
 check(/Ladattu TT: vertailu julkisiin vertailututkimuksiin/.test(fiPrev) && /Hyväksynyt/.test(fiPrev) && /Lähimmät julkiset vertailututkimukset/.test(fiPrev), 'Finnish report section');
-check(fi.ctc.summary === result.summary.fi && fi.ctc.similarities.join() === result.comparison.similarities_fi.join(), 'Finnish summary and comparison');
+check(/10,9 x 10,1 mm/.test(fi.ctc.summary) && !/\d[.,]\d{2,}/.test(fi.ctc.summary + fi.ctc.points.join() + fi.ctc.similarities.join() + fi.ctc.differences.join()) && fi.ctc.similarities.length >= 2 && fi.ctc.differences.length >= 2, 'Finnish summary and comparison (1 decimal place)');
+check(!/\d[.,]\d{2,}/.test(fiPrev.slice(fiPrev.indexOf('Ladattu TT: vertailu')).replace(/data:image[^"]+/g, '').split('<section')[0]), 'Report CT comparison section: 1 decimal place');
 check(!/Research comparison: the AI read/.test(fiPrev) && !/Awaiting clinician approval/.test(fiPrev), 'No English text in the Finnish section');
 L18?.setLang?.('fi');
 const fiPage = C.view();
 check(/Lähin julkinen vertailututkimus|Closest public reference study/.test(fiPage) && /Tekoälyn yhteenveto raakatiedoista|AI summary of the raw data/.test(fiPage), 'Page renders in Finnish mode');
-check(C.forPatient(pid, 'fi').summary === result.summary.fi, 'Finnish AI summary on the page');
+check(/10,9 x 10,1 mm/.test(C.forPatient(pid, 'fi').summary) && /Yhtäläisyydet ja erot/.test(fiPage) && /Tekoälyn yhteenveto raakatiedoista/.test(fiPage), 'Finnish AI summary and table on the page');
 L18?.setLang?.('en');
 
 // Imaging review: CT / X-ray drop-down; completion card at the bottom.
@@ -78,6 +89,24 @@ check(scan.lastIndexOf('analysis-card') > scan.lastIndexOf('scan-layout'), 'Comp
 ctx.api.state.scanMode = 'xray';
 const xr = I.scanView();
 check(/Classifier scores \(raw\)|No chest X-ray for this study/.test(xr) && xr.lastIndexOf('analysis-card') > Math.max(xr.lastIndexOf('scan-layout'), xr.lastIndexOf('empty-scan')), 'X-ray section, completion card at the bottom');
+
+// Imaging review overview: functions, two links, and this patient's CT and X-ray results.
+ctx.api.state.scanMode = 'ct';
+let ov = I.scanView();
+check(/What you can do here/.test(ov) && /data-go="care\/ct-compare"/.test(ov) && /Go to CT analysis/.test(ov) && /data-action="upload"[^>]*>[\s\S]{0,200}Go to X-ray analysis/.test(ov), 'Imaging review: overview with links to the CT and X-ray pages');
+check(/class="card ir-result"[\s\S]*?ctc-pair[\s\S]*?Uploaded CT · key slice[\s\S]*?public reference/.test(ov) && /10\.9 × 10\.1 mm/.test(ov) && /class="ir-points"/.test(ov), 'Imaging review: CT key slice next to the public reference, with a concise summary');
+check(/<details class="agent-drop ir-more"/.test(ov) && ov.lastIndexOf('analysis-card') > ov.lastIndexOf('ir-more'), 'Detailed viewer in a drop-down; completion card at the bottom');
+check(!/Uploaded X-ray/.test(ov), 'No uploaded X-ray shown before one is analysed');
+win.candexXray = {byPatient: {[pid]: {at: new Date().toISOString(), image: 'data:image/png;base64,iVBORw0KGgo=', model: 'TorchXRayVision DenseNet121', top: [{label: 'Effusion', score: 0.61234}, {label: 'Atelectasis', score: 0.5}, {label: 'Infiltration', score: 0.41}], nodule: [{label: 'Nodule', score: 0.08}], summary: 'Highest score is Effusion 0.61.', points: ['Effusion has the highest score, 0.61.'], live: true, lang: 'en'}}};
+ov = I.scanView();
+check(/Uploaded X-ray/.test(ov) && /src="data:image\/png;base64,iVBORw0KGgo="/.test(ov) && /Effusion 0\.61/.test(ov) && /Effusion has the highest score/.test(ov), 'Imaging review: screened X-ray image with scores and summary');
+const xrep = R.build(pid, {lang: 'en'}), xprev = R.previewHTML(xrep);
+check(xrep.cxr?.uploaded && /Uploaded chest X-ray as screened/.test(xprev) && /Effusion/.test(xprev) && /0\.61/.test(xprev), 'Report: uploaded X-ray section with image and scores');
+check(/<h4>Similarities and differences<\/h4><div class="table-wrap"><table>/.test(xprev) && /<td>Size<\/td><td>10\.9 × 10\.1 mm<\/td><td>9\.4 mm<\/td><td>Similar<\/td>/.test(xprev) && !/<h4>Similarities<\/h4>/.test(xprev), 'Report: similarities and differences as a table');
+check(/<h4>AI summary of the raw data<\/h4><ul>/.test(xprev), 'Report: AI summary as bullet points');
+const xfi = R.previewHTML(R.build(pid, {lang: 'fi'}));
+check(/Yhtäläisyydet ja erot/.test(xfi) && /<td>Koko<\/td>/.test(xfi) && /Samankaltainen/.test(xfi) && /Ladattu keuhkoröntgenkuva/.test(xfi) && /0,61/.test(xfi) && /kirjoitettu englanniksi/.test(xfi), 'Finnish report: table and uploaded X-ray');
+delete win.candexXray;
 
 // Withdrawing approval: report shows it is not approved.
 click('[data-ctc-withdraw]');

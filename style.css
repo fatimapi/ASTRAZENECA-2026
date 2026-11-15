@@ -26,3 +26,12 @@
 @media(max-width:950px){.brand .wordmark{width:124px}.hero-art img.hero-ribbon{height:180px}}
 @media(max-width:700px){.brand .wordmark{width:140px}.hero-art img.hero-ribbon{width:auto;height:170px;transform:none}}
 
+/* Dashboard: Imaging review drop-down */
+.action-menu{position:relative;margin-top:auto}
+.action-menu>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:.82rem;color:var(--green);padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.action-menu>summary::-webkit-details-marker{display:none}
+.action-menu>summary .icon{width:16px;height:16px}
+.action-menu>summary .icon:last-child{transition:transform .15s}
+.action-menu[open]>summary .icon:last-child{transform:rotate(90deg)}
+.action-menu-list{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper);box-shadow:var(--shadow)}
+.action-menu-list .text-btn{padding:6px 2px}
