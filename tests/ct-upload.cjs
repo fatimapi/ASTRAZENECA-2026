@@ -9,7 +9,7 @@ const listeners = {};
 const document = {querySelector: sel => (nodes[sel] ||= node()), querySelectorAll: () => [], addEventListener: (n, fn) => (listeners[n] ??= []).push(fn), createElement: () => node(), documentElement: node(), body: node(), createTreeWalker: () => ({nextNode: () => null})};
 const calls = [];
 let script = [];
-const fetch = async (url, opts = {}) => { calls.push({url, method: opts.method || 'GET', body: opts.body}); const r = script.shift(); return {ok: r.status < 400, status: r.status, json: async () => r.body}; };
+const fetch = async (url, opts = {}) => { if (url === '/api/demo/files') return {ok: true, status: 200, json: async () => ({ct: [{id: 'LIDC-IDRI-0110', slices: 125, mb: 63}], xray: []})}; calls.push({url, method: opts.method || 'GET', body: opts.body}); const r = script.shift(); return {ok: r.status < 400, status: r.status, json: async () => r.body}; };
 class FormData { constructor() { this.items = []; } append(k, v) { this.items.push([k, v]); } }
 const win = {scrollTo() {}, addEventListener() {}};
 const ctx = vm.createContext({document, window: win, location: {hash: '#care/ct-compare'}, localStorage: mem(), sessionStorage: mem(), MutationObserver: class { observe() {} }, fetch, FormData, File, Blob, console, setTimeout: (fn) => setImmediate(fn), clearTimeout() {}, Set, Map, Intl, crypto: globalThis.crypto});
@@ -57,6 +57,18 @@ const until = async cond => { for (let i = 0; i < 200 && !cond(); i++) await new
   for (const fn of listeners.click || []) fn({target: {closest: s => (s === '[data-ctc-run]' ? {} : null), id: ''}});
   await until(() => /rate-limited/.test(C.view()));
   check(/rate-limited/.test(C.view()), 'A failed job shows the server’s message');
+  // Demo CT from the drop-down: the server reads it; no files are uploaded.
+  check(/<optgroup label="FINAL DEMO CT">/.test(C.view()) && /LIDC-IDRI-0110 · 125 slices/.test(C.view()) && /Upload a new CT series \(choose folder\)/.test(C.view()), 'CT drop-down lists the demo scans and an upload option');
+  for (const fn of listeners.change || []) fn({target: {id: 'ctc-source', value: 'demo:LIDC-IDRI-0110'}});
+  check(!/id="ctc-folder"/.test(C.view()) && /nothing is uploaded from this computer/.test(C.view()), 'Choosing a demo hides the folder picker');
+  calls.length = 0;
+  script = [{status: 202, body: {job: 'J3', status: 'running', stage: 'queued'}}, {status: 200, body: {job: 'J3', status: 'done', stage: 'summary', result: fixture}}];
+  for (const fn of listeners.click || []) fn({target: {closest: s => (s === '[data-ctc-run]' ? {} : null), id: ''}});
+  await until(() => calls.length >= 2 && !/Comparing/.test(C.view()));
+  const items = calls[0].body.items;
+  check(items.some(([k, v]) => k === 'demo_case' && v === 'LIDC-IDRI-0110') && !items.some(([k]) => k === 'files'), 'A demo CT sends its name, not files');
+  for (const fn of listeners.change || []) fn({target: {id: 'ctc-source', value: 'upload'}});
+  check(/id="ctc-folder"/.test(C.view()), 'Upload option shows the folder picker');
   console.log(defects.length ? JSON.stringify(defects, null, 2) : `PASS: ${checks} CT upload checks (one series, 200-slice cap, header fallback, background job and polling).`);
   if (defects.length) process.exitCode = 1;
 })();

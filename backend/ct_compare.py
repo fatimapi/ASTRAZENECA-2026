@@ -458,12 +458,15 @@ async def _run_job(job, paths, workdir, original):
 
 
 @router.post("/compare", status_code=202)
-async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False),
-                  original_slices: int = Form(0), authorization: str = Header(default="")):
+async def compare(files: Optional[List[UploadFile]] = File(None), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False),
+                  original_slices: int = Form(0), demo_case: str = Form(""), authorization: str = Header(default="")):
     global _busy
     require_token(authorization)
     if not confirmed_chest or not permitted_data:
         raise HTTPException(422, "Confirm a chest CT series and permission to process this de-identified research or test image.")
+    files = files or []
+    if not files and not demo_case:
+        raise HTTPException(422, "Choose a demo CT or upload the folder of one CT series.")
     if len(files) > MAX_SLICES:
         raise HTTPException(413, f"Upload at most {MAX_SLICES} DICOM files (one CT series).")
     if _busy:
@@ -472,8 +475,9 @@ async def compare(files: List[UploadFile] = File(...), confirmed_chest: bool = F
     _prune_jobs()
     workdir = tempfile.mkdtemp(prefix="candex-ct-")
     try:
-        paths = []
-        for n, f in enumerate(files):  # to disk, one file at a time: the upload is never all in memory
+        from . import demo
+        paths = demo.ct_paths(demo_case) if demo_case else []  # demo CT: read on the server, not uploaded
+        for n, f in enumerate([] if demo_case else files):  # to disk, one file at a time: the upload is never all in memory
             b = await f.read(MAX_SLICE_BYTES + 1)
             await f.close()
             if len(b) > MAX_SLICE_BYTES:
