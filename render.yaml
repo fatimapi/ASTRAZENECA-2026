@@ -1,0 +1,42 @@
+# Render Blueprint for the published Candex site (https://render.com/docs/blueprint-spec).
+# One web service: the FastAPI backend, which also serves the static site.
+#
+# Applying it (Render dashboard → New → Blueprint → this repo):
+# - "name" must match the existing service exactly, so Render updates that service instead of
+#   creating a new one (Render: "attempts to apply the Blueprint's configuration to that existing service").
+# - "region" cannot be changed after a service is created: it must match the existing service's
+#   region (Render → the service → Settings). Frankfurt keeps processing in the EU.
+# - Secrets are never written here. CANDEX_API_KEY is generated once by Render and then kept;
+#   GEMINI_API_KEY is asked for when the Blueprint is first applied (or kept if already set).
+services:
+  - type: web
+    name: astrazeneca-2026
+    runtime: python
+    plan: free            # 0.1 CPU, 512 MB: the backend is tuned to fit (see backend/README.md)
+    region: frankfurt
+    # CPU-only PyTorch first (the default Linux wheel also pulls ~2 GB of GPU libraries), then the rest.
+    buildCommand: >-
+      pip install --no-cache-dir torch==2.10.0 torchvision==0.25.0 --index-url https://download.pytorch.org/whl/cpu &&
+      pip install --no-cache-dir -r requirements.txt
+    # Render routes traffic to $PORT on 0.0.0.0. (python -m backend is for laptops: it binds 127.0.0.1:8000.)
+    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT --no-access-log
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      # Backend access token: generated once by Render (random, 256-bit) and kept across restarts and deploys.
+      # Read it in Render → the service → Environment, and paste it into the site's "Backend token" box.
+      - key: CANDEX_API_KEY
+        generateValue: true
+      # Live AI (Gemini). Entered in the dashboard; never commit it.
+      - key: GEMINI_API_KEY
+        sync: false
+      # Run the chest X-ray model in a short-lived worker so PyTorch is not kept in the 512 MB.
+      - key: CANDEX_XRAY_SUBPROCESS
+        value: "1"
+      - key: CANDEX_CPU_THREADS
+        value: "1"
+      # At most 200 CT slices are processed per upload (the browser sends at most 200 as well).
+      - key: CANDEX_CT_MAX_VOLUME_SLICES
+        value: "200"

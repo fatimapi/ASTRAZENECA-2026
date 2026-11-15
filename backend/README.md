@@ -39,6 +39,9 @@ Open **http://127.0.0.1:8000/#care/dicom** and keep the terminal open. Press Ctr
 
 ### Published site (Render)
 
+The service is described in [`render.yaml`](../render.yaml) (a Render Blueprint): build and start commands, the free plan, the health check and the environment variables. To link it: Render dashboard → **New → Blueprint** → choose this repository. The `name` in the file matches the existing service, so Render updates that service rather than creating a new one; the `region` must match the existing service's region. After that, changes to `render.yaml` on `main` are applied on the next sync.
+
+
 - **Set a fixed token.** In Render → the service → Environment, add `CANDEX_API_KEY` (24+ random characters, e.g. from `python -c "import secrets; print(secrets.token_urlsafe(32))"`). Without it the token changes on every restart, and free Render services restart after about 15 minutes idle, so a token that worked earlier is rejected later. Share the value with the team privately; never commit it.
 - **Gemini key.** Set `GEMINI_API_KEY` in the same place for the live AI features.
 - **Memory (free plan, 512 MB).** Measured on a backend set up like Render: an X-ray analysis followed by a 133-slice CT comparison peaks at about 260 MB.
