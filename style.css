@@ -35,3 +35,13 @@
 .action-menu[open]>summary .icon:last-child{transform:rotate(90deg)}
 .action-menu-list{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--paper);box-shadow:var(--shadow)}
 .action-menu-list .text-btn{padding:6px 2px}
+
+/* Quality → Sources */
+.src-intro p{margin:0 0 10px}.src-group{margin-top:16px}
+.src-list{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:12px}
+.src-list li{padding-left:4px}
+.src-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.src-head a{font-weight:600;color:var(--green);text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.src-head a:hover{text-decoration:underline}.src-head a .icon{width:14px;height:14px;flex:none}
+.src-note{margin:3px 0 2px;font-size:.84rem}
+.src-url{margin:0;font-size:.74rem;color:var(--muted,#6b6475);overflow-wrap:anywhere}
