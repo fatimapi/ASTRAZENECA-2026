@@ -39,7 +39,7 @@ const until = async cond => { for (let i = 0; i < 200 && !cond(); i++) await new
   // Job flow: POST answers with a job; the page polls until the result arrives.
   ctx.api.state.selected = 'CX-1042';
   A.setToken('t'.repeat(32));
-  for (const fn of listeners.change || []) fn({target: {id: 'ctc-files', files: [...a, ...b]}});
+  for (const fn of listeners.change || []) fn({target: {id: 'ctc-folder', files: [...a, ...b]}});
   await until(() => C.view().includes('125 files'));
   check(/125 files/.test(C.view()) && /other files left out/.test(C.view()), 'Page shows what will be sent');
   script = [{status: 202, body: {job: 'J1', status: 'running', stage: 'queued'}}, {status: 200, body: {job: 'J1', status: 'running', stage: 'search'}}, {status: 200, body: {job: 'J1', status: 'done', stage: 'summary', result: fixture}}];
@@ -50,7 +50,7 @@ const until = async cond => { for (let i = 0; i < 200 && !cond(); i++) await new
   check(sent === 125, 'Only the chosen series is uploaded');
   check(C.forPatient('CX-1042', 'en')?.closest === fixture.closest, 'The polled result is saved for the patient');
   // A failed job shows its message.
-  for (const fn of listeners.change || []) fn({target: {id: 'ctc-files', files: b}});
+  for (const fn of listeners.change || []) fn({target: {id: 'ctc-folder', files: b}});
   await until(() => C.view().includes('125 files'));
   calls.length = 0;
   script = [{status: 202, body: {job: 'J2', status: 'running', stage: 'queued'}}, {status: 200, body: {job: 'J2', status: 'error', stage: 'read', code: 503, detail: 'The AI service is rate-limited (too many requests or the daily quota is used up). Wait a minute and try again.'}}];
