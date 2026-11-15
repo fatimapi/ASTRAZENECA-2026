@@ -10,9 +10,43 @@
  const card=title=>{const n=node('section','card');n.append(node('h2','referrals-card-title',title));return n;};
  const note=text=>node('p','referrals-note',text);
  const status=(text,kind='')=>node('span','referrals-status'+(kind?' is-'+kind:''),text);
- function download(report){
+ // The reviewed report as a PDF in the Candex document style (referral-report.js makeKit: wordmark, header,
+ // footer, page numbers). Falls back to a text file if the PDF library cannot load (e.g. offline).
+ function downloadText(report){
   const text=`CANDEX — REVIEWED DEMO REPORT\nNot a signed clinical document or real referral.\n\nPatient: ${S().patient.name} / ${report.patientId}\nVersion: ${report.version}\nReviewed by: ${report.approvedBy}\nReleased: ${date(report.approvedAt)} (Finland time)\nCare pathway: ${report.type}\n\nFINDINGS\n${report.findings}\n\nNEXT STEP\n${report.plan}\n`;
   const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=node('a');a.href=url;a.download=`candex-reviewed-demo-report-v${report.version}.txt`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }
+ function reportPdf(jsPDF,report){
+  const R=window.candexReport,fi=window.candexI18n?.lang==='fi',t=(en,f)=>fi?f:en;
+  const k=R.makeKit(jsPDF,{base:11}),doc=k.doc,name=S().patient.name;
+  doc.setLanguage?.(fi?'fi':'en-GB');
+  doc.setProperties({title:`${t('Your reviewed report','Tarkastettu raporttisi')} · ${report.patientId}`,subject:t('Reviewed demo report','Tarkastettu demoraportti'),author:'Candex (demonstration)',creator:'Candex'});
+  k.title(t('Your reviewed report','Tarkastettu raporttisi'),`${name} · ${report.patientId} · ${t('Version','Versio')} ${report.version}`,t('Demonstration: fictional patient. Not a signed clinical document or a real referral.','Demo: kuvitteellinen potilas. Ei allekirjoitettu potilasasiakirja eikä oikea lähete.'));
+  k.callout(t('Reviewed by your care team','Hoitotiimisi tarkastama'),`${report.approvedBy} · ${date(report.approvedAt)} (${t('Finland time','Suomen aikaa')})`);
+  let n=1;
+  k.section(n++,t('About this report','Tietoa raportista'));
+  k.kv([[t('Patient','Potilas'),name],[t('Patient ID','Potilastunnus'),report.patientId],[t('Care pathway','Hoitopolku'),report.type],[t('Version','Versio'),String(report.version)],[t('Reviewed by','Tarkastaja'),report.approvedBy],[t('Released','Julkaistu'),`${date(report.approvedAt)} (${t('Finland time','Suomen aikaa')})`]],52);
+  k.section(n++,t('Findings','Löydökset'));
+  for(const part of String(report.findings||'').split(/\n\s*\n|\n/).map(x=>x.trim()).filter(Boolean))k.para(part);
+  k.section(n++,t('Proposed next step','Ehdotettu seuraava vaihe'));
+  for(const part of String(report.plan||'').split(/\n\s*\n|\n/).map(x=>x.trim()).filter(Boolean))k.para(part);
+  k.section(n++,t('Please note','Huomioitavaa'));
+  k.list([t('This report was reviewed by a clinician in the Candex demonstration. It uses fictional information.','Raportin on tarkastanut lääkäri Candex-demossa. Se sisältää kuvitteellisia tietoja.'),
+   t('Choose a follow-up time on the Reports & appointments page. No real appointment or referral is made.','Valitse seuranta-aika Raportit ja ajanvaraus -sivulla. Oikeaa aikaa tai lähetettä ei tehdä.'),
+   t('If your symptoms get worse, contact your health centre or call 116 117.','Jos oireesi pahenevat, ota yhteyttä terveysasemaasi tai soita 116 117.')]);
+  k.frame(`Candex · ${t('Reviewed report','Tarkastettu raportti')} · ${report.patientId}`,t('Demonstration only. Fictional patient. Not a signed clinical document.','Vain demo. Kuvitteellinen potilas. Ei allekirjoitettu potilasasiakirja.'),t('Page','Sivu'),t('of','/'));
+  return doc;
+ }
+ async function download(report){
+  const R=window.candexReport;
+  try{
+   if(!R?.makeKit||!R?.loadJsPDF)throw new Error('PDF tools not loaded');
+   const lib=await R.loadJsPDF();
+   reportPdf(lib.jsPDF,report).save(`candex-reviewed-report-v${report.version}.pdf`);
+  }catch{
+   (typeof toast==='function'?toast:()=>{})(window.candexI18n?.lang==='fi'?'PDF-kirjasto ei latautunut; ladataan tekstitiedostona.':'The PDF library could not load; downloading a text file instead.');
+   downloadText(report);
+  }
  }
  function reportBody(report){const pre=node('pre','referrals-report',`FINDINGS\n${report.findings}\n\nPROPOSED NEXT STEP\n${report.plan}`);return pre;}
  function demoBanner(){const n=node('div','referrals-demo');n.append(status('Browser-local demonstration'),node('p','','Reviewed reports, appointment selections and referral decisions are shared between the demo roles on this browser only. No patient message, health-service booking or hospital referral is sent. Use fictional information.'));return n;}
@@ -94,5 +128,5 @@
   const open=button('Open referrals & follow-up');open.dataset.go='care/referrals';root.append(previewButton,preview,label,send,feedback,open);container.replaceChildren(root);updatePreview();
   return()=>{alive=false;for(const remove of cleanups)remove();};
  }
- window.CandexReferrals={render,mount,mountReportReview};
+ window.CandexReferrals={render,mount,mountReportReview,_reportPdf:reportPdf};
 })();
