@@ -136,6 +136,11 @@ window.candexI18n?.extend?.({
 "Preview supplied by your backend. No tumour outlines or lesion localisation are produced by this classifier.": "Esikatselu palvelimelta. Luokittelija ei tuota kasvainrajauksia eikä paikanna muutoksia.",
 "Preview generated from the uploaded chest X-ray DICOM. This classifier provides image-level scores without lesion localisation.": "Esikatselu lähetetystä keuhkoröntgen-DICOMista. Luokittelija antaa koko kuvaa koskevat pisteet paikantamatta muutoksia.",
 "Image-level model outputs": "Mallin tulokset koko kuvalle",
+"Chest X-ray": "Keuhkoröntgenkuva",
+"Choose an X-ray…": "Valitse röntgenkuva…",
+"Upload a new X-ray file…": "Lataa uusi röntgenkuva…",
+"Choose a demo X-ray or upload a new file.": "Valitse esimerkkiröntgenkuva tai lataa uusi tiedosto.",
+"Choose a demo X-ray or a file within the size limit, enter the API key and confirm both checks.": "Valitse esimerkkiröntgenkuva tai kokorajan sisällä oleva tiedosto, anna API-avain ja vahvista molemmat kohdat.",
 "Scores run from 0 to 1. They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.": "Pisteet ovat välillä 0–1. Ne ovat kalibroimattomia mallin tuloksia – eivät todennäköisyyksiä, diagnoosi eivätkä todennäköisyys sille, että henkilöllä on syöpä.",
 "Actual classifier scores returned by the connected backend, ranked from highest to lowest": "Yhdistetyn palvelimen palauttamat luokittelijan pisteet suurimmasta pienimpään",
 "Model label": "Mallin nimike",
@@ -254,11 +259,28 @@ export function mountDicomPanel(container) {
   fileInput.id = 'dicom-study';
   fileInput.type = 'file';
   fileInput.accept = '.dcm,.dicom,application/dicom';
-  fileInput.required = true;
-  const fileDetails = element('p', 'dicom-file-details', 'No file selected.');
+  const fileDetails = element('p', 'dicom-file-details', 'Choose a demo X-ray or upload a new file.');
   fileDetails.id = 'dicom-file-details';
   fileInput.setAttribute('aria-describedby', fileDetails.id);
-  form.append(field('DICOM file', fileInput), fileDetails);
+  // Source: a demo X-ray on the server (demo-data/chest-xrays = the team's FINAL DEMO XRAY) or a new upload.
+  const sourceSelect = element('select');
+  sourceSelect.id = 'dicom-source';
+  const sourcePlaceholder = element('option', '', 'Choose an X-ray…');
+  sourcePlaceholder.value = '';
+  const demoGroup = element('optgroup');
+  demoGroup.label = 'FINAL DEMO XRAY';
+  const uploadOption = element('option', '', 'Upload a new X-ray file…');
+  uploadOption.value = 'upload';
+  sourceSelect.append(sourcePlaceholder, uploadOption);
+  const fileField = field('DICOM file', fileInput);
+  fileField.hidden = true;
+  form.append(field('Chest X-ray', sourceSelect), fileField, fileDetails);
+  const demoChoice = () => (sourceSelect.value.startsWith('demo:') ? sourceSelect.value.slice(5) : '');
+  fetch('/api/demo/files', {headers: {Accept: 'application/json'}, credentials: 'omit'}).then(r => (r.ok ? r.json() : null)).then(d => {
+    if (!alive || !d?.xray?.length) return;
+    for (const x of d.xray) { const o = element('option', '', `${text(x.id, 40)} · ${Number(x.mb) || '?'} MB`); o.value = `demo:${text(x.id, 40)}`; o.setAttribute('translate', 'no'); demoGroup.append(o); }
+    sourceSelect.insertBefore(demoGroup, uploadOption);
+  }).catch(() => {});
   const chestLabel = element('label', 'check-row');
   const chestCheck = element('input');
   chestCheck.type = 'checkbox';
@@ -323,7 +345,9 @@ export function mountDicomPanel(container) {
   }
   function syncControls() {
     const file = fileInput.files?.[0];
-    analyseButton.disabled = busy || !connected || tokenInput.value.trim().length < 24 || !file || file.size > MAX_FILE_BYTES || !chestCheck.checked || !permissionCheck.checked;
+    const chosen = demoChoice() ? true : sourceSelect.value === 'upload' && file && file.size <= MAX_FILE_BYTES;
+    analyseButton.disabled = busy || !connected || tokenInput.value.trim().length < 24 || !chosen || !chestCheck.checked || !permissionCheck.checked;
+    sourceSelect.disabled = busy;
     connectButton.disabled = busy;
     forgetButton.disabled = busy;
     clearButton.disabled = busy;
@@ -365,6 +389,18 @@ export function mountDicomPanel(container) {
   listen(urlInput, 'input', () => { sessionBackend = urlInput.value; disconnect(); });
   listen(tokenInput, 'input', () => { sessionToken = tokenInput.value; window.candexAgent?.setToken?.(tokenInput.value); showTokenState(); syncControls(); });
   listen(forgetButton, 'click', () => { sessionToken = ''; tokenInput.value = ''; showTokenState(); resetResult(); setStatus(requestStatus, 'API key cleared from this page session.'); syncControls(); });
+  listen(sourceSelect, 'change', () => {
+    resetResult();
+    setStatus(requestStatus, '');
+    fileField.hidden = sourceSelect.value !== 'upload';
+    fileInput.value = '';
+    const id = demoChoice();
+    const fi = reportLang() === 'fi';
+    fileDetails.textContent = id ? `FINAL DEMO XRAY · ${id} · ${fi ? 'luetaan palvelimelta; tältä tietokoneelta ei lähetetä mitään.' : 'read on the server; nothing is uploaded from this computer.'}` : sourceSelect.value === 'upload' ? 'No file selected.' : 'Choose a demo X-ray or upload a new file.';
+    chestCheck.checked = false;
+    permissionCheck.checked = false;
+    syncControls();
+  });
   listen(fileInput, 'change', () => {
     resetResult();
     setStatus(requestStatus, '');
@@ -381,9 +417,11 @@ export function mountDicomPanel(container) {
   listen(clearButton, 'click', () => {
     const pid = currentPatient(); if (pid && window.candexXray) delete window.candexXray.byPatient[pid];
     fileInput.value = '';
+    sourceSelect.value = '';
+    fileField.hidden = true;
     chestCheck.checked = false;
     permissionCheck.checked = false;
-    fileDetails.textContent = 'No file selected.';
+    fileDetails.textContent = 'Choose a demo X-ray or upload a new file.';
     resetResult();
     setStatus(requestStatus, 'Image selection and analysis results cleared from this page.');
     syncControls();
@@ -414,9 +452,10 @@ export function mountDicomPanel(container) {
     if (!connected) { setStatus(requestStatus, 'Check the backend connection first.', 'error'); return; }
     const file = fileInput.files?.[0];
     const key = tokenInput.value.trim();
-    if (!file || file.size > MAX_FILE_BYTES || !chestCheck.checked || !permissionCheck.checked || key.length < 24) { setStatus(requestStatus, 'Choose a file within the size limit, enter the API key and confirm both checks.', 'error'); return; }
+    const demoId = demoChoice();
+    if ((!demoId && (!file || file.size > MAX_FILE_BYTES)) || !chestCheck.checked || !permissionCheck.checked || key.length < 24) { setStatus(requestStatus, 'Choose a demo X-ray or a file within the size limit, enter the API key and confirm both checks.', 'error'); return; }
     const body = new FormData();
-    body.append('file', file);
+    if (demoId) body.append('demo_file', demoId); else body.append('file', file);
     body.append('confirmed_chest', 'true');
     body.append('permitted_data', 'true');
     resetResult();

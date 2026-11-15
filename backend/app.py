@@ -20,6 +20,8 @@ from .model import ChestXrayEngine, LIMITATIONS, ModelUnavailable, make_engine
 from .agent import router as agent_router
 from .ct_compare import router as ct_router
 from .jobs import HEAVY, XRAY_WAIT_S
+from . import demo
+from typing import Optional
 
 # Multipart parts above 64 KB go to a temporary file instead of memory (Starlette's default keeps parts up to
 # 1 MB in RAM, so a CT series of ~0.5 MB slices was held entirely in memory). Not 0: that means never spool.
@@ -131,6 +133,7 @@ class InferenceRequestGuard:
 app = FastAPI(title="Candex DICOM research", docs_url=None, redoc_url=None, openapi_url=None)
 app.include_router(agent_router)
 app.include_router(ct_router)
+app.include_router(demo.router)
 app.add_middleware(InferenceRequestGuard)
 origins = []
 for origin in os.getenv("CANDEX_ALLOWED_ORIGINS", "").split(","):
@@ -150,16 +153,23 @@ async def health():
 
 
 @app.post("/api/analyze")
-async def analyze(file: UploadFile = File(...), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False)):
+async def analyze(file: Optional[UploadFile] = File(None), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False),
+                  demo_file: str = Form("")):
+    async def close():
+        if file is not None:
+            await file.close()
     if not confirmed_chest or not permitted_data:
-        await file.close()
+        await close()
         raise HTTPException(422, "Confirm a frontal chest X-ray and permission to process the research/test image.")
+    if file is None and not demo_file:
+        raise HTTPException(422, "Choose a demo X-ray or upload a DICOM file.")
     if analysis_slot.locked():
-        await file.close()
+        await close()
         raise HTTPException(429, "The local model is processing another request. Try again after it finishes.")
     async with analysis_slot:
         try:
-            content = await file.read(MAX_FILE_BYTES + 1)
+            # A demo X-ray (demo-data/chest-xrays) is read on the server; otherwise the uploaded file.
+            content = demo.xray_bytes(demo_file) if demo_file else await file.read(MAX_FILE_BYTES + 1)
             if len(content) > MAX_FILE_BYTES:
                 raise HTTPException(413, "The DICOM file limit is 20 MiB.")
             try:
@@ -192,7 +202,7 @@ async def analyze(file: UploadFile = File(...), confirmed_chest: bool = Form(Fal
         except Exception:
             raise HTTPException(500, "Analysis failed. No findings were generated; check the backend setup.") from None
         finally:
-            await file.close()
+            await close()
 
 
 @app.get("/")
