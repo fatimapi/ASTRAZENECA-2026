@@ -29,9 +29,24 @@ Python 3.10–3.12 and enough disk space for PyTorch/model dependencies are requ
 
 The requirements select PyTorch 2.10 / torchvision 0.25 on Apple Silicon, Linux and Windows. Intel Macs automatically select the last compatible PyTorch 2.2.2 / torchvision 0.17.2 wheels and NumPy 1.26.4; Python 3.10–3.12 Intel-macOS wheels were verified on PyPI, but this older-Mac runtime was not executed during development. The actual inference checks ran on Linux CPU. If Python 3.13+ is your default, create the environment with an installed Python 3.12 instead. On Apple Silicon, use a native arm64 Python rather than an x86_64 Python under Rosetta when possible.
 
-Open **http://127.0.0.1:8000/#care/dicom** and keep the terminal open. The startup command prints a temporary access token once. Copy it into the Doctor DICOM backend token field. The token changes after a restart unless you set `CANDEX_API_KEY` yourself. Press Ctrl+C to stop.
+Open **http://127.0.0.1:8000/#care/dicom** and keep the terminal open. Press Ctrl+C to stop.
 
-To keep the same token across restarts, start with `CANDEX_API_KEY_FILE=~/candex-token python -m backend`. The first start creates that file with a random token, readable only by you (startup refuses a file others can read); later starts reuse it. Keep the file outside the repository and never commit it.
+**Backend token.** The token stays the same across restarts. The first start creates `~/candex-data/.candex-token` with a random token, readable only by you (startup refuses a file others can read); later starts reuse it. Paste it into the backend token field on the DICOM, CT comparison, clinical agent or quality pages. Show it with `cat ~/candex-data/.candex-token`, or copy it on a Mac with `pbcopy < ~/candex-data/.candex-token`. Keep the file outside the repository and never commit it.
+
+- Use another file: `CANDEX_API_KEY_FILE=~/my-token python -m backend`. Set the token directly: `CANDEX_API_KEY=... python -m backend` (24+ characters).
+- A new random token each start (printed once): `CANDEX_EPHEMERAL_TOKEN=1 python -m backend`.
+- If a backend is already running on port 8000, a second start stops with a message instead of printing a token that no server uses. Stop the running one first to restart.
+
+### Published site (Render)
+
+- **Set a fixed token.** In Render → the service → Environment, add `CANDEX_API_KEY` (24+ random characters, e.g. from `python -c "import secrets; print(secrets.token_urlsafe(32))"`). Without it the token changes on every restart, and free Render services restart after about 15 minutes idle, so a token that worked earlier is rejected later. Share the value with the team privately; never commit it.
+- **Gemini key.** Set `GEMINI_API_KEY` in the same place for the live AI features.
+- **Memory (free plan, 512 MB).** Measured on a backend set up like Render: an X-ray analysis followed by a 133-slice CT comparison peaks at about 260 MB.
+  - The chest X-ray model runs in a short-lived worker process (`backend/xray_worker.py`) that exits after each X-ray, so PyTorch (~300 MB) is not kept in memory. This is automatic on Render (`RENDER` is set); force it elsewhere with `CANDEX_XRAY_SUBPROCESS=1`, or turn it off with `CANDEX_XRAY_SUBPROCESS=0`.
+  - CT uploads are saved to a temporary folder and decoded slice by slice into a disk-backed volume; only the slices a step needs are read. The folder is deleted when the job ends.
+  - The browser sends only one CT series (the largest), at most 200 evenly spaced slices; the server keeps the same cap (`CANDEX_CT_MAX_VOLUME_SLICES`).
+- **Time limits.** `POST /api/ct/compare` saves the upload and answers at once (202) with a job id; the page polls `GET /api/ct/jobs/{id}` every 3 s and shows the current step. This keeps each request short, whatever the CPU speed. Jobs are kept for 30 minutes and are lost if the server restarts.
+- **Before a demo,** open `/api/health` a minute early: free services sleep after 15 minutes idle and take 30–60 s to wake.
 
 If port 8000 is already used by `python3 -m http.server`, stop that server with Ctrl+C first. A static server alone cannot run the medical model.
 

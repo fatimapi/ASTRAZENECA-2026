@@ -82,3 +82,49 @@ class ChestXrayEngine:
                 return sorted([{"label": str(label), "score": float(score)} for label, score in zip(labels, outputs) if label], key=lambda item: item["score"], reverse=True)
             except Exception:
                 raise ModelUnavailable("Model inference failed. No findings have been generated; check the backend installation and input compatibility.") from None
+
+
+class SubprocessXrayEngine:
+    """Same interface as ChestXrayEngine, but each prediction runs in a short-lived worker process
+    (python -m backend.xray_worker) that exits afterwards, so PyTorch and the model (~300 MB) are
+    not kept in the server's memory. Used on small hosted instances (Render free: 512 MB), where a
+    resident model plus a CT comparison would exceed the limit. Costs a few seconds per X-ray."""
+
+    TIMEOUT_S = 240
+
+    def __init__(self):
+        self._lock = threading.Lock()
+
+    loaded = False
+
+    def metadata(self):
+        return ChestXrayEngine.metadata(self)
+
+    def predict(self, pixels_255: np.ndarray):
+        import io
+        import json
+        import subprocess
+        import sys
+        buf = io.BytesIO()
+        np.save(buf, np.ascontiguousarray(pixels_255, dtype=np.float32), allow_pickle=False)
+        with self._lock:
+            try:
+                done = subprocess.run([sys.executable, "-m", "backend.xray_worker"], input=buf.getvalue(), capture_output=True,
+                                      timeout=self.TIMEOUT_S, cwd=str(Path(__file__).resolve().parents[1]), env=os.environ.copy())
+            except subprocess.TimeoutExpired:
+                raise ModelUnavailable("The imaging model took too long. Try again; the first run downloads the model weights.") from None
+        try:
+            out = json.loads(done.stdout.decode() or "{}")
+        except ValueError:
+            out = {}
+        if done.returncode != 0 or "findings" not in out:
+            # The worker reports a safe, fixed message; a crash (e.g. out of memory) has none.
+            raise ModelUnavailable(out.get("error") or "The imaging model could not run (the worker process stopped). Check the backend's available memory.")
+        return out["findings"]
+
+
+def make_engine():
+    """In-process model on a laptop (fast after the first load); worker process on hosted/small instances."""
+    flag = os.getenv("CANDEX_XRAY_SUBPROCESS")
+    use_worker = flag == "1" if flag is not None else bool(os.getenv("RENDER"))
+    return SubprocessXrayEngine() if use_worker else ChestXrayEngine()
