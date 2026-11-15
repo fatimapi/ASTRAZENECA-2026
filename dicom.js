@@ -141,6 +141,9 @@ window.candexI18n?.extend?.({
 "Upload a new X-ray file…": "Lataa uusi röntgenkuva…",
 "Choose a demo X-ray or upload a new file.": "Valitse esimerkkiröntgenkuva tai lataa uusi tiedosto.",
 "Choose a demo X-ray or a file within the size limit, enter the API key and confirm both checks.": "Valitse esimerkkiröntgenkuva tai kokorajan sisällä oleva tiedosto, anna API-avain ja vahvista molemmat kohdat.",
+"Scores run from 0 to 1.": "Pisteet ovat välillä 0–1.",
+"They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.": "Ne ovat kalibroimattomia mallin tuloksia – eivät todennäköisyyksiä, diagnoosi eivätkä todennäköisyys sille, että henkilöllä on syöpä.",
+"All scores and model details": "Kaikki pisteet ja mallin tiedot",
 "Scores run from 0 to 1. They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.": "Pisteet ovat välillä 0–1. Ne ovat kalibroimattomia mallin tuloksia – eivät todennäköisyyksiä, diagnoosi eivätkä todennäköisyys sille, että henkilöllä on syöpä.",
 "Actual classifier scores returned by the connected backend, ranked from highest to lowest": "Yhdistetyn palvelimen palauttamat luokittelijan pisteet suurimmasta pienimpään",
 "Model label": "Mallin nimike",
@@ -542,7 +545,9 @@ export function mountDicomPanel(container) {
     const summaryCard = element('section', 'card dicom-ai-summary');
     summaryCard.setAttribute('aria-live', 'polite');
     const outputCard = element('section', 'card');
-    outputCard.append(element('h2', '', 'Image-level model outputs'), element('p', 'dicom-section-copy', 'Scores run from 0 to 1. They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.'));
+    outputCard.append(element('h2', '', 'Image-level model outputs'), element('p', 'dicom-section-copy', 'Scores run from 0 to 1.'));
+    const outputDrop = element('details', 'agent-drop dicom-drop');
+    outputDrop.append(element('summary', '', 'All scores and model details'), element('p', 'dicom-section-copy', 'They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.'));
     const wrap = element('div', 'table-wrap');
     const table = element('table', 'dicom-score-table');
     const caption = element('caption', 'sr-only', 'Actual classifier scores returned by the connected backend, ranked from highest to lowest');
@@ -561,12 +566,13 @@ export function mountDicomPanel(container) {
       const value = element('td', 'dicom-score', reportLang() === 'fi' ? Number(finding.score).toFixed(4).replace('.', ',') : Number(finding.score).toFixed(4));
       row.append(name, value); body.append(row);
     }
-    table.append(caption, head, body); wrap.append(table); outputCard.append(wrap);
+    table.append(caption, head, body); wrap.append(table); outputDrop.append(wrap);
     const provenance = element('dl', 'dicom-provenance');
     for (const [name, value] of [['Model', modelName(result.model)], ['Version', result.model.version || 'Not reported'], ['Weights', result.model.weights || 'Not reported'], ['Task', result.model.task || 'Not reported'], ['Analysis reference', result.analysis_id || 'Not reported']]) provenance.append(element('dt', '', name), element('dd', '', text(value, 300)));
-    outputCard.append(provenance);
-    const limits = element('section', 'dicom-limitations');
-    limits.append(element('h3', '', 'Limitations & clinical review'));
+    outputDrop.append(provenance);
+    outputCard.append(outputDrop);
+    const limits = element('details', 'agent-drop dicom-drop dicom-limitations');
+    limits.append(element('summary', '', 'Limitations & clinical review'));
     const limitList = element('ul');
     for (const limitation of result.limitations.slice(0, 30)) limitList.append(element('li', '', text(limitation, 2000)));
     limits.append(limitList);
