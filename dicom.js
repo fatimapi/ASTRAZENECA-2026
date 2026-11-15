@@ -136,6 +136,9 @@ window.candexI18n?.extend?.({
 "Preview supplied by your backend. No tumour outlines or lesion localisation are produced by this classifier.": "Esikatselu palvelimelta. Luokittelija ei tuota kasvainrajauksia eikä paikanna muutoksia.",
 "Preview generated from the uploaded chest X-ray DICOM. This classifier provides image-level scores without lesion localisation.": "Esikatselu lähetetystä keuhkoröntgen-DICOMista. Luokittelija antaa koko kuvaa koskevat pisteet paikantamatta muutoksia.",
 "Image-level model outputs": "Mallin tulokset koko kuvalle",
+"Scores run from 0 to 1.": "Pisteet ovat välillä 0–1.",
+"They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.": "Ne ovat kalibroimattomia mallin tuloksia – eivät todennäköisyyksiä, diagnoosi eivätkä todennäköisyys sille, että henkilöllä on syöpä.",
+"All scores and model details": "Kaikki pisteet ja mallin tiedot",
 "Scores run from 0 to 1. They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.": "Pisteet ovat välillä 0–1. Ne ovat kalibroimattomia mallin tuloksia – eivät todennäköisyyksiä, diagnoosi eivätkä todennäköisyys sille, että henkilöllä on syöpä.",
 "Actual classifier scores returned by the connected backend, ranked from highest to lowest": "Yhdistetyn palvelimen palauttamat luokittelijan pisteet suurimmasta pienimpään",
 "Model label": "Mallin nimike",
@@ -503,7 +506,9 @@ export function mountDicomPanel(container) {
     const summaryCard = element('section', 'card dicom-ai-summary');
     summaryCard.setAttribute('aria-live', 'polite');
     const outputCard = element('section', 'card');
-    outputCard.append(element('h2', '', 'Image-level model outputs'), element('p', 'dicom-section-copy', 'Scores run from 0 to 1. They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.'));
+    outputCard.append(element('h2', '', 'Image-level model outputs'), element('p', 'dicom-section-copy', 'Scores run from 0 to 1.'));
+    const outputDrop = element('details', 'agent-drop dicom-drop');
+    outputDrop.append(element('summary', '', 'All scores and model details'), element('p', 'dicom-section-copy', 'They are uncalibrated model outputs—not probabilities, a diagnosis, or the likelihood that this person has cancer.'));
     const wrap = element('div', 'table-wrap');
     const table = element('table', 'dicom-score-table');
     const caption = element('caption', 'sr-only', 'Actual classifier scores returned by the connected backend, ranked from highest to lowest');
@@ -522,12 +527,13 @@ export function mountDicomPanel(container) {
       const value = element('td', 'dicom-score', reportLang() === 'fi' ? Number(finding.score).toFixed(4).replace('.', ',') : Number(finding.score).toFixed(4));
       row.append(name, value); body.append(row);
     }
-    table.append(caption, head, body); wrap.append(table); outputCard.append(wrap);
+    table.append(caption, head, body); wrap.append(table); outputDrop.append(wrap);
     const provenance = element('dl', 'dicom-provenance');
     for (const [name, value] of [['Model', modelName(result.model)], ['Version', result.model.version || 'Not reported'], ['Weights', result.model.weights || 'Not reported'], ['Task', result.model.task || 'Not reported'], ['Analysis reference', result.analysis_id || 'Not reported']]) provenance.append(element('dt', '', name), element('dd', '', text(value, 300)));
-    outputCard.append(provenance);
-    const limits = element('section', 'dicom-limitations');
-    limits.append(element('h3', '', 'Limitations & clinical review'));
+    outputDrop.append(provenance);
+    outputCard.append(outputDrop);
+    const limits = element('details', 'agent-drop dicom-drop dicom-limitations');
+    limits.append(element('summary', '', 'Limitations & clinical review'));
     const limitList = element('ul');
     for (const limitation of result.limitations.slice(0, 30)) limitList.append(element('li', '', text(limitation, 2000)));
     limits.append(limitList);
