@@ -73,17 +73,42 @@ def client():
     return _clients[key]
 
 
+# Temporary provider errors (rate limit, overload, gateway) are retried with a short backoff:
+# a CT comparison makes ~10 calls in a row, so one transient error should not fail the whole run.
+RETRY_CODES = {429, 500, 502, 503, 504}
+RETRY_DELAYS_S = (3, 8, 20)
+
+
 async def generate(model: str, contents, config) -> object:
     def call():
         return client().models.generate_content(model=model, contents=contents, config=config)
-    try:
-        return await asyncio.wait_for(asyncio.to_thread(call), TIMEOUT_S)
-    except HTTPException:
-        raise
-    except asyncio.TimeoutError:
-        raise HTTPException(504, "The AI service took too long to answer.")
-    except Exception as exc:  # do not echo provider details (may include request data)
-        raise HTTPException(502, f"The AI service returned an error ({type(exc).__name__}).")
+    for attempt in range(len(RETRY_DELAYS_S) + 1):
+        try:
+            return await asyncio.wait_for(asyncio.to_thread(call), TIMEOUT_S)
+        except HTTPException:
+            raise
+        except asyncio.TimeoutError:
+            if attempt < len(RETRY_DELAYS_S):
+                print(f"AI call to {model} timed out; retrying ({attempt + 1}/{len(RETRY_DELAYS_S)}).", flush=True)
+                continue
+            raise HTTPException(504, "The AI service took too long to answer. Try again in a minute.")
+        except Exception as exc:
+            # Log only the provider's code and status, never the request or response body.
+            code = getattr(exc, "code", None)
+            status = getattr(exc, "status", None) or type(exc).__name__
+            print(f"AI call to {model} failed: {code or ''} {status} (attempt {attempt + 1}).", flush=True)
+            if code in RETRY_CODES and attempt < len(RETRY_DELAYS_S):
+                await asyncio.sleep(RETRY_DELAYS_S[attempt])
+                continue
+            if code == 429:
+                raise HTTPException(503, "The AI service is rate-limited (too many requests or the daily quota is used up). Wait a minute and try again.")
+            if code in (500, 502, 503, 504):
+                raise HTTPException(502, f"The AI service is temporarily unavailable ({code} {status}). Try again in a minute.")
+            if code in (401, 403):
+                raise HTTPException(502, "The Gemini API key was rejected by the AI service. Check the key in ~/candex-data/.gemini-key.")
+            if code == 404:
+                raise HTTPException(502, f"The AI model {model} is not available to this Gemini API key.")
+            raise HTTPException(502, f"The AI service returned an error ({code or ''} {status}).".replace("( ", "("))
 
 
 # ---------- request models ----------

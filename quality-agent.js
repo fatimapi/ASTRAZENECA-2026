@@ -398,7 +398,7 @@ async function writeAI() {
       R.error = tx(L, `The AI summary used numbers that are not in the data (${[...out.typedNumbers, ...out.unknownTokens].join(', ')}), so it was not used. The report uses template text.`, `Tekoälyn yhteenvedossa oli lukuja, joita aineistossa ei ole (${[...out.typedNumbers, ...out.unknownTokens].join(', ')}), joten sitä ei käytetty. Raportti käyttää mallipohjaista tekstiä.`);
     }
   } catch (e) {
-    R.error = e.status === 401 ? T('The backend token was not accepted. Paste the current token.') : `${T('The AI summary failed; the report uses template text.')} (${e.message})`;
+    R.error = e.status === 401 ? `${T('The backend token was not accepted.')} ${window.candexAgent?.tokenWhere?.() || ''}` : `${T('The AI summary failed; the report uses template text.')} (${e.message})`;
   }
   R.busy = false; render(true);
   setTimeout(() => paintReport(true), 50);
@@ -691,7 +691,7 @@ window.candexI18n?.extend?.({
   'The AI summary failed; the report uses template text.': 'Tekoälyn yhteenveto epäonnistui; raportti käyttää mallipohjaista tekstiä.',
   'Preview the current report before downloading.': 'Esikatsele nykyinen raportti ennen lataamista.', 'PDF downloaded. It is a draft built from synthetic data.': 'PDF ladattu. Se on synteettisestä aineistosta koottu luonnos.',
   'The PDF library could not load (offline?). Use the preview and your browser’s Print → Save as PDF.': 'PDF-kirjasto ei latautunut (ei yhteyttä?). Käytä esikatselua ja selaimen Tulosta → Tallenna PDF:nä.',
-  'Paste the backend token first.': 'Liitä ensin palvelimen tunniste.', 'The backend token was not accepted. Paste the current token.': 'Palvelimen tunnistetta ei hyväksytty. Liitä voimassa oleva tunniste.',
+  'Paste the backend token first.': 'Liitä ensin palvelimen tunniste.', 'The backend token was not accepted.': 'Palvelimen tunnistetta ei hyväksytty.',
   'Reports': 'Raportit', 'Set': 'Asetettu', 'Not set': 'Ei asetettu', 'Backend token': 'Palvelimen tunniste', 'How it works': 'Miten se toimii', 'What the agent can see': 'Mitä agentti näkee', 'Kept in this page’s memory only. The Gemini key stays on the server.': 'Säilyy vain tämän sivun muistissa. Gemini-avain pysyy palvelimella.', 'Export sample data (PDF)': 'Vie esimerkkidata (PDF)', 'CSV': 'CSV', 'PDF downloaded. All values are synthetic examples.': 'PDF ladattu. Kaikki arvot ovat synteettisiä esimerkkejä.', 'Preparing the PDF…': 'Valmistellaan PDF:ää…',
 });
 window.candexQuality = {pack, hashOf, regionalMaps, dataPdf, exportDataPDF, writeDataPDF, view, reportsView, buildReport, previewHTML, writePDF, offlineAnswer, templateNarrative, ask, _R: R, _log: log, _setStatus: v => { status = v; }};

@@ -53,7 +53,7 @@ async function parseResponse(response) {
   try { body = await response.json(); } catch { throw new Error('The backend did not return JSON. Check that this is the Candex API address, rather than a static web server.'); }
   if (!response.ok) {
     const detail = typeof body.detail === 'string' ? body.detail : typeof body.error === 'string' ? body.error : '';
-    if (response.status === 401 || response.status === 403) throw new Error('The API key was not accepted. Check the key configured on the backend, then try again.');
+    if (response.status === 401 || response.status === 403) throw new Error(`${window.candexI18n?.tr?.('The API key was not accepted.') || 'The API key was not accepted.'} ${window.candexAgent?.tokenWhere?.() || ''}`.trim());
     if (response.status === 413) throw new Error('This file exceeds the backend upload limit. Use a DICOM file smaller than 20 MiB.');
     throw new Error(detail || `The backend could not complete this request (HTTP ${response.status}).`);
   }
@@ -151,7 +151,7 @@ window.candexI18n?.extend?.({
 "This structured draft contains the returned model information. Edit it for your research review. Downloading does not sign a clinical report.": "Tämä jäsennelty luonnos sisältää mallin palauttamat tiedot. Muokkaa sitä tutkimusarviota varten. Lataaminen ei allekirjoita kliinistä raporttia.",
 "Draft findings and limitations": "Löydösten ja rajoitusten luonnos",
 "Download review draft": "Lataa tarkistusluonnos",
-"The API key was not accepted. Check the key configured on the backend, then try again.": "API-avainta ei hyväksytty. Tarkista palvelimelle asetettu avain ja yritä uudelleen.",
+"The API key was not accepted.": "API-avainta ei hyväksytty.",
 "Could not reach the Candex backend. Check its address, that it is running, its allowed origins, and whether your browser is blocking an HTTP backend from an HTTPS page.": "Candex-palvelimeen ei saatu yhteyttä. Tarkista osoite, että palvelin on käynnissä, sen sallitut alkuperät ja estääkö selain HTTP-palvelimen HTTPS-sivulta.",
 "Request cancelled. The backend may still be processing an analysis already started.": "Pyyntö peruttu. Palvelin voi yhä käsitellä jo aloitettua analyysiä.",
 "This address did not return the expected Candex model-service health response.": "Tämä osoite ei palauttanut odotettua Candex-mallipalvelun tilavastausta.",

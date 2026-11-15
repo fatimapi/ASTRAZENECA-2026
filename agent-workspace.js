@@ -181,7 +181,7 @@ async function run(kind, payload) {
     }
   } catch (e) {
     if (revision !== sessionRevision) return;
-    if (e.status === 401) reply = {role: 'model', type: 'error', text: T('The backend token is missing or wrong. Paste the token printed by python -m backend.')};
+    if (e.status === 401) reply = {role: 'model', type: 'error', text: `${T('The backend token is missing or wrong.')} ${tokenWhere()}`};
     else if (kind === 'ct') {
       const pre = window.candexAi?.read(caseOf(id)?.id);
       reply = pre ? {role: 'model', type: 'ct', data: {read: pre, model: `${window.candexAi.provenance()?.model || 'precomputed'} (precomputed)`, input: T('Live AI unavailable; showing the precomputed research read')}} : {role: 'model', type: 'error', text: `${T('Live AI unavailable')}: ${e.message}`};
@@ -223,7 +223,6 @@ document.addEventListener('click', e => {
 window.candexI18n?.extend?.({
   'Research prototype. The agents use Gemini through your local backend, on fictional patients, synthetic statistics and public research images; the Candex guide runs a small open-source model in your browser. Outputs are unvalidated and never set urgency or decisions.': 'Tutkimusprototyyppi. Agentit käyttävät Geminiä paikallisen palvelimesi kautta kuvitteellisille potilaille, synteettisille tilastoille ja julkisille tutkimuskuville; Candex-opas ajaa pientä avoimen lähdekoodin mallia selaimessasi. Tulokset ovat validoimattomia, eivätkä ne koskaan määritä kiireellisyyttä tai päätöksiä.',
   'Clinical agent': 'Kliininen agentti', 'Research': 'Tutkimus', 'Backend token': 'Taustapalvelun tunniste',
-  'Paste the token printed by python -m backend': 'Liitä python -m backend -komennon tulostama tunniste',
   'Kept in this page’s memory only. The Gemini key stays on the server.': 'Säilyy vain tämän sivun muistissa. Gemini-avain pysyy palvelimella.',
   'What the agent can see': 'Mitä agentti näkee', 'How it works': 'Miten se toimii',
   'Tools:': 'Työkalut:', 'one agent calls specialist tools: the patient record and a Gemini CT read of the linked study.': 'yksi agentti käyttää erikoistyökaluja: potilastietoja ja linkitetyn TT-kuvan Gemini-luentaa.',
@@ -248,21 +247,26 @@ window.candexI18n?.extend?.({
   'Research read: not a diagnosis; not used for urgency or recommendations.': 'Tutkimusluenta: ei diagnoosi; ei käytetä kiireellisyyteen tai suosituksiin.',
   'Ask about this patient, draft a document, or run a CT read. Answers use only the record shown on the left and cite where each fact comes from.': 'Kysy potilaasta, luonnostele asiakirja tai aja TT-luenta. Vastaukset perustuvat vain vasemmalla näkyviin tietoihin ja kertovat lähteensä.',
   'Reading the CT…': 'Luetaan TT-kuvaa…', 'Drafting, then reviewing…': 'Luonnostellaan ja tarkastetaan…', 'Thinking…': 'Mietitään…', 'No answer.': 'Ei vastausta.',
-  'The backend token is missing or wrong. Paste the token printed by python -m backend.': 'Taustapalvelun tunniste puuttuu tai on väärä. Liitä python -m backend -komennon tulostama tunniste.',
   'Live AI unavailable; showing the precomputed research read': 'Tekoäly ei käytettävissä; näytetään valmiiksi laskettu tutkimusluenta', 'Run a CT read of the linked study.': 'Aja TT-luenta linkitetystä tutkimuksesta.',
   'Paste the backend token first.': 'Liitä ensin taustapalvelun tunniste.', 'Draft copied.': 'Luonnos kopioitu.', 'Copy failed; select the text instead.': 'Kopiointi epäonnistui; valitse teksti.',
   'Added to the referral note. Open Reports to review it.': 'Lisätty lähetteen huomioon. Tarkista se Raportit-sivulla.', 'Added to the referral note (first 800 characters). Open Reports to review it.': 'Lisätty lähetteen huomioon (ensimmäiset 800 merkkiä). Tarkista se Raportit-sivulla.',
   'Clinical agent (research prototype): fictional patients, public research CT. Answers and drafts must be checked by a clinician; nothing is sent.': 'Kliininen agentti (tutkimusprototyyppi): kuvitteelliset potilaat, julkinen tutkimus-TT. Lääkärin on tarkistettava vastaukset ja luonnokset; mitään ei lähetetä.',
+  'On this computer the token is in ~/candex-data/.candex-token (it stays the same across restarts).': 'Tällä tietokoneella tunniste on tiedostossa ~/candex-data/.candex-token (se pysyy samana uudelleenkäynnistyksissä).',
+  'On the published site the token is the CANDEX_API_KEY set in the hosting settings (ask whoever deployed it).': 'Julkaistulla sivustolla tunniste on palveluntarjoajan asetuksiin asetettu CANDEX_API_KEY (kysy julkaisijalta).',
+  'The backend token is missing or wrong.': 'Taustapalvelun tunniste puuttuu tai on väärä.', 'Paste the backend token': 'Liitä taustapalvelun tunniste',
   'Open-source agents behind these ideas': 'Ideoiden taustalla olevat avoimen lähdekoodin agentit',
 });
 
 // One backend token for the whole page (clinical agent and DICOM page).
 const getToken = () => token;
+// Where the token comes from: the local file when the site runs on this computer, else the host's CANDEX_API_KEY.
+const isLocal = () => { try { return /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname); } catch { return true; } };
+const tokenWhere = () => T(isLocal() ? 'On this computer the token is in ~/candex-data/.candex-token (it stays the same across restarts).' : 'On the published site the token is the CANDEX_API_KEY set in the hosting settings (ask whoever deployed it).');
 // The backend token field, as a drop-down (closed by default; opened when needed).
 const tokenState = () => (token.trim() ? T('Set') : T('Not set'));
 function tokenDrop(id, hint = 'Kept in this page’s memory only. The Gemini key stays on the server.') {
   return `<details class="agent-drop token-drop"><summary>${icon('lock')}<span>${T('Backend token')}</span><span class="token-state${token.trim() ? ' is-set' : ''}">${tokenState()}</span></summary>
-<div class="field"><label class="sr-only" for="${id}">${T('Backend token')}</label><input id="${id}" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(T('Paste the token printed by python -m backend'))}" value="${esc(token)}"><small>${T(hint)}</small></div></details>`;
+<div class="field"><label class="sr-only" for="${id}">${T('Backend token')}</label><input id="${id}" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(T('Paste the backend token'))}" value="${esc(token)}"><small>${T(hint)}</small></div></details>`;
 }
 function openToken(sel) { const el = document.querySelector(sel); el?.closest?.('details')?.setAttribute?.('open', ''); el?.focus?.(); }
 const setToken = v => {
@@ -270,5 +274,5 @@ const setToken = v => {
   for (const el of document.querySelectorAll('#agent-token, #q-token')) if (el.value !== token) el.value = token;
   for (const el of document.querySelectorAll('.token-drop .token-state')) { el.textContent = tokenState(); el.classList.toggle('is-set', !!token.trim()); }
 };
-window.candexAgent = {view, record, refreshStatus, resetSession, plain, run, getToken, setToken, tokenDrop, openToken, _convo: convo, _setStatus: v => { status = v; }};
+window.candexAgent = {view, record, refreshStatus, resetSession, plain, run, getToken, setToken, tokenDrop, openToken, tokenWhere, _convo: convo, _setStatus: v => { status = v; }};
 })();
