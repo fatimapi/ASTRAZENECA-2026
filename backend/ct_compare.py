@@ -470,10 +470,22 @@ async def compare(request: Request, files: Optional[List[UploadFile]] = File(Non
     files = files or []
     if not files and not demo_case:
         raise HTTPException(422, "Choose a demo CT or upload the folder of one CT series.")
+    if public and (files or not demo_case):
+        raise HTTPException(401, public_demo.UPLOAD_NEEDS_TOKEN)
+    if demo_case and not files:
+        # A demo CT with a saved analysis: shown at once for the public demo, or when live AI (Gemini) is not
+        # configured. No Gemini call, no limit used. With the token and live AI, the CT is analysed again.
+        from . import demo as _saved
+        from .agent import gemini_key
+        saved = _saved.saved_ct_result(demo_case)
+        if saved and (public or not gemini_key()):
+            _prune_jobs()
+            jid = secrets.token_urlsafe(12)
+            now = time.time()
+            _jobs[jid] = {"id": jid, "status": "done", "stage": "done", "started": now, "finished": now, "result": saved, "public": public}
+            return {"job": jid, "status": "done", "stage": "done"}
     if public:
         # Public demo: a built-in demo CT only, never an upload; counted against the demo limits.
-        if files or not demo_case:
-            raise HTTPException(401, public_demo.UPLOAD_NEEDS_TOKEN)
         if _busy:
             raise HTTPException(429, "Another CT comparison is running. Try again when it finishes.")
         from . import demo as _demo

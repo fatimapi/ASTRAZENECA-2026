@@ -109,3 +109,34 @@ def test_whole_server_limit(client, monkeypatch):
     monkeypatch.setattr(demo, "xray_bytes", lambda name: (_ for _ in ()).throw(service.HTTPException(404, "stub")))
     codes = [client.post("/api/analyze", data={**OK, "demo_file": "LIDC-IDRI-0002"}, headers={"X-Forwarded-For": f"10.0.0.{i}"}).status_code for i in range(3)]
     assert codes == [404, 404, 429]
+
+
+def test_saved_demo_ct_is_shown_without_gemini_or_token(client, monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("CANDEX_GEMINI_KEY_FILE", raising=False)
+    files = client.get("/api/demo/files").json()
+    if not any(c["id"] == "LIDC-IDRI-0078" and c["saved"] for c in files["ct"]):
+        pytest.skip("saved demo result not present")
+    assert files["liveAi"] is False
+    r = client.post("/api/ct/compare", data={**OK, "demo_case": "LIDC-IDRI-0078"})
+    assert r.status_code == 202 and r.json()["status"] == "done"
+    res = client.get(f"/api/ct/jobs/{r.json()['job']}").json()["result"]
+    assert res["saved"]["case"] == "LIDC-IDRI-0078" and res["closest"] == "LIDC-IDRI-0968" and res["images"]["key"]
+    assert public_demo._hits.get(("server", "ct")) in (None, public_demo.deque())  # a saved result uses no limit
+
+
+def test_token_with_live_ai_runs_the_ct_again(client, monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "x" * 39)
+    started = []
+
+    async def fake_run(job, paths, workdir, original):
+        started.append(job)
+        ct_compare._busy = False
+    monkeypatch.setattr(ct_compare, "_run_job", fake_run)
+    r = client.post("/api/ct/compare", headers=H, data={**OK, "demo_case": "LIDC-IDRI-0078"})
+    assert r.status_code == 202 and r.json()["status"] == "running" and started
+
+
+def test_saved_result_names_are_checked():
+    assert demo.saved_ct_result("../../backend/app") is None
+    assert demo.saved_ct_result("LIDC-IDRI-9999") is None

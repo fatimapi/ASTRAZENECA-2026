@@ -47,6 +47,7 @@ The service is described in [`render.yaml`](../render.yaml) (a Render Blueprint)
   - limits per visitor per hour: 10 X-rays, 3 CT comparisons and 10 X-ray summaries; for the whole server per day: 200, 25 and 200, so the Gemini quota cannot be drained;
   - the X-ray summary accepts only the classifier's own label names;
   - a public CT job can be followed with its unguessable job id alone; a job started with the token still needs the token.
+  - **Saved demo CT analyses** (`demo-data/ct-results/<case>.json`, currently LIDC-IDRI-0078 from the live run on 2026-11-15) are shown at once to public visitors, and to everyone when Gemini is not configured: no AI call and no limit used. With the token and Gemini, the demo CT is analysed again. Demo CTs without a saved analysis are greyed out ("needs live AI") when Gemini is not configured.
   - Turn it off with `CANDEX_PUBLIC_DEMO=0` (Render → Environment); then everything needs the token again. The code is in `backend/public_demo.py`.
 - **Set a fixed token.** In Render → the service → Environment, add `CANDEX_API_KEY` (24+ random characters, e.g. from `python -c "import secrets; print(secrets.token_urlsafe(32))"`). Without it the token changes on every restart, and free Render services restart after about 15 minutes idle, so a token that worked earlier is rejected later. Share the value with the team privately; never commit it.
 - **Gemini key.** Set `GEMINI_API_KEY` in the same place for the live AI features.
