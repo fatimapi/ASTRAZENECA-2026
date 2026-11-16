@@ -32,7 +32,7 @@ import secrets
 import shutil
 import tempfile
 
-from fastapi import APIRouter, File, Form, Header, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, Header, HTTPException, UploadFile, Request
 from pydantic import BaseModel, Field
 
 from .agent import (CHAT_MODEL, LANG, LIDC_DIR, ROOT, VISION_MODEL, CtRead, generate, require_token,
@@ -458,15 +458,27 @@ async def _run_job(job, paths, workdir, original):
 
 
 @router.post("/compare", status_code=202)
-async def compare(files: Optional[List[UploadFile]] = File(None), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False),
+async def compare(request: Request, files: Optional[List[UploadFile]] = File(None), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False),
                   original_slices: int = Form(0), demo_case: str = Form(""), authorization: str = Header(default="")):
     global _busy
-    require_token(authorization)
+    from . import public_demo
+    public = public_demo.is_public(request)
+    if not public:
+        require_token(authorization)
     if not confirmed_chest or not permitted_data:
         raise HTTPException(422, "Confirm a chest CT series and permission to process this de-identified research or test image.")
     files = files or []
     if not files and not demo_case:
         raise HTTPException(422, "Choose a demo CT or upload the folder of one CT series.")
+    if public:
+        # Public demo: a built-in demo CT only, never an upload; counted against the demo limits.
+        if files or not demo_case:
+            raise HTTPException(401, public_demo.UPLOAD_NEEDS_TOKEN)
+        if _busy:
+            raise HTTPException(429, "Another CT comparison is running. Try again when it finishes.")
+        from . import demo as _demo
+        _demo.ct_paths(demo_case)  # unknown demo names fail here, before a run is counted
+        public_demo.allow(request.scope, "ct")
     if len(files) > MAX_SLICES:
         raise HTTPException(413, f"Upload at most {MAX_SLICES} DICOM files (one CT series).")
     if _busy:
@@ -492,16 +504,19 @@ async def compare(files: Optional[List[UploadFile]] = File(None), confirmed_ches
         _busy = False
         raise
     jid = secrets.token_urlsafe(12)
-    job = _jobs[jid] = {"id": jid, "status": "running", "stage": "queued", "started": time.time()}
+    job = _jobs[jid] = {"id": jid, "status": "running", "stage": "queued", "started": time.time(), "public": public}
     asyncio.get_running_loop().create_task(_run_job(job, paths, workdir, max(0, min(int(original_slices or 0), 5000))))
     return {"job": jid, "status": "running", "stage": "queued"}
 
 
 @router.get("/jobs/{jid}")
 async def job_status(jid: str, authorization: str = Header(default="")):
-    require_token(authorization)
+    from . import public_demo
     _prune_jobs()
     job = _jobs.get(jid)
+    # A public demo run can be followed with its (unguessable) job id alone; anything else needs the token.
+    if not (public_demo.enabled() and job and job.get("public")):
+        require_token(authorization)
     if not job:
         raise HTTPException(404, "This CT comparison is no longer available (the server restarted or it expired). Upload the series again.")
     out = {"job": jid, "status": job["status"], "stage": job["stage"], "seconds": round((job.get("finished") or time.time()) - job["started"], 1)}

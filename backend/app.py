@@ -10,7 +10,7 @@ import uuid
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.concurrency import run_in_threadpool
@@ -21,6 +21,7 @@ from .agent import router as agent_router
 from .ct_compare import router as ct_router
 from .jobs import HEAVY, XRAY_WAIT_S
 from . import demo
+from . import public_demo
 from typing import Optional
 
 # Multipart parts above 64 KB go to a temporary file instead of memory (Starlette's default keeps parts up to
@@ -71,38 +72,45 @@ class InferenceRequestGuard:
                 return await JSONResponse({"detail": "Request is too large for the agent."}, status_code=413)(scope, receive, private_send)
         if scope.get("path") == "/api/ct/compare" and scope.get("method") == "POST":
             # A CT series is many files: authenticate first, cap the body while it streams (no buffering here).
-            key = configured_key()
-            if not key or not secrets.compare_digest(headers.get(b"authorization", b""), ("Bearer " + key).encode("ascii")):
-                return await JSONResponse({"detail": "A valid backend access token is required."}, status_code=401)(scope, receive, private_send)
+            # Without the token, only the public demo (a demo CT name, no files) gets through.
+            limit, too_big = CT_MAX_BYTES, "The CT upload is too large (limit 400 MB)."
+            if not public_demo.has_token(headers.get(b"authorization", b"")):
+                if not public_demo.enabled():
+                    return await JSONResponse({"detail": "A valid backend access token is required."}, status_code=401)(scope, receive, private_send)
+                scope.setdefault("state", {})["public_demo"] = True
+                limit, too_big = public_demo.SMALL_BODY, public_demo.UPLOAD_NEEDS_TOKEN
             try:
                 length = int(headers.get(b"content-length", b"0"))
             except ValueError:
-                length = CT_MAX_BYTES + 1
-            if length > CT_MAX_BYTES:
-                return await JSONResponse({"detail": "The CT upload is too large (limit 400 MB)."}, status_code=413)(scope, receive, private_send)
+                length = limit + 1
+            if length > limit:
+                return await JSONResponse({"detail": too_big}, status_code=401 if limit == public_demo.SMALL_BODY else 413)(scope, receive, private_send)
             seen = 0
 
             async def counted():
                 nonlocal seen
                 message = await receive()
                 seen += len(message.get("body", b""))
-                if seen > CT_MAX_BYTES:
-                    raise HTTPException(413, "The CT upload is too large (limit 400 MB).")
+                if seen > limit:
+                    raise HTTPException(413, too_big)
                 return message
             return await self.app(scope, counted, private_send)
         if scope.get("path") == "/api/analyze" and scope.get("method") == "POST":
-            key = configured_key()
-            if not key:
-                return await JSONResponse({"detail": "The backend API key is not configured. Start with python -m backend or set CANDEX_API_KEY to at least 24 characters."}, status_code=503)(scope, receive, private_send)
-            auth = headers.get(b"authorization", b"")
-            if not secrets.compare_digest(auth, ("Bearer " + key).encode("ascii")):
-                return await JSONResponse({"detail": "A valid backend access token is required."}, status_code=401)(scope, receive, private_send)
+            limit, too_big, too_big_code = MAX_BODY_BYTES, "Upload is too large. The DICOM file limit is 20 MiB.", 413
+            if not public_demo.has_token(headers.get(b"authorization", b"")):
+                # Without the token, only the public demo (a demo X-ray name, no file) gets through.
+                if not public_demo.enabled():
+                    if not configured_key():
+                        return await JSONResponse({"detail": "The backend API key is not configured. Start with python -m backend or set CANDEX_API_KEY to at least 24 characters."}, status_code=503)(scope, receive, private_send)
+                    return await JSONResponse({"detail": "A valid backend access token is required."}, status_code=401)(scope, receive, private_send)
+                scope.setdefault("state", {})["public_demo"] = True
+                limit, too_big, too_big_code = public_demo.SMALL_BODY, public_demo.UPLOAD_NEEDS_TOKEN, 401
             try:
                 length = int(headers.get(b"content-length", b"0"))
             except ValueError:
-                length = MAX_BODY_BYTES + 1
-            if length > MAX_BODY_BYTES:
-                return await JSONResponse({"detail": "Upload is too large. The DICOM file limit is 20 MiB."}, status_code=413)(scope, receive, private_send)
+                length = limit + 1
+            if length > limit:
+                return await JSONResponse({"detail": too_big}, status_code=too_big_code)(scope, receive, private_send)
             chunks, total = [], 0
             while True:
                 message = await receive()
@@ -110,8 +118,8 @@ class InferenceRequestGuard:
                     return
                 chunk = message.get("body", b"")
                 total += len(chunk)
-                if total > MAX_BODY_BYTES:
-                    return await JSONResponse({"detail": "Upload is too large. The DICOM file limit is 20 MiB."}, status_code=413)(scope, receive, private_send)
+                if total > limit:
+                    return await JSONResponse({"detail": too_big}, status_code=too_big_code)(scope, receive, private_send)
                 chunks.append(chunk)
                 if not message.get("more_body", False):
                     break
@@ -149,11 +157,11 @@ app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=Fals
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "Candex DICOM research", "model": {**engine.metadata(), "loaded": engine.loaded, "supported_modalities": ["CR", "DX"]}, "limitations": LIMITATIONS}
+    return {"status": "ok", "service": "Candex DICOM research", "public_demo": public_demo.enabled(), "model": {**engine.metadata(), "loaded": engine.loaded, "supported_modalities": ["CR", "DX"]}, "limitations": LIMITATIONS}
 
 
 @app.post("/api/analyze")
-async def analyze(file: Optional[UploadFile] = File(None), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False),
+async def analyze(request: Request, file: Optional[UploadFile] = File(None), confirmed_chest: bool = Form(False), permitted_data: bool = Form(False),
                   demo_file: str = Form("")):
     async def close():
         if file is not None:
@@ -163,6 +171,11 @@ async def analyze(file: Optional[UploadFile] = File(None), confirmed_chest: bool
         raise HTTPException(422, "Confirm a frontal chest X-ray and permission to process the research/test image.")
     if file is None and not demo_file:
         raise HTTPException(422, "Choose a demo X-ray or upload a DICOM file.")
+    if public_demo.is_public(request):
+        if file is not None or not demo_file:
+            await close()
+            raise HTTPException(401, public_demo.UPLOAD_NEEDS_TOKEN)
+        public_demo.allow(request.scope, "xray")
     if analysis_slot.locked():
         await close()
         raise HTTPException(429, "The local model is processing another request. Try again after it finishes.")

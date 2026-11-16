@@ -25,7 +25,7 @@ import secrets
 from pathlib import Path
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -323,8 +323,16 @@ CXR_RULES = """Rules:
 
 
 @router.post("/cxr-summary")
-async def cxr_summary(body: CxrIn, authorization: str = Header(default="")):
-    require_token(authorization)
+async def cxr_summary(body: CxrIn, request: Request, authorization: str = Header(default="")):
+    from . import public_demo
+    if not (public_demo.enabled() and not public_demo.has_token(authorization)):
+        require_token(authorization)
+    else:
+        # Public demo: only the X-ray classifier's own labels, and counted against the demo limits.
+        from .xray_onnx import LABELS
+        if any(f.label not in LABELS for f in body.findings):
+            raise HTTPException(422, "The public demo summarises only the X-ray model's own labels.")
+        public_demo.allow(request.scope, "cxr-summary")
     from google.genai import types
     scores = sorted(({"label": f.label, "score": round(f.score, 2)} for f in body.findings), key=lambda x: -x["score"])
     data = json.dumps({"classifier": body.model, "scores": scores}, ensure_ascii=False)

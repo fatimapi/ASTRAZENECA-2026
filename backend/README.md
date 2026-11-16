@@ -42,6 +42,12 @@ Open **http://127.0.0.1:8000/#care/dicom** and keep the terminal open. Press Ctr
 The service is described in [`render.yaml`](../render.yaml) (a Render Blueprint): build and start commands, the free plan, the health check and the environment variables. To link it: Render dashboard → **New → Blueprint** → choose this repository. The `name` in the file matches the existing service, so Render updates that service rather than creating a new one; the `region` must match the existing service's region. After that, changes to `render.yaml` on `main` are applied on the next sync.
 
 
+- **Public demo (on by default).** Visitors can run the X-ray and CT AI on the built-in demo scans (`demo-data/`, FINAL DEMO XRAY / FINAL DEMO CT) without the token; the pages say so under the token field. Without the token:
+  - only demo files are accepted: an upload is refused (401) before it is read, so nobody can send their own images through the public site;
+  - limits per visitor per hour: 10 X-rays, 3 CT comparisons and 10 X-ray summaries; for the whole server per day: 200, 25 and 200, so the Gemini quota cannot be drained;
+  - the X-ray summary accepts only the classifier's own label names;
+  - a public CT job can be followed with its unguessable job id alone; a job started with the token still needs the token.
+  - Turn it off with `CANDEX_PUBLIC_DEMO=0` (Render → Environment); then everything needs the token again. The code is in `backend/public_demo.py`.
 - **Set a fixed token.** In Render → the service → Environment, add `CANDEX_API_KEY` (24+ random characters, e.g. from `python -c "import secrets; print(secrets.token_urlsafe(32))"`). Without it the token changes on every restart, and free Render services restart after about 15 minutes idle, so a token that worked earlier is rejected later. Share the value with the team privately; never commit it.
 - **Gemini key.** Set `GEMINI_API_KEY` in the same place for the live AI features.
 - **Memory (free plan, 512 MB).** Measured with the server started as on Render: an X-ray on the largest demo image peaks at about 360–380 MB (server plus worker); a full CT comparison at about 155 MB; idle about 100 MB.

@@ -116,6 +116,9 @@ window.candexI18n?.extend?.({
 "Select one supported DICOM file to continue.": "Valitse yksi tuettu DICOM-tiedosto jatkaaksesi.",
 "Confirm the chest X-ray and data-permission checks to continue.": "Vahvista keuhkoröntgen- ja tietolupakohdat jatkaaksesi.",
 "Ready. The file will be sent only when you choose Analyse DICOM.": "Valmis. Tiedosto lähetetään vasta, kun valitset Analysoi DICOM.",
+"Ready. Public demo: no API key needed for the demo X-rays.": "Valmis. Julkinen esittely: esimerkkiröntgenkuviin ei tarvita API-avainta.",
+"Uploading your own file needs the backend API key. Choose a demo X-ray to try it without one.": "Oman tiedoston lataaminen vaatii palvelimen API-avaimen. Valitse esimerkkiröntgenkuva, niin voit kokeilla ilman avainta.",
+"Not needed for the demo X-rays: anyone can try those. The key is only needed to upload your own file. It stays in this page’s memory and is sent only to the backend you select.": "Ei tarvita esimerkkiröntgenkuviin: niitä voi kokeilla kuka tahansa. Avain tarvitaan vain oman tiedoston lataamiseen. Se säilyy vain tämän sivun muistissa ja lähetetään vain valitsemallesi palvelimelle.",
 "This file is larger than the 20 MiB limit.": "Tiedosto ylittää 20 MiB:n rajan.",
 "Choose a DICOM file smaller than 20 MiB.": "Valitse alle 20 MiB:n DICOM-tiedosto.",
 "Choose a file within the size limit, enter the API key and confirm both checks.": "Valitse kokorajan sisällä oleva tiedosto, anna API-avain ja vahvista molemmat kohdat.",
@@ -193,6 +196,7 @@ export function mountDicomPanel(container) {
   if (!(container instanceof HTMLElement)) throw new TypeError('DICOM panel needs a container element.');
   let alive = true;
   let connected = false;
+  let publicDemo = false; // the server lets anyone run its demo X-rays without the API key
   let backend = '';
   let busy = false;
   let activeController;
@@ -237,7 +241,7 @@ export function mountDicomPanel(container) {
   const tokenSummary = element('summary');
   const tokenState = element('span', `token-state${tokenInput.value.trim() ? ' is-set' : ''}`, tokenInput.value.trim() ? 'Set' : 'Not set');
   tokenSummary.append(element('span', '', 'Backend API key'), tokenState);
-  tokenDrop.append(tokenSummary, field('Backend API key', tokenInput, 'Enter the CANDEX_API_KEY set on your server. It stays in this page’s memory and is sent only to the backend you select.'));
+  tokenDrop.append(tokenSummary, field('Backend API key', tokenInput, 'Not needed for the demo X-rays: anyone can try those. The key is only needed to upload your own file. It stays in this page’s memory and is sent only to the backend you select.'));
   connectionCard.append(tokenDrop);
   const showTokenState = () => { const set = !!tokenInput.value.trim(); tokenState.textContent = set ? 'Set' : 'Not set'; tokenState.classList.toggle('is-set', set); };
   const connectionButtons = element('div', 'button-row');
@@ -346,10 +350,13 @@ export function mountDicomPanel(container) {
     summaryController?.abort();
     resultArea.replaceChildren(resultTitle, placeholder);
   }
+  // The API key is needed for uploads, or when the server has no public demo.
+  const needsKey = () => !(publicDemo && demoChoice());
+  const keyMissing = () => needsKey() && tokenInput.value.trim().length < 24;
   function syncControls() {
     const file = fileInput.files?.[0];
     const chosen = demoChoice() ? true : sourceSelect.value === 'upload' && file && file.size <= MAX_FILE_BYTES;
-    analyseButton.disabled = busy || !connected || tokenInput.value.trim().length < 24 || !chosen || !chestCheck.checked || !permissionCheck.checked;
+    analyseButton.disabled = busy || !connected || keyMissing() || !chosen || !chestCheck.checked || !permissionCheck.checked;
     sourceSelect.disabled = busy;
     connectButton.disabled = busy;
     forgetButton.disabled = busy;
@@ -363,14 +370,16 @@ export function mountDicomPanel(container) {
     form.setAttribute('aria-busy', String(busy));
     if (busy) runHint.textContent = 'The backend is processing this request. The first run may need to download model weights. You can cancel waiting; the server may continue its current computation.';
     else if (!connected) runHint.textContent = 'Check the backend connection before running analysis.';
-    else if (tokenInput.value.trim().length < 24) runHint.textContent = 'Enter the backend API key (at least 24 characters) to enable analysis.';
-    else if (!file) runHint.textContent = 'Select one supported DICOM file to continue.';
-    else if (file.size > MAX_FILE_BYTES) runHint.textContent = 'Choose a DICOM file smaller than 20 MiB.';
+    else if (keyMissing()) runHint.textContent = publicDemo ? 'Uploading your own file needs the backend API key. Choose a demo X-ray to try it without one.' : 'Enter the backend API key (at least 24 characters) to enable analysis.';
+    else if (!demoChoice() && !file) runHint.textContent = 'Select one supported DICOM file to continue.';
+    else if (!demoChoice() && file.size > MAX_FILE_BYTES) runHint.textContent = 'Choose a DICOM file smaller than 20 MiB.';
     else if (!chestCheck.checked || !permissionCheck.checked) runHint.textContent = 'Confirm the chest X-ray and data-permission checks to continue.';
+    else if (!needsKey() && !tokenInput.value.trim()) runHint.textContent = 'Ready. Public demo: no API key needed for the demo X-rays.';
     else runHint.textContent = 'Ready. The file will be sent only when you choose Analyse DICOM.';
   }
   function disconnect() {
     connected = false;
+    publicDemo = false;
     resetResult();
     setStatus(connectionStatus, 'Backend address changed. Check the new connection before analysing.');
     setStatus(requestStatus, '');
@@ -433,6 +442,7 @@ export function mountDicomPanel(container) {
     if (busy) return;
     resetResult();
     connected = false;
+    publicDemo = false;
     try { backend = normaliseBackend(urlInput.value.trim()); }
     catch (error) { setStatus(connectionStatus, error.message, 'error'); syncControls(); return; }
     sessionBackend = backend;
@@ -445,6 +455,7 @@ export function mountDicomPanel(container) {
       if (!alive) return;
       if (data.status !== 'ok' || !data.model?.name || !Array.isArray(data.model.supported_modalities)) throw new Error('This address did not return the expected Candex model-service health response.');
       connected = true;
+      publicDemo = data.public_demo === true;
       setStatus(connectionStatus, reportLang() === 'fi' ? `Palvelin tavoitettavissa · ${modelName(data.model)}. ${data.model.loaded ? 'Malli on ladattu.' : 'Malli latautuu ensimmäisessä analyysissä.'} API-avain tarkistetaan, kun analyysi alkaa.` : `Backend reachable · ${modelName(data.model)}. ${data.model.loaded ? 'Model is loaded.' : 'Model will load on the first analysis.'} API credentials are checked when analysis starts.`, 'success');
     } catch (error) { if (alive) setStatus(connectionStatus, networkError(error, 'Connection check'), 'error'); }
     finally { if (alive) { busy = false; syncControls(); } }
@@ -456,7 +467,7 @@ export function mountDicomPanel(container) {
     const file = fileInput.files?.[0];
     const key = tokenInput.value.trim();
     const demoId = demoChoice();
-    if ((!demoId && (!file || file.size > MAX_FILE_BYTES)) || !chestCheck.checked || !permissionCheck.checked || key.length < 24) { setStatus(requestStatus, 'Choose a demo X-ray or a file within the size limit, enter the API key and confirm both checks.', 'error'); return; }
+    if ((!demoId && (!file || file.size > MAX_FILE_BYTES)) || !chestCheck.checked || !permissionCheck.checked || keyMissing()) { setStatus(requestStatus, 'Choose a demo X-ray or a file within the size limit, enter the API key and confirm both checks.', 'error'); return; }
     const body = new FormData();
     if (demoId) body.append('demo_file', demoId); else body.append('file', file);
     body.append('confirmed_chest', 'true');
@@ -466,7 +477,7 @@ export function mountDicomPanel(container) {
     syncControls();
     setStatus(requestStatus, 'The backend is running the model. Waiting for its actual response…');
     try {
-      const result = await request(`${backend}/api/analyze`, { method: 'POST', headers: { Accept: 'application/json', Authorization: `Bearer ${key}` }, body }, ANALYSIS_TIMEOUT_MS);
+      const result = await request(`${backend}/api/analyze`, { method: 'POST', headers: { Accept: 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) }, body }, ANALYSIS_TIMEOUT_MS);
       if (!alive) return;
       validateResult(result);
       lastResult = result;
@@ -511,7 +522,7 @@ export function mountDicomPanel(container) {
     let out;
     try {
       const response = await fetch(`${backend}/api/agent/cxr-summary`, {method: 'POST', signal: controller.signal, cache: 'no-store', credentials: 'omit', redirect: 'error',
-        headers: {'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${tokenInput.value.trim()}`},
+        headers: {'Content-Type': 'application/json', Accept: 'application/json', ...(tokenInput.value.trim() ? {Authorization: `Bearer ${tokenInput.value.trim()}`} : {})},
         body: JSON.stringify({lang, model: `${modelName(result.model)} ${text(result.model.weights || '', 100)}`.trim(), findings: result.findings.slice(0, 40).map(f => ({label: text(f.label, 80), score: f.score}))})});
       if (response.status === 503 || response.status === 404) return fallback(L('Live AI is not configured on this backend.', 'Tekoälyä ei ole otettu käyttöön tällä palvelimella.'));
       out = await parseResponse(response);
@@ -610,5 +621,8 @@ export function mountDicomPanel(container) {
     if (currentCleanup === cleanup) currentCleanup = undefined;
   };
   currentCleanup = cleanup;
+  // When the site is served by the backend itself (e.g. the published site), check the connection
+  // straight away (no image is sent), so visitors can try a demo X-ray without extra steps.
+  if (['http:', 'https:'].includes(location.protocol) && urlInput.value.trim() === location.origin) connectButton.click();
   return cleanup;
 }

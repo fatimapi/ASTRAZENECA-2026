@@ -179,7 +179,7 @@ ${S.source === 'upload' ? `<div class="button-row"><label class="button secondar
 <small>${S.scanning ? T('Checking the files…') : S.files.length ? `${S.files.length} ${T('files')} · ${num(totalMb)} MB${S.note ? ` · ${esc(S.note)}` : ''}` : S.note ? esc(S.note) : T('Choose the folder of one CT series (all its .dcm files). Up to 800 files, 400 MB.')}</small>` : demoId() ? `<small>${T('Demo CT from the server (public LIDC-IDRI data); nothing is uploaded from this computer.')}</small>` : ''}</div>
 <label class="check-row"><input type="checkbox" id="ctc-chest"><span>${T('This is one axial chest CT series.')}</span></label>
 <label class="check-row"><input type="checkbox" id="ctc-permit"><span>${T('I have permission to process this de-identified research or test image.')}</span></label>
-${window.candexAgent?.tokenDrop ? window.candexAgent.tokenDrop('ctc-token') : ''}
+${window.candexAgent?.tokenDrop ? window.candexAgent.tokenDrop('ctc-token', 'Not needed for the demo CTs: anyone can try those. The token is only needed to upload your own scan. Kept in this page’s memory only.') : ''}
 <button type="button" class="button" data-ctc-run ${S.busy ? 'disabled' : ''}>${icon('scan')}${S.busy ? T('Comparing… (1–2 minutes)') : T('Upload and compare')}</button>
 ${S.busy ? `<p class="field-note" role="status">${T(STAGES[S.stage] || 'Uploading the CT series…')} <span translate="no">(${Math.round((Date.now() - S.started) / 1000)} s)</span></p>` : ''}
 ${S.error ? `<p class="notice" role="alert">${esc(S.error)}</p>` : ''}
@@ -199,14 +199,14 @@ async function run() {
   const id = pid();
   if (!demoId() && !S.files.length) { S.error = T('Choose a demo CT or upload the folder of one CT series.'); return paint(); }
   if (!document.querySelector('#ctc-chest')?.checked || !document.querySelector('#ctc-permit')?.checked) { S.error = T('Confirm both checks first.'); return paint(); }
-  if (!token()) { S.error = T('Paste the backend token first.'); paint(); return window.candexAgent?.openToken?.('#ctc-token'); }
+  if (!token() && !demoId()) { S.error = T('Uploading your own scan needs the backend token. Choose a demo CT to try it without one.'); paint(); return window.candexAgent?.openToken?.('#ctc-token'); }
   const fd = new FormData();
   if (demoId()) fd.append('demo_case', demoId());
   else for (const f of S.files) fd.append('files', f, f.name);
   fd.append('confirmed_chest', 'true'); fd.append('permitted_data', 'true');
   if (S.original && !demoId()) fd.append('original_slices', String(S.original));
   Object.assign(S, {busy: true, error: null, started: Date.now(), stage: ''}); paint();
-  const ask = async (url, opts = {}) => { const res = await fetch(url, {...opts, headers: {Authorization: `Bearer ${token()}`, Accept: 'application/json'}}); let data = null; try { data = await res.json(); } catch { data = null; } return {res, data}; };
+  const ask = async (url, opts = {}) => { const res = await fetch(url, {...opts, headers: {...(token() ? {Authorization: `Bearer ${token()}`} : {}), Accept: 'application/json'}}); let data = null; try { data = await res.json(); } catch { data = null; } return {res, data}; };
   try {
     let {res, data} = await ask('/api/ct/compare', {method: 'POST', body: fd});
     // Step 3: the server answers at once with a job; poll it (a proxy may not wait a minute for one reply).
@@ -223,7 +223,7 @@ async function run() {
         if (poll.data.status === 'error') { res = {ok: false, status: poll.data.code || 500}; data = {detail: poll.data.detail}; break; }
       }
     }
-    if (!res.ok) throw new Error(res.status === 401 ? `${T('The backend token was not accepted.')} ${window.candexAgent?.tokenWhere?.() || ''}` : data?.detail || (res.status >= 500 ? `${T('The backend did not answer properly')} (HTTP ${res.status}). ${T('Check that the backend is running and that you opened the site from http://127.0.0.1:8000, then try again.')}` : `HTTP ${res.status}`));
+    if (!res.ok) throw new Error(res.status === 401 && token() ? `${T('The backend token was not accepted.')} ${window.candexAgent?.tokenWhere?.() || ''}` : data?.detail || (res.status >= 500 ? `${T('The backend did not answer properly')} (HTTP ${res.status}). ${T('Check that the backend is running and that you opened the site from http://127.0.0.1:8000, then try again.')}` : `HTTP ${res.status}`));
     const all = read(); all[id] = {at: new Date().toISOString(), result: data, approval: null};
     if (!write(all)) throw new Error(T('This browser could not save the result.'));
     Object.assign(S, {files: [], note: '', original: 0, source: ''});
@@ -294,6 +294,8 @@ window.candexI18n?.extend?.({
   'Scoring the 25 public reference studies…': 'Pisteytetään 25 julkista vertailututkimusta…', 'Writing and safety-checking the summary…': 'Kirjoitetaan ja tarkistetaan yhteenvetoa…', 'Uploading the CT series…': 'Lähetetään TT-sarjaa…',
   'Comparing… (1–2 minutes)': 'Verrataan… (1–2 minuuttia)', 'The comparison is taking too long. Try again later.': 'Vertailu kestää liian kauan. Yritä myöhemmin uudelleen.',
   'The backend token was not accepted.': 'Palvelimen tunnistetta ei hyväksytty.',
+  'Not needed for the demo CTs: anyone can try those. The token is only needed to upload your own scan. Kept in this page’s memory only.': 'Ei tarvita esimerkki-TT-kuviin: niitä voi kokeilla kuka tahansa. Tunniste tarvitaan vain oman kuvan lataamiseen. Säilyy vain tämän sivun muistissa.',
+  'Uploading your own scan needs the backend token. Choose a demo CT to try it without one.': 'Oman kuvan lataaminen vaatii palvelimen tunnisteen. Valitse esimerkki-TT, niin voit kokeilla ilman tunnistetta.',
   'The backend did not answer properly': 'Palvelin ei vastannut oikein', 'Check that the backend is running and that you opened the site from http://127.0.0.1:8000, then try again.': 'Tarkista, että palvelin on käynnissä ja että avasit sivuston osoitteesta http://127.0.0.1:8000, ja yritä uudelleen.',
   'Results go to the Imaging review of': 'Tulokset siirtyvät kuvantamisen arvioon potilaalle', 'Change the patient in Imaging review. The image stays in this browser session only.': 'Vaihda potilas kuvantamisen arviossa. Kuva säilyy vain tässä selainistunnossa.', 'Back to Imaging review': 'Takaisin kuvantamisen arvioon',
   'CT and X-ray results for one patient, in one place.': 'Yhden potilaan TT- ja röntgentulokset yhdessä paikassa.',
