@@ -27,7 +27,7 @@ const S = {pid: null, files: [], busy: false, error: null, started: 0, stage: ''
 function loadDemos() {
   if (S.demos !== null || typeof fetch !== 'function') return;
   S.demos = [];
-  fetch('/api/demo/files', {headers: {Accept: 'application/json'}}).then(r => (r.ok ? r.json() : null)).then(d => { S.demos = d?.ct || []; paint(); }).catch(() => { S.demos = []; });
+  fetch('/api/demo/files', {headers: {Accept: 'application/json'}}).then(r => (r.ok ? r.json() : null)).then(d => { S.demos = d?.ct || []; S.liveAi = d?.liveAi !== false; paint(); }).catch(() => { S.demos = []; });
 }
 const demoId = () => (S.source.startsWith('demo:') ? S.source.slice(5) : '');
 const MAX_SEND = 200; // slices sent per series (the server keeps the same cap)
@@ -153,7 +153,7 @@ function resultHTML(id, rec) {
   const rv = res.review, ok = rv.verdict === 'consistent with the raw data' && !(rv.unverifiedNumbers || []).length;
   const top = res.matches.slice(0, 3);
   const chosen = ap.caseId || best.caseId;
-  return `<section class="card ctc-result"><div class="card-head"><div><h2>${T('Closest public reference study')}: <span translate="no">${esc(best.caseId)}</span></h2><p class="subhead">${T('Similarity')} ${num(best.similarity)} % · ${T('uploaded')} ${esc(dt(rec.at))} · ${num(res.seconds)} s</p></div>${ap.state === 'approved' ? badge(T('Approved by clinician')) : ap.state === 'changed' ? badge(T('Changed since approval'), 'amber') : badge(T('Awaiting clinician approval'), 'amber')}</div>
+  return `<section class="card ctc-result"><div class="card-head"><div><h2>${T('Closest public reference study')}: <span translate="no">${esc(best.caseId)}</span></h2><p class="subhead">${T('Similarity')} ${num(best.similarity)} % · ${T('uploaded')} ${esc(dt(rec.at))} · ${num(res.seconds)} s</p>${res.saved ? `<p class="field-note">${T('Saved analysis of this demo CT')} (${esc(dt(res.saved.at))}). ${T('Shown without re-running the AI.')}</p>` : ''}</div>${ap.state === 'approved' ? badge(T('Approved by clinician')) : ap.state === 'changed' ? badge(T('Changed since approval'), 'amber') : badge(T('Awaiting clinician approval'), 'amber')}</div>
 <div class="ctc-pair"><figure><img alt="${esc(T('Key slice of the uploaded CT'))}" src="data:image/jpeg;base64,${res.images.key}"><figcaption>${T('Uploaded CT · key slice')} (z ${num(res.raw.read.keySliceZ)} mm)</figcaption></figure><figure>${refImg ? `<img alt="${esc(T('Key slice of the reference study'))}" src="${esc(refImg)}">` : ''}<figcaption translate="no">${esc(best.caseId)} · ${num(best.diameter)} mm · Lung-RADS ${esc(best.band)}</figcaption></figure></div>
 <details class="agent-drop ctc-sum ${ok ? '' : 'is-warn'}"><summary>${T('AI summary of the raw data')} ${badge(T(ok ? 'Safety review: consistent with the raw data' : 'Safety review: needs changes'), ok ? '' : 'amber')}</summary>
 <ul class="ctc-points" translate="no">${points.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
@@ -174,12 +174,12 @@ function body() {
   const totalMb = S.files.reduce((a, f) => a + f.size, 0) / 1e6;
   return `<div class="ctc-layout"><aside class="card ctc-controls"><h2>${T('Upload a chest CT')}</h2>
 <div class="field"><label for="ctc-patient">${icon('users')}${T('Patient')}</label><select id="ctc-patient">${patients.map(x => `<option value="${esc(x.id)}" ${x.id === id ? 'selected' : ''}>${esc(x.name)} · ${esc(x.id)}</option>`).join('')}</select></div>
-<div class="field"><label for="ctc-source">${T('CT series (DICOM files)')}</label><select id="ctc-source"><option value="" ${S.source ? '' : 'selected'}>${T('Choose a CT…')}</option>${(S.demos || []).length ? `<optgroup label="FINAL DEMO CT">${S.demos.map(d => `<option value="demo:${esc(d.id)}" ${S.source === 'demo:' + d.id ? 'selected' : ''} translate="no">${esc(d.id)} · ${d.slices} ${T('slices')}</option>`).join('')}</optgroup>` : ''}<option value="upload" ${S.source === 'upload' ? 'selected' : ''}>${T('Upload a new CT series (choose folder)…')}</option></select>
+<div class="field"><label for="ctc-source">${T('CT series (DICOM files)')}</label><select id="ctc-source"><option value="" ${S.source ? '' : 'selected'}>${T('Choose a CT…')}</option>${(S.demos || []).length ? `<optgroup label="FINAL DEMO CT">${S.demos.map(d => `<option value="demo:${esc(d.id)}" ${S.source === 'demo:' + d.id ? 'selected' : ''} ${!d.saved && S.liveAi === false ? 'disabled' : ''} translate="no">${esc(d.id)} · ${d.slices} ${T('slices')}${d.saved ? ` · ${T('saved analysis')}` : S.liveAi === false ? ` · ${T('needs live AI')}` : ''}</option>`).join('')}</optgroup>` : ''}<option value="upload" ${S.source === 'upload' ? 'selected' : ''}>${T('Upload a new CT series (choose folder)…')}</option></select>
 ${S.source === 'upload' ? `<div class="button-row"><label class="button secondary ctc-file">${icon('upload')}${T('Choose folder')}<input type="file" id="ctc-folder" webkitdirectory multiple hidden></label></div>
 <small>${S.scanning ? T('Checking the files…') : S.files.length ? `${S.files.length} ${T('files')} · ${num(totalMb)} MB${S.note ? ` · ${esc(S.note)}` : ''}` : S.note ? esc(S.note) : T('Choose the folder of one CT series (all its .dcm files). Up to 800 files, 400 MB.')}</small>` : demoId() ? `<small>${T('Demo CT from the server (public LIDC-IDRI data); nothing is uploaded from this computer.')}</small>` : ''}</div>
 <label class="check-row"><input type="checkbox" id="ctc-chest"><span>${T('This is one axial chest CT series.')}</span></label>
 <label class="check-row"><input type="checkbox" id="ctc-permit"><span>${T('I have permission to process this de-identified research or test image.')}</span></label>
-${window.candexAgent?.tokenDrop ? window.candexAgent.tokenDrop('ctc-token') : ''}
+${window.candexAgent?.tokenDrop ? window.candexAgent.tokenDrop('ctc-token', 'Not needed for the demo CTs: anyone can try those. The token is only needed to upload your own scan. Kept in this page’s memory only.') : ''}
 <button type="button" class="button" data-ctc-run ${S.busy ? 'disabled' : ''}>${icon('scan')}${S.busy ? T('Comparing… (1–2 minutes)') : T('Upload and compare')}</button>
 ${S.busy ? `<p class="field-note" role="status">${T(STAGES[S.stage] || 'Uploading the CT series…')} <span translate="no">(${Math.round((Date.now() - S.started) / 1000)} s)</span></p>` : ''}
 ${S.error ? `<p class="notice" role="alert">${esc(S.error)}</p>` : ''}
@@ -199,14 +199,14 @@ async function run() {
   const id = pid();
   if (!demoId() && !S.files.length) { S.error = T('Choose a demo CT or upload the folder of one CT series.'); return paint(); }
   if (!document.querySelector('#ctc-chest')?.checked || !document.querySelector('#ctc-permit')?.checked) { S.error = T('Confirm both checks first.'); return paint(); }
-  if (!token()) { S.error = T('Paste the backend token first.'); paint(); return window.candexAgent?.openToken?.('#ctc-token'); }
+  if (!token() && !demoId()) { S.error = T('Uploading your own scan needs the backend token. Choose a demo CT to try it without one.'); paint(); return window.candexAgent?.openToken?.('#ctc-token'); }
   const fd = new FormData();
   if (demoId()) fd.append('demo_case', demoId());
   else for (const f of S.files) fd.append('files', f, f.name);
   fd.append('confirmed_chest', 'true'); fd.append('permitted_data', 'true');
   if (S.original && !demoId()) fd.append('original_slices', String(S.original));
   Object.assign(S, {busy: true, error: null, started: Date.now(), stage: ''}); paint();
-  const ask = async (url, opts = {}) => { const res = await fetch(url, {...opts, headers: {Authorization: `Bearer ${token()}`, Accept: 'application/json'}}); let data = null; try { data = await res.json(); } catch { data = null; } return {res, data}; };
+  const ask = async (url, opts = {}) => { const res = await fetch(url, {...opts, headers: {...(token() ? {Authorization: `Bearer ${token()}`} : {}), Accept: 'application/json'}}); let data = null; try { data = await res.json(); } catch { data = null; } return {res, data}; };
   try {
     let {res, data} = await ask('/api/ct/compare', {method: 'POST', body: fd});
     // Step 3: the server answers at once with a job; poll it (a proxy may not wait a minute for one reply).
@@ -223,7 +223,7 @@ async function run() {
         if (poll.data.status === 'error') { res = {ok: false, status: poll.data.code || 500}; data = {detail: poll.data.detail}; break; }
       }
     }
-    if (!res.ok) throw new Error(res.status === 401 ? `${T('The backend token was not accepted.')} ${window.candexAgent?.tokenWhere?.() || ''}` : data?.detail || (res.status >= 500 ? `${T('The backend did not answer properly')} (HTTP ${res.status}). ${T('Check that the backend is running and that you opened the site from http://127.0.0.1:8000, then try again.')}` : `HTTP ${res.status}`));
+    if (!res.ok) throw new Error(res.status === 401 && token() ? `${T('The backend token was not accepted.')} ${window.candexAgent?.tokenWhere?.() || ''}` : data?.detail || (res.status >= 500 ? `${T('The backend did not answer properly')} (HTTP ${res.status}). ${T('Check that the backend is running and that you opened the site from http://127.0.0.1:8000, then try again.')}` : `HTTP ${res.status}`));
     const all = read(); all[id] = {at: new Date().toISOString(), result: data, approval: null};
     if (!write(all)) throw new Error(T('This browser could not save the result.'));
     Object.assign(S, {files: [], note: '', original: 0, source: ''});
@@ -294,6 +294,10 @@ window.candexI18n?.extend?.({
   'Scoring the 25 public reference studies…': 'Pisteytetään 25 julkista vertailututkimusta…', 'Writing and safety-checking the summary…': 'Kirjoitetaan ja tarkistetaan yhteenvetoa…', 'Uploading the CT series…': 'Lähetetään TT-sarjaa…',
   'Comparing… (1–2 minutes)': 'Verrataan… (1–2 minuuttia)', 'The comparison is taking too long. Try again later.': 'Vertailu kestää liian kauan. Yritä myöhemmin uudelleen.',
   'The backend token was not accepted.': 'Palvelimen tunnistetta ei hyväksytty.',
+  'saved analysis': 'tallennettu analyysi', 'needs live AI': 'vaatii tekoälyn',
+  'Saved analysis of this demo CT': 'Tämän esimerkki-TT:n tallennettu analyysi', 'Shown without re-running the AI.': 'Näytetään ajamatta tekoälyä uudelleen.',
+  'Not needed for the demo CTs: anyone can try those. The token is only needed to upload your own scan. Kept in this page’s memory only.': 'Ei tarvita esimerkki-TT-kuviin: niitä voi kokeilla kuka tahansa. Tunniste tarvitaan vain oman kuvan lataamiseen. Säilyy vain tämän sivun muistissa.',
+  'Uploading your own scan needs the backend token. Choose a demo CT to try it without one.': 'Oman kuvan lataaminen vaatii palvelimen tunnisteen. Valitse esimerkki-TT, niin voit kokeilla ilman tunnistetta.',
   'The backend did not answer properly': 'Palvelin ei vastannut oikein', 'Check that the backend is running and that you opened the site from http://127.0.0.1:8000, then try again.': 'Tarkista, että palvelin on käynnissä ja että avasit sivuston osoitteesta http://127.0.0.1:8000, ja yritä uudelleen.',
   'Results go to the Imaging review of': 'Tulokset siirtyvät kuvantamisen arvioon potilaalle', 'Change the patient in Imaging review. The image stays in this browser session only.': 'Vaihda potilas kuvantamisen arviossa. Kuva säilyy vain tässä selainistunnossa.', 'Back to Imaging review': 'Takaisin kuvantamisen arvioon',
   'CT and X-ray results for one patient, in one place.': 'Yhden potilaan TT- ja röntgentulokset yhdessä paikassa.',
